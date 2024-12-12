@@ -1,4 +1,7 @@
 import { sql } from '@vercel/postgres';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export async function GET({ url }) {
     const barcode = url.searchParams.get('barcode');

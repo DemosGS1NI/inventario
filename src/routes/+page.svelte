@@ -22,15 +22,15 @@
 
     // Redirect to "Change PIN" page if required
     if (result.user.debe_cambiar_pin) {
-      message = 'You need to change your PIN.';
+      message = 'Necesitas cambiar tu PIN.';
       window.location.href = '/forms/change-pin'; // Redirect to "Change PIN" page
       return;
     }
 
-    message = result.message || 'Login successful!';
+    message = result.message || 'Login satisfactorio!';
     window.location.href = '/forms/menu'; // Redirect to the dashboard after successful login
   } catch (err) {
-    message = 'An error occurred. Please try again.';
+    message = 'Un error ha ocurrido. Favor intente nuevamente.';
   }
 }
 
@@ -42,12 +42,12 @@
 
     <form on:submit|preventDefault={login} class="space-y-4">
       <div>
-        <label for="numero_telefono" class="block text-sm font-medium text-gray-700">Phone Number</label>
+        <label for="numero_telefono" class="block text-sm font-medium text-gray-700">Numero de Telefono</label>
         <input
           type="text"
           id="numero_telefono"
           bind:value={numero_telefono}
-          placeholder="Enter your phone number"
+          placeholder="Ingrese su numero de telefono"
           class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           required
         />
@@ -59,7 +59,7 @@
           type="password"
           id="pin"
           bind:value={pin}
-          placeholder="Enter your PIN"
+          placeholder="Ingrese su PIN"
           class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           required
         />

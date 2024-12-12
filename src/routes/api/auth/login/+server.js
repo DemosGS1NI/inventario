@@ -3,7 +3,7 @@ import { sql } from '@vercel/postgres';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 export async function POST({ request }) {
   const { numero_telefono, pin } = await request.json();

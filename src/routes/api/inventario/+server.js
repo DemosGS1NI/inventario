@@ -1,6 +1,6 @@
 import { sql } from '@vercel/postgres';  // Importing the sql function from @vercel/postgres
-import { config } from 'dotenv';
-config(); // Load environment variables from .env file
+import dotenv from 'dotenv';
+dotenv.config(); // Load environment variables from .env file
 
 export async function GET({ url }) {
     const page = parseInt(url.searchParams.get('page')) || 1;

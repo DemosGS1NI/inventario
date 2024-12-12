@@ -1,8 +1,10 @@
 import { json } from '@sveltejs/kit';
 import { sql } from '@vercel/postgres';
-import { config } from 'dotenv';
-config();
+import dotenv from 'dotenv';
 import xlsx from 'xlsx';
+
+dotenv.config();
+
 
 export const POST = async ({ request }) => {
     try {

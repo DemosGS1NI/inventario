@@ -2,12 +2,7 @@ import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: '.env.local' });
-
-import { sql } from '@vercel/postgres';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 export async function GET() {
   try {
