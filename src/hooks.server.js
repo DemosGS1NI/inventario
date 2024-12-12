@@ -30,5 +30,6 @@ export async function handle({ event, resolve }) {
     }
   }
 
+  console.log('User set in locals:', event.locals.user);
   return resolve(event);
 }
