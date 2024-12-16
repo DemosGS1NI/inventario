@@ -1,7 +1,8 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { BrowserMultiFormatReader } from '@zxing/browser';
-
+  import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
+  
   let bodegas = [];
   let marcas = [];
   let categoriasIncidencia = []; // To be fetched from the database
@@ -26,6 +27,7 @@
     await fetchBodegas();
     await fetchCategoriasIncidencias();
   });
+
 
   // Fetch bodegas
   async function fetchBodegas() {
@@ -202,13 +204,14 @@
     resetFieldsAfterSave();
   }
 
-  function goToMainMenu() {
-    window.location.href = '/'; // Replace with the actual main menu route
-  }
 </script>
 
 <div class="p-6 bg-gray-100 min-h-screen">
   <h1 class="text-2xl font-bold mb-4">Toma de Inventario - Workflow 1</h1>
+  <div>
+    <BackToMenuButton />
+
+  </div>  
 
   <!-- Select Bodega -->
   <div class="mb-4">
@@ -241,11 +244,6 @@
         on:click={() => startScanner('ubicacion')}
         class="mt-4 bg-blue-500 text-white p-2 rounded">
         Scan Ubicación
-      </button>
-      <button
-        on:click={goToMainMenu}
-        class="mt-4 bg-gray-500 text-white p-2 rounded">
-        Back to Main Menu
       </button>
     </div>
   {/if}

@@ -8,9 +8,8 @@ export async function handle({ event, resolve }) {
 
   if (sessionId) {
     try {
-      // Fetch user and role from session
       const result = await sql`
-        SELECT u.id, u.rol_id, r.nombre_rol
+        SELECT u.nombre, r.nombre_rol
         FROM sessions s
         JOIN usuarios u ON s.user_id = u.id
         JOIN roles r ON u.rol_id = r.id
@@ -20,9 +19,8 @@ export async function handle({ event, resolve }) {
       if (result.rows.length > 0) {
         const user = result.rows[0];
         event.locals.user = {
-          id: user.id,
-          roleId: user.rol_id,
-          roleName: user.nombre_rol,
+          nombre: user.nombre, // User's name
+          roleName: user.nombre_rol, // User's role
         };
       }
     } catch (error) {
@@ -30,6 +28,5 @@ export async function handle({ event, resolve }) {
     }
   }
 
-  console.log('User set in locals:', event.locals.user);
   return resolve(event);
 }

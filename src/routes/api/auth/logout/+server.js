@@ -11,6 +11,7 @@ export async function POST({ request, cookies }) {
       await sql`
         DELETE FROM sessions WHERE id = ${sessionId}
       `;
+      cookies.delete('sessionId', { path: '/' }); // Ensure the cookie is deleted
     } catch (error) {
       console.error('Error during logout:', error);
     }

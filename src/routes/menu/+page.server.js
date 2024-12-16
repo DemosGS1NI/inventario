@@ -16,6 +16,7 @@ export async function load({ locals }) {
   }
 
   return {
+    username: locals.user.username,
     userRole: locals.user.roleName
   };
 }
