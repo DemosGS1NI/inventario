@@ -1,17 +1,19 @@
 <script>
   import { goto } from '$app/navigation'; // Import the goto function
+	import BackToMenu from '$lib/BackToMenu.svelte';
+
   let newPin = '';
   let confirmNewPin = '';
   let errorMessage = '';
 
   const changePin = async () => {
     if (newPin !== confirmNewPin) {
-      errorMessage = 'PINs do not match';
+      errorMessage = 'PINs no coincide';
       return;
     }
 
     try {
-      const response = await fetch('/api/change-pin', {
+      const response = await fetch('/api/auth/change-pin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -26,7 +28,7 @@
         window.location.href = '/menu'; // Redirect after success
       } else {
         const data = await response.json();
-        errorMessage = data.message || 'Failed to change PIN.';
+        errorMessage = data.message || 'Error al cambiar PIN.';
       }
     } catch (error) {
       errorMessage = 'An unexpected error occurred. Please try again later.';
@@ -40,10 +42,13 @@
     class="bg-white p-6 rounded-lg shadow-md w-full max-w-md"
     on:submit|preventDefault={changePin}
   >
-    <h2 class="text-2xl font-bold mb-4 text-center">Change Your PIN</h2>
+    <h2 class="text-2xl font-bold mb-4 text-center">Cambiar PIN</h2>
+
+    <BackToMenu />
+
     <div class="mb-4">
       <label for="newPin" class="block text-gray-700 font-medium mb-2">
-        Enter Your New PIN:
+        Ingrese su nuevo PIN:
       </label>
       <input
         type="password"
@@ -54,7 +59,7 @@
     </div>
     <div class="mb-4">
       <label for="confirmNewPin" class="block text-gray-700 font-medium mb-2">
-        Confirm Your New PIN:
+        Confirme su nuevo PIN:
       </label>
       <input
         type="password"
@@ -70,7 +75,7 @@
       type="submit"
       class="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600"
     >
-      Change PIN
+      Cambiar PIN
     </button>
   </form>
 </div>

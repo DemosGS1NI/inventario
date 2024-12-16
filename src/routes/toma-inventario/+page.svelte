@@ -56,7 +56,7 @@
     // Fetch categorias incidencias
     async function fetchCategoriasIncidencias() {
     try {
-      const res = await fetch('/api/categorias-incidencias');
+      const res = await fetch('/api/db/categorias-incidencias');
       const data = await res.json();
 
       console.log('Fetched categories:', data); // Log the response data

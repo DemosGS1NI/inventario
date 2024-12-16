@@ -9,7 +9,7 @@ export async function handle({ event, resolve }) {
   if (sessionId) {
     try {
       const result = await sql`
-        SELECT u.nombre, r.nombre_rol
+        SELECT u.id, u.nombre, r.nombre_rol
         FROM sessions s
         JOIN usuarios u ON s.user_id = u.id
         JOIN roles r ON u.rol_id = r.id
@@ -19,6 +19,7 @@ export async function handle({ event, resolve }) {
       if (result.rows.length > 0) {
         const user = result.rows[0];
         event.locals.user = {
+          id: user.id,  // user id
           nombre: user.nombre, // User's name
           roleName: user.nombre_rol, // User's role
         };

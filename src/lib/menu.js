@@ -9,6 +9,7 @@ export const menuOptions = [
     { label: 'Categorias de Incidencias', href: '/categorias-incidencias', roles: ['Admin', 'Supervisor'] },
     { label: 'Usuarios', href: '/usuarios', roles: ['Admin'] },
     { label: 'Roles', href: '/roles', roles: ['Admin'] },
-    { label: 'Change PIN', href: '/change-pin', roles: ['Admin', 'Inventario', 'Supervisor'] },
+    { label: 'Cambiar PIN', href: '/change-pin', roles: ['Admin', 'Inventario', 'Supervisor'] }, 
+    { label: 'Log out', action: 'logout', roles: ['Admin', 'Inventario', 'Supervisor'] }, 
   ];
   

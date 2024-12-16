@@ -14,7 +14,8 @@ export async function GET() {
         u.numero_telefono, 
         u.rol_id, 
         r.nombre_rol, 
-        u.activo 
+        u.activo,
+        u.debe_cambiar_pin
       FROM usuarios u
       LEFT JOIN roles r ON u.rol_id = r.id
       ORDER BY u.fecha_creacion DESC
@@ -54,13 +55,17 @@ export async function POST({ request }) {
   }
 
 export async function PUT({ request }) {
-  const { id, nombre, apellido, numero_telefono, rol_id } = await request.json();
+  const { id, numero_telefono, nombre, apellido,  rol_id, activo, debe_cambiar_pin } = await request.json();
   await sql`
     UPDATE usuarios
-    SET nombre = ${nombre}, apellido = ${apellido}, numero_telefono = ${numero_telefono}, rol_id = ${rol_id}, fecha_actualizacion = NOW()
+    SET nombre = ${nombre}, apellido = ${apellido}, numero_telefono = ${numero_telefono}, 
+    rol_id = ${rol_id},  activo = ${activo},  debe_cambiar_pin = ${debe_cambiar_pin}, fecha_actualizacion = NOW()
     WHERE id = ${id}
   `;
+
+  console.log(nombre, apellido,numero_telefono, rol_id, activo, debe_cambiar_pin)
   return new Response('User updated', { status: 200 });
+
 }
 
 export async function DELETE({ params }) {
