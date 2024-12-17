@@ -1,6 +1,6 @@
 <script>
   import { onMount, tick } from 'svelte';
-  import { BrowserMultiFormatReader } from '@zxing/browser';
+  import { BrowserCodeReader } from '@zxing/browser';
   import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
   
   let bodegas = [];
