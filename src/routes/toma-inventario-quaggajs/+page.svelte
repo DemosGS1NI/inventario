@@ -2,6 +2,7 @@
     import { onMount, tick } from 'svelte';
     import Quagga from 'quagga';
     import BackToMenuButton from '$lib/BackToMenu.svelte';
+    
   
     let bodegas = [];
     let marcas = [];
