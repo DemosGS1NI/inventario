@@ -1,6 +1,6 @@
 <script>
   import { onMount, tick } from 'svelte';
-  import { BrowserCodeReader } from '@zxing/browser';
+  import Quagga from 'quagga';
   import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
   
   let bodegas = [];
@@ -73,58 +73,98 @@
 
   // Start scanner
   async function startScanner(type) {
-    scanningType = type;
-    isScanning = true;
+  scanningType = type;
+  isScanning = true;
 
-    await tick(); // Ensure video element is rendered
-    const videoElement = document.getElementById('scanner-video');
-    if (!videoElement) {
-      console.error('Scanner video element not found');
-      return;
-    }
+  await tick(); // Ensure the DOM is updated
 
-    scanner = new BrowserMultiFormatReader();
+  const videoElement = document.querySelector('#scanner-video');
 
-    try {
-      await scanner.decodeFromVideoDevice(null, videoElement, (result) => {
-        if (result) {
-          const scannedValue = result.getText();
-          console.log(`Scanned ${type}:`, scannedValue);
+  if (!videoElement) {
+    console.error('Scanner video element not found.');
+    return;
+  }
 
-          if (type === 'ubicacion') {
-            ubicacion = scannedValue;
-            stopScanner();
-          } else if (type === 'codigoBarras') {
-            codigoBarras = scannedValue;
-            fetchProductDetails();
-            stopScanner();
-          }
-        }
+  try {
+    // Request the video stream with torch support
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'environment',
+        advanced: [{ torch: true }], // Attempt to turn on the torch
+      },
+    });
+
+    const [track] = stream.getVideoTracks(); // Get the active video track
+    const capabilities = track.getCapabilities();
+
+    // Check if the device supports torch
+    if (capabilities.torch) {
+      track.applyConstraints({
+        advanced: [{ torch: true }],
       });
-    } catch (error) {
-      console.error(`Error initializing scanner for ${type}:`, error);
+      console.log('Torch activated.');
+    } else {
+      console.warn('Torch is not supported on this device.');
+    }
+
+    // Attach the video stream to the video element
+    videoElement.srcObject = stream;
+    videoElement.play();
+
+    // Initialize QuaggaJS
+    Quagga.init(
+      {
+        inputStream: {
+          type: 'LiveStream',
+          target: videoElement, // Video element
+        },
+        decoder: {
+          readers: ['code_128_reader'], // Code 128 scanner
+        },
+      },
+      (err) => {
+        if (err) {
+          console.error('QuaggaJS Initialization Error:', err);
+          stopScanner();
+          return;
+        }
+        console.log('QuaggaJS initialized');
+        Quagga.start();
+      }
+    );
+
+    // Handle barcode detection
+    Quagga.onDetected((data) => {
+      console.log('Scanned Result:', data.codeResult.code);
+
+      if (scanningType === 'ubicacion') {
+        ubicacion = data.codeResult.code;
+      } else if (scanningType === 'codigoBarras') {
+        codigoBarras = data.codeResult.code;
+        fetchProductDetails();
+      }
+
       stopScanner();
-    }
+    });
+
+  } catch (error) {
+    console.error('Error starting scanner:', error);
+    stopScanner();
   }
+}
 
-  // Stop scanner
-  function stopScanner() {
-    isScanning = false;
-    scanningType = '';
+function stopScanner() {
+  Quagga.stop();
+  isScanning = false;
+  scanningType = '';
 
-    if (scanner) {
-      scanner.reset();
-      scanner = null;
-    }
-
-    const videoElement = document.getElementById('scanner-video');
-    if (videoElement && videoElement.srcObject) {
-      const stream = videoElement.srcObject;
-      const tracks = stream.getTracks();
-      tracks.forEach((track) => track.stop());
-      videoElement.srcObject = null;
-    }
+  const videoElement = document.querySelector('#scanner-video');
+  if (videoElement?.srcObject) {
+    const tracks = videoElement.srcObject.getTracks();
+    tracks.forEach((track) => track.stop()); // Stop all video tracks
+    videoElement.srcObject = null;
   }
+}
 
  async function fetchProductDetails() {
   try {

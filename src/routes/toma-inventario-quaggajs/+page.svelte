@@ -54,7 +54,7 @@
   
     // Start Quagga Scanner
 
-    async function startScanner(type) {
+  async function startScanner(type) {
   scanningType = type;
   isScanning = true;
 
