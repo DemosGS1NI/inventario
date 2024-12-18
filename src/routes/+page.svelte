@@ -13,6 +13,14 @@
 
   async function login() {
     message = ''; // Reset the message
+
+    // Validate inputs before sending request
+    if (!numero_telefono.trim() || !pin.trim()) {
+      messageType = 'error';
+      message = 'Por favor, complete todos los campos.';
+      return;
+    }
+
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -24,22 +32,21 @@
 
       const result = await response.json();
 
-      if (!response.ok) {
-        messageType = 'error';
-        message = result.message || 'Credenciales incorrectas. Intente nuevamente.';
-        return;
-      }
+      if (response.ok && result.status === 'success') {
+        if (result.data.user.debe_cambiar_pin) {
+          messageType = 'success';
+          message = 'Necesitas cambiar tu PIN.';
+          window.location.href = '/change-pin'; // Redirect to "Change PIN" page
+          return;
+        }
 
-      if (result.user.debe_cambiar_pin) {
         messageType = 'success';
-        message = 'Necesitas cambiar tu PIN.';
-        window.location.href = '/change-pin'; // Redirect to "Change PIN" page
-        return;
+        message = result.message || 'Login satisfactorio!';
+        window.location.href = '/menu'; // Redirect to the dashboard
+      } else {
+        messageType = 'error';
+        message = result.error?.message || 'Credenciales incorrectas. Intente nuevamente.';
       }
-
-      messageType = 'success';
-      message = result.message || 'Login satisfactorio!';
-      window.location.href = '/menu'; // Redirect to the dashboard after successful login
     } catch (err) {
       messageType = 'error';
       message = 'Un error ha ocurrido. Favor intente nuevamente.';
@@ -68,9 +75,6 @@
           required
           aria-describedby="telefono-help"
         />
-        <small id="telefono-help" class="text-gray-500">
-          Ejemplo: 88888888
-        </small>
       </div>
 
       <div>

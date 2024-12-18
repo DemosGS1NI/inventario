@@ -20,8 +20,6 @@
   let scanningType = ''; // 'ubicacion' or 'codigoBarra'
   let beep;
 
-
-
   // Fetch bodegas and categorias incidencias on mount
   onMount(async () => {
     beep = new Audio('store-scanner-beep-90395.mp3');
@@ -81,10 +79,11 @@
 
   const videoElement = document.querySelector('#scanner-video');
 
+
   if (!videoElement) {
     console.error('Scanner video element not found.');
     return;
-  }
+  } 
 
   try {
     // Request the video stream with torch support

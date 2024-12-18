@@ -1,16 +1,36 @@
 <script>
   import { goto } from '$app/navigation'; // Import the goto function
-	import BackToMenu from '$lib/BackToMenu.svelte';
+  import BackToMenu from '$lib/BackToMenu.svelte';
 
   let newPin = '';
   let confirmNewPin = '';
   let errorMessage = '';
 
-  const changePin = async () => {
-    if (newPin !== confirmNewPin) {
-      errorMessage = 'PINs no coincide';
-      return;
+  const validateInputs = () => {
+    // Trim inputs to avoid blank spaces
+    newPin = newPin.trim();
+    confirmNewPin = confirmNewPin.trim();
+
+    // Check for empty inputs
+    if (!newPin || !confirmNewPin) {
+      errorMessage = 'Todos los campos son obligatorios.';
+      return false;
     }
+
+    // Check for mismatched PINs
+    if (newPin !== confirmNewPin) {
+      errorMessage = 'Los PINs no coinciden.';
+      return false;
+    }
+
+    // Clear error if everything is valid
+    errorMessage = '';
+    return true;
+  };
+
+  const changePin = async () => {
+    // Validate inputs before sending request
+    if (!validateInputs()) return;
 
     try {
       const response = await fetch('/api/auth/change-pin', {
@@ -19,22 +39,22 @@
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          newPin, // Ensure this matches the expected API key
-          confirmNewPin, // Ensure this matches the expected API key
+          newPin,
+          confirmNewPin,
         }),
       });
 
       if (response.ok) {
-        window.location.href = '/menu'; // Redirect after success
+        alert('¡PIN ha sido cambiado satisfactoriamente!');
+        goto('/menu'); // Redirect to menu
       } else {
         const data = await response.json();
-        errorMessage = data.message || 'Error al cambiar PIN.';
+        errorMessage = data.message || 'Error al cambiar el PIN.';
       }
     } catch (error) {
-      errorMessage = 'An unexpected error occurred. Please try again later.';
+      errorMessage = 'Ocurrió un error inesperado. Por favor, inténtelo más tarde.';
     }
   };
-
 </script>
 
 <div class="flex justify-center items-center min-h-screen bg-gray-100">

@@ -1,6 +1,10 @@
 <script>
 	export let data;
   
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+    injectSpeedInsights();
+
 	// Access user-related data if needed
 	const { userName, userRole } = data;
   </script>
