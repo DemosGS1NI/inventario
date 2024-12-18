@@ -144,6 +144,7 @@
         ubicacion = data.codeResult.code;
       } else if (scanningType === 'codigoBarras') {
         codigoBarras = data.codeResult.code;
+        console.log(codigoBarras);
         fetchProductDetails();
       }
 
@@ -343,7 +344,7 @@ function stopScanner() {
         class="block w-full mt-1 p-2 border rounded"
       >
         <option value="">Select a category</option>
-        {#each categoriasIncidencia as categoria}
+        {#each categoriasIncidencias as categoria}
           <option value={categoria}>{categoria}</option>
         {/each}
       </select>
