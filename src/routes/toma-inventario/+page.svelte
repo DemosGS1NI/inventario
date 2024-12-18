@@ -136,7 +136,7 @@
 
     // Handle barcode detection
     Quagga.onDetected((data) => {
-      
+
       if (beep) beep.play();
       console.log('Scanned Result:', data.codeResult.code);
 
@@ -174,11 +174,12 @@ function stopScanner() {
     const res = await fetch(`/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`);
 
     if (!res.ok) {
-      console.log(codigoBarras);
       throw new Error('Codigo de Barras del Producto no encontrado!');
     }
 
     const data = await res.json();
+
+    console.log(data);
 
     if (data.product && data.product.length > 0) {
       product = data.product[0];
@@ -212,7 +213,7 @@ function stopScanner() {
         marca: selectedMarca,
         codigo_barras: codigoBarras,
         inventario_fisico: stockQuantity,
-        categoria_incidencia: SelectedCategoriaIncidencia, // Include categoria incidencia in the payload        
+        categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
         incidencia: incidencia,
         actualizado_por: 1,
       };
