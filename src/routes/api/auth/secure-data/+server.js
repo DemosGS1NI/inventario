@@ -1,14 +1,14 @@
+import { successResponse, errorResponse } from '$lib/responseUtils';
+
 export async function GET({ locals }) {
-    if (!locals.user) {
-      return new Response(JSON.stringify({ message: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-  
-    return new Response(JSON.stringify({ message: 'Authorized', userId: locals.user.id }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+  // Check if user is authenticated
+  if (!locals.user) {
+    return errorResponse(401, 'UNAUTHORIZED', 'You are not authorized to access this resource.');
   }
-  
+
+  // Return authorized response with user details
+  return successResponse(
+    { userId: locals.user.id },
+    'Authorized access'
+  );
+}

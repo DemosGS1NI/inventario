@@ -27,13 +27,17 @@
     await fetchCategoriasIncidencias();
   });
 
-
-  // Fetch bodegas
   async function fetchBodegas() {
-    try {
-      const res = await fetch('/api/bodegas');
-      const response = await res.json();
-      bodegas = response.bodegas || [];
+  try {
+    const res = await fetch('/api/bodegas');
+    const data = await res.json();
+
+    if (res.ok && data.status === 'success') {
+      bodegas = data.data; // Assign the fetched bodega names to the `bodegas` variable
+      console.log('Bodegas fetched:', bodegas);
+    } else {
+      console.error('Error fetching bodegas:', data.message || 'Unknown error');
+    }
     } catch (error) {
       console.error('Error fetching bodegas:', error);
     }
@@ -41,34 +45,49 @@
 
   // Fetch marcas based on selected bodega
   async function fetchMarcas() {
-    if (!selectedBodega) return;
-
-    try {
-      const res = await fetch(`/api/marcas?bodega=${selectedBodega}`);
-      const data = await res.json();
-      marcas = data.marcas || [];
-    } catch (error) {
-      console.error('Error fetching marcas:', error);
-    }
+  if (!selectedBodega) {
+    console.error('Error: No bodega selected.');
+    return;
   }
 
-    // Fetch categorias incidencias
-    async function fetchCategoriasIncidencias() {
-    try {
-      const res = await fetch('/api/db/categorias-incidencias');
-      const data = await res.json();
+  try {
+    const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
+    const data = await res.json();
 
-      console.log('Fetched categories:', data); // Log the response data
-
-      if (res.ok) {
-        categoriasIncidencias = data.map((item) => item.categoria); // Extract only category names
-      } else {
-        console.error('Error fetching categorias incidencias:', data.error);
-      }
-    } catch (error) {
-      console.error('Error fetching categorias incidencias:', error);
+    if (res.ok && data.status === 'success') {
+      marcas = data.data; // Assign the fetched marcas to the `marcas` variable
+      console.log('Marcas fetched:', marcas);
+    } else {
+      console.error('Error fetching marcas:', data.message || 'Unknown error');
+      message = 'Error fetching marcas. Please try again.';
     }
+  } catch (error) {
+    console.error('Error fetching marcas:', error);
+    message = 'An unexpected error occurred while fetching marcas.';
   }
+}
+
+  async function fetchCategoriasIncidencias() {
+  try {
+    const res = await fetch('/api/db/categorias-incidencias');
+    const data = await res.json();
+
+    console.log('Fetched categories:', data); // Log the response data for debugging
+
+    // Check for success and proper structure
+    if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
+      categoriasIncidencias = data.data.map((item) => item.categoria); // Extract category names
+    } else {
+      console.error(
+        'Error fetching categorias incidencias:',
+        data.message || 'Invalid response structure'
+      );
+    }
+  } catch (error) {
+    console.error('Error fetching categorias incidencias:', error);
+  }
+}
+
 
   // Start scanner
   async function startScanner(type) {
@@ -169,37 +188,33 @@ function stopScanner() {
   }
 }
 
- async function fetchProductDetails() {
+async function fetchProductDetails() {
   try {
-    const res = await fetch(`/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`);
-
-    if (!res.ok) {
-      throw new Error('Codigo de Barras del Producto no encontrado!');
-    }
+    const res = await fetch(
+      `/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
+    );
 
     const data = await res.json();
 
-    console.log(data);
-
-    if (data.product && data.product.length > 0) {
-      product = data.product[0];
+    if (res.ok && data.data && data.data.length > 0) {
+      product = data.data[0]; // Access the first product from "data"
       stockQuantity = product.inventario_fisico || 0;
       incidencia = product.incidencia || '';
-      selectedCategoriaIncidencia = product.categoria_incidencia || ''; // Set fetched value or empty
-      message = ''; // Clear message
+      selectedCategoriaIncidencia = product.categoria_incidencia || '';
+      message = '';
     } else {
       product = null;
-      message = 'Producto no existe';
-      codigoBarras = ''; // Reset codigoBarra for a new scan
-      await tick(); // Wait for DOM updates
-      startScanner('codigoBarras'); // Restart scanner for barcode
+      message = data.message || 'Producto no existe';
+      codigoBarras = '';
+      await tick();
+      startScanner('codigoBarras');
     }
   } catch (error) {
     console.error('Error fetching product:', error);
-    message = 'Producto no existe'; // Display error
-    codigoBarras = ''; // Reset codigoBarra for a new scan
-    await tick(); // Wait for DOM updates
-    startScanner('codigoBarras'); // Restart scanner for barcode
+    message = 'Producto no existe';
+    codigoBarras = '';
+    await tick();
+    startScanner('codigoBarras');
   }
 }
 

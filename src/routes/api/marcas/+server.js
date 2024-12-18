@@ -1,43 +1,39 @@
 import { sql } from '@vercel/postgres';
+import { successResponse, errorResponse } from '$lib/responseUtils';
 import dotenv from 'dotenv';
 
-// Load environment variables from .env file
+// Load environment variables
 dotenv.config();
 
 export async function GET({ url }) {
-    const bodega = url.searchParams.get('bodega'); // Get the bodega parameter from the query string
+  const bodega = url.searchParams.get('bodega'); // Get the `bodega` parameter from the query string
 
-    if (!bodega) {
-        return new Response(
-            JSON.stringify({ success: false, message: 'Bodega is required' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+  // Validate the query parameter
+  if (!bodega) {
+    return errorResponse(400, 'BAD_REQUEST', 'Bodega parameter is required');
+  }
+
+  try {
+    // Query to fetch distinct marcas for the given bodega
+    const result = await sql`
+      SELECT DISTINCT marca
+      FROM inventario
+      WHERE bodega = ${bodega}
+    `;
+
+    if (result.rows.length > 0) {
+      const marcas = result.rows.map((row) => row.marca);
+      return successResponse(marcas, 'Marcas fetched successfully');
+    } else {
+      return errorResponse(404, 'NOT_FOUND', 'No marcas found for the specified bodega');
     }
-
-    try {
-        // Query to get distinct marcas based on bodega
-        const result = await sql`
-            SELECT DISTINCT marca 
-            FROM inventario 
-            WHERE bodega = ${bodega}
-        `;
-
-        if (result.rows.length > 0) {
-            return new Response(
-                JSON.stringify({ marcas: result.rows.map(row => row.marca) }),
-                { status: 200, headers: { 'Content-Type': 'application/json' } }
-            );
-        } else {
-            return new Response(
-                JSON.stringify({ success: false, message: 'No marcas found for the specified bodega' }),
-                { status: 404, headers: { 'Content-Type': 'application/json' } }
-            );
-        }
-    } catch (error) {
-        console.error('Error fetching marcas:', error);
-        return new Response(
-            JSON.stringify({ success: false, message: 'Error fetching marcas' }),
-            { status: 500, headers: { 'Content-Type': 'application/json' } }
-        );
-    }
+  } catch (error) {
+    console.error('Error fetching marcas:', error);
+    return errorResponse(
+      500,
+      'INTERNAL_SERVER_ERROR',
+      'An error occurred while fetching marcas',
+      error.message
+    );
+  }
 }

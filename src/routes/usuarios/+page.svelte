@@ -30,31 +30,25 @@
     }
   };
 
-  // Fetch roles
-  const fetchRoles = async () => {
+
+    // Fetch roles
+    const fetchRoles = async () => {
     try {
-      const response = await fetch('/api/db/roles');
-
-      if (!response.ok) {
-        console.error(`Failed to fetch roles: ${response.status} ${response.statusText}`);
-        roles = [];
-        return;
+      const res = await fetch('/api/db/roles');
+      const data = await res.json();
+      if (data.status === 'success') {
+        roles = data.data;
+        message = '';
+      } else {
+        throw new Error(data.error?.message || 'Error fetching roles');
       }
-
-      const { success, data } = await response.json();
-
-      if (!success || !Array.isArray(data)) {
-        console.error('Invalid response format or success flag is false');
-        roles = [];
-        return;
-      }
-
-      roles = data;
-    } catch (error) {
-      console.error('Error fetching roles:', error.message);
-      roles = [];
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+      message = 'Ocurrió un error al cargar los roles.';
+      messageType = 'error';
     }
   };
+
 
   // Save or update a user
   const saveUser = async () => {

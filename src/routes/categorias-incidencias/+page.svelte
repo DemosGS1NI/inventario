@@ -6,17 +6,30 @@
   let currentCategory = { id: null, categoria: '', descripcion: '' };
   let showForm = false;
   let message = '';
+  let messageType = ''; // 'success' or 'error'
 
+  // Fetch all categories
   async function fetchCategories() {
     try {
       const res = await fetch('/api/db/categorias-incidencias');
       const data = await res.json();
-      if (res.ok) categories = data;
+
+      if (res.ok && data.status === 'success') {
+        categories = data.data; // Access the `data` field in the standardized response
+        message = '';
+        messageType = '';
+      } else {
+        message = data.message || 'Error al cargar categorías.';
+        messageType = 'error';
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      message = 'Ocurrió un error al cargar categorías.';
+      messageType = 'error';
     }
   }
 
+  // Save or update a category
   async function saveCategory() {
     const method = currentCategory.id ? 'PUT' : 'POST';
     try {
@@ -26,20 +39,28 @@
         body: JSON.stringify(currentCategory),
       });
 
-      if (res.ok) {
-        message = currentCategory.id ? 'Categoría actualizada con éxito!' : 'Categoría creada con éxito!';
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success') {
+        message = currentCategory.id
+          ? 'Categoría actualizada con éxito!'
+          : 'Categoría creada con éxito!';
+        messageType = 'success';
         await fetchCategories();
         resetForm();
         showForm = false;
       } else {
-        message = 'Error al guardar la categoría.';
+        message = data.message || 'Error al guardar la categoría.';
+        messageType = 'error';
       }
     } catch (error) {
       console.error('Error saving category:', error);
       message = 'Ocurrió un error al guardar la categoría.';
+      messageType = 'error';
     }
   }
 
+  // Delete a category
   async function deleteCategory(id) {
     if (!confirm('¿Está seguro de que desea eliminar esta categoría?')) return;
 
@@ -50,15 +71,20 @@
         body: JSON.stringify({ id }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success') {
         message = 'Categoría eliminada con éxito!';
+        messageType = 'success';
         await fetchCategories();
       } else {
-        message = 'Error al eliminar la categoría.';
+        message = data.message || 'Error al eliminar la categoría.';
+        messageType = 'error';
       }
     } catch (error) {
       console.error('Error deleting category:', error);
       message = 'Ocurrió un error al eliminar la categoría.';
+      messageType = 'error';
     }
   }
 
@@ -72,9 +98,20 @@
     showForm = false;
   }
 
+  // Reset message after a delay
+  function resetMessage() {
+    setTimeout(() => {
+      message = '';
+      messageType = '';
+    }, 5000);
+  }
+
+  $: if (message) resetMessage();
+
   onMount(fetchCategories);
 </script>
 
+<!-- Template -->
 <div class="p-6 bg-gray-100 min-h-screen">
   <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
     Categorías de Incidencias
@@ -85,7 +122,13 @@
   </div>
 
   {#if message}
-    <p class="text-center text-green-600 mb-4">{message}</p>
+    <p
+      class="text-center mb-4"
+      class:text-green-600={messageType === 'success'}
+      class:text-red-600={messageType === 'error'}
+    >
+      {message}
+    </p>
   {/if}
 
   <div class="flex justify-center mb-6">
@@ -100,6 +143,7 @@
     </button>
   </div>
 
+  <!-- Form -->
   {#if showForm}
     <div class="bg-white shadow-md rounded px-8 py-6 mb-6 max-w-lg mx-auto">
       <form on:submit|preventDefault={saveCategory}>
@@ -142,6 +186,7 @@
     </div>
   {/if}
 
+  <!-- Table -->
   <div class="overflow-x-auto bg-white shadow-md rounded">
     <table class="table-auto w-full border-collapse">
       <thead class="bg-gray-200 text-gray-700">

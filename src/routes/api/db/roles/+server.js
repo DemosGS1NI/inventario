@@ -1,6 +1,6 @@
-import { json } from '@sveltejs/kit';
 import { sql } from '@vercel/postgres';
 import dotenv from 'dotenv';
+import { successResponse, errorResponse } from '$lib/responseUtils';
 
 dotenv.config();
 
@@ -8,10 +8,10 @@ dotenv.config();
 export async function GET() {
   try {
     const result = await sql`SELECT * FROM roles ORDER BY fecha_creacion DESC`;
-    return json({ success: true, data: result.rows });
+    return successResponse(result.rows, 'Roles fetched successfully');
   } catch (error) {
     console.error('Error fetching roles:', error);
-    return json({ success: false, error: 'Failed to fetch roles' }, { status: 500 });
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to fetch roles', error.message);
   }
 }
 
@@ -21,15 +21,19 @@ export async function POST({ request }) {
     const body = await request.json();
     const { nombre_rol, descripcion, opciones_menu, accesos_api } = body;
 
+    if (!nombre_rol || !descripcion || !opciones_menu || !accesos_api) {
+      return errorResponse(400, 'VALIDATION_ERROR', 'All fields are required');
+    }
+
     const result = await sql`
       INSERT INTO roles (nombre_rol, descripcion, opciones_menu, accesos_api)
       VALUES (${nombre_rol}, ${descripcion}, ${JSON.stringify(opciones_menu)}, ${JSON.stringify(accesos_api)})
       RETURNING *`;
 
-    return json({ success: true, data: result.rows[0] });
+    return successResponse(result.rows[0], 'Role created successfully');
   } catch (error) {
     console.error('Error creating role:', error);
-    return json({ success: false, error: 'Failed to create role' }, { status: 500 });
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to create role', error.message);
   }
 }
 
@@ -38,6 +42,10 @@ export async function PUT({ request }) {
   try {
     const body = await request.json();
     const { id, nombre_rol, descripcion, opciones_menu, accesos_api } = body;
+
+    if (!id || !nombre_rol || !descripcion || !opciones_menu || !accesos_api) {
+      return errorResponse(400, 'VALIDATION_ERROR', 'All fields are required');
+    }
 
     const result = await sql`
       UPDATE roles
@@ -51,13 +59,13 @@ export async function PUT({ request }) {
       RETURNING *`;
 
     if (result.rowCount === 0) {
-      return json({ success: false, error: 'Role not found' }, { status: 404 });
+      return errorResponse(404, 'NOT_FOUND', 'Role not found');
     }
 
-    return json({ success: true, data: result.rows[0] });
+    return successResponse(result.rows[0], 'Role updated successfully');
   } catch (error) {
     console.error('Error updating role:', error);
-    return json({ success: false, error: 'Failed to update role' }, { status: 500 });
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to update role', error.message);
   }
 }
 
@@ -67,18 +75,22 @@ export async function DELETE({ request }) {
     const body = await request.json();
     const { id } = body;
 
+    if (!id) {
+      return errorResponse(400, 'VALIDATION_ERROR', 'Role ID is required');
+    }
+
     const result = await sql`
       DELETE FROM roles
       WHERE id = ${id}
       RETURNING *`;
 
     if (result.rowCount === 0) {
-      return json({ success: false, error: 'Role not found' }, { status: 404 });
+      return errorResponse(404, 'NOT_FOUND', 'Role not found');
     }
 
-    return json({ success: true, data: result.rows[0] });
+    return successResponse(result.rows[0], 'Role deleted successfully');
   } catch (error) {
     console.error('Error deleting role:', error);
-    return json({ success: false, error: 'Failed to delete role' }, { status: 500 });
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to delete role', error.message);
   }
 }

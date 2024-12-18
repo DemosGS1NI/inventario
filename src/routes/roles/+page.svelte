@@ -12,20 +12,44 @@
   };
   let showForm = false;
   let message = '';
+  let messageType = ''; // 'success' or 'error'
 
   // Fetch roles
   const fetchRoles = async () => {
     try {
       const res = await fetch('/api/db/roles');
       const data = await res.json();
-      if (data.success) roles = data.data;
+      if (data.status === 'success') {
+        roles = data.data;
+        message = '';
+      } else {
+        throw new Error(data.error?.message || 'Error fetching roles');
+      }
     } catch (err) {
       console.error('Error fetching roles:', err);
+      message = 'Ocurrió un error al cargar los roles.';
+      messageType = 'error';
+    }
+  };
+
+  // Validate JSON fields
+  const isValidJSON = (value) => {
+    try {
+      JSON.parse(value);
+      return true;
+    } catch {
+      return false;
     }
   };
 
   // Save or update a role
   const saveRole = async () => {
+    if (!isValidJSON(currentRole.opciones_menu) || !isValidJSON(currentRole.accesos_api)) {
+      message = 'Opciones de menú y Accesos a API deben ser JSON válidos.';
+      messageType = 'error';
+      return;
+    }
+
     const method = currentRole.id ? 'PUT' : 'POST';
     try {
       const res = await fetch('/api/db/roles', {
@@ -35,17 +59,19 @@
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.status === 'success') {
         message = 'Rol guardado con éxito!';
+        messageType = 'success';
         await fetchRoles();
         resetForm();
         showForm = false;
       } else {
-        message = data.error || 'Error al guardar el rol.';
+        throw new Error(data.error?.message || 'Error al guardar el rol.');
       }
     } catch (err) {
       console.error('Error saving role:', err);
       message = 'Ocurrió un error al guardar el rol.';
+      messageType = 'error';
     }
   };
 
@@ -61,15 +87,17 @@
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.status === 'success') {
         message = 'Rol eliminado con éxito!';
+        messageType = 'success';
         await fetchRoles();
       } else {
-        message = data.error || 'Error al eliminar el rol.';
+        throw new Error(data.error?.message || 'Error al eliminar el rol.');
       }
     } catch (err) {
       console.error('Error deleting role:', err);
       message = 'Ocurrió un error al eliminar el rol.';
+      messageType = 'error';
     }
   };
 
@@ -83,9 +111,20 @@
     };
   };
 
+  // Reset message after a delay
+  const resetMessage = () => {
+    setTimeout(() => {
+      message = '';
+      messageType = '';
+    }, 5000);
+  };
+
+  $: if (message) resetMessage();
+
   onMount(fetchRoles);
 </script>
 
+<!-- UI -->
 <div class="p-6 bg-gray-100 min-h-screen">
   <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Gestión de Roles</h1>
 
@@ -94,7 +133,13 @@
   </div>
 
   {#if message}
-    <p class="text-center text-green-600 mb-4">{message}</p>
+    <p
+      class="text-center mb-4"
+      class:text-green-600={messageType === 'success'}
+      class:text-red-600={messageType === 'error'}
+    >
+      {message}
+    </p>
   {/if}
 
   <div class="flex justify-center mb-6">
@@ -109,10 +154,12 @@
     </button>
   </div>
 
+  <!-- Role Form -->
   {#if showForm}
     <div class="bg-white shadow-md rounded px-8 py-6 mb-6 max-w-lg mx-auto">
       <form on:submit|preventDefault={saveRole}>
         <div class="grid grid-cols-1 gap-4">
+          <!-- Role Name -->
           <div>
             <label for="nombre_rol" class="block text-gray-700 text-sm font-medium">Nombre del Rol</label>
             <input
@@ -123,6 +170,8 @@
               class="w-full px-3 py-2 border rounded focus:ring-primary focus:border-primary"
             />
           </div>
+
+          <!-- Description -->
           <div>
             <label for="descripcion" class="block text-gray-700 text-sm font-medium">Descripción</label>
             <textarea
@@ -131,6 +180,8 @@
               class="w-full px-3 py-2 border rounded focus:ring-primary focus:border-primary"
             ></textarea>
           </div>
+
+          <!-- Menu Options -->
           <div>
             <label for="opciones_menu" class="block text-gray-700 text-sm font-medium">Opciones de Menú (JSON)</label>
             <textarea
@@ -139,6 +190,8 @@
               class="w-full px-3 py-2 border rounded focus:ring-primary focus:border-primary"
             ></textarea>
           </div>
+
+          <!-- API Access -->
           <div>
             <label for="accesos_api" class="block text-gray-700 text-sm font-medium">Accesos a API (JSON)</label>
             <textarea
@@ -148,6 +201,8 @@
             ></textarea>
           </div>
         </div>
+
+        <!-- Form Actions -->
         <div class="flex justify-end mt-4 space-x-4">
           <button
             type="button"
@@ -170,11 +225,12 @@
     </div>
   {/if}
 
+  <!-- Role Table -->
   <div class="overflow-x-auto bg-white shadow-md rounded">
     <table class="table-auto w-full border-collapse">
       <thead class="bg-gray-200 text-gray-700">
         <tr>
-          <th class="py-3 px-4 border">Nombre del Rol</th>
+          <th class="py-3 px-4 border">Rol</th>
           <th class="py-3 px-4 border">Descripción</th>
           <th class="py-3 px-4 border text-center">Acciones</th>
         </tr>
