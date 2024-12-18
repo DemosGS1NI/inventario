@@ -16,8 +16,6 @@ export const GET = async () => {
         // Extract the bodega names into an array
         const bodegas = rows.map((row) => row.bodega);
 
-        console.log('Fetched bodegas:', bodegas);
-
         // Return the response with the bodegas
         return json({ bodegas }, { status: 200 });
     } catch (error) {
@@ -26,4 +24,3 @@ export const GET = async () => {
         return json({ error: 'Failed to fetch bodegas' }, { status: 500 });
     }
 };
-

@@ -5,7 +5,7 @@
   
   let bodegas = [];
   let marcas = [];
-  let categoriasIncidencia = []; // To be fetched from the database
+  let categoriasIncidencias = []; // To be fetched from the database
   let selectedBodega = '';
   let selectedMarca = '';
   let ubicacion = '';
@@ -13,17 +13,18 @@
   let product = null;
   let stockQuantity = 0;
   let incidencia = '';
-  let categoriaIncidencia = ''; // This will reflect the database value
+  let selectedCategoriaIncidencia = ''; // This will reflect the database value
   let message = '';
   let scanner = null;
   let isScanning = false;
   let scanningType = ''; // 'ubicacion' or 'codigoBarra'
-  let categoriaIncidencias = '';
+  let beep;
 
 
 
-  // Fetch bodegas on mount
+  // Fetch bodegas and categorias incidencias on mount
   onMount(async () => {
+    beep = new Audio('store-scanner-beep-90395.mp3');
     await fetchBodegas();
     await fetchCategoriasIncidencias();
   });
@@ -62,7 +63,7 @@
       console.log('Fetched categories:', data); // Log the response data
 
       if (res.ok) {
-        categoriasIncidencia = data.map((item) => item.categoria); // Extract only category names
+        categoriasIncidencias = data.map((item) => item.categoria); // Extract only category names
       } else {
         console.error('Error fetching categorias incidencias:', data.error);
       }
@@ -135,6 +136,8 @@
 
     // Handle barcode detection
     Quagga.onDetected((data) => {
+      
+      if (beep) beep.play();
       console.log('Scanned Result:', data.codeResult.code);
 
       if (scanningType === 'ubicacion') {
@@ -181,7 +184,7 @@ function stopScanner() {
       product = data.product[0];
       stockQuantity = product.inventario_fisico || 0;
       incidencia = product.incidencia || '';
-      categoriaIncidencia = product.categoria_incidencia || ''; // Set fetched value or empty
+      selectedCategoriaIncidencia = product.categoria_incidencia || ''; // Set fetched value or empty
       message = ''; // Clear message
     } else {
       product = null;
@@ -209,7 +212,7 @@ function stopScanner() {
         marca: selectedMarca,
         codigo_barras: codigoBarras,
         inventario_fisico: stockQuantity,
-        categoria_incidencia: categoriaIncidencia, // Include categoria incidencia in the payload        
+        categoria_incidencia: SelectedCategoriaIncidencia, // Include categoria incidencia in the payload        
         incidencia: incidencia,
         actualizado_por: 1,
       };
@@ -235,7 +238,7 @@ function stopScanner() {
     product = null;
     stockQuantity = 0;
     incidencia = '';
-    categoriaIncidencia = ''; // Reset category
+    SelectedCategoriaIncidencia = ''; // Reset category
     message = '';
   }
 
@@ -247,10 +250,10 @@ function stopScanner() {
 </script>
 
 <div class="p-6 bg-gray-100 min-h-screen">
-  <h1 class="text-2xl font-bold mb-4">Toma de Inventario - Workflow 1</h1>
+  <h1 class="text-2xl font-bold mb-4">Toma de Inventario - Codigo Interno</h1>
+
   <div>
     <BackToMenuButton />
-
   </div>  
 
   <!-- Select Bodega -->
@@ -335,7 +338,7 @@ function stopScanner() {
       </label>
       <select
         id="categoriaIncidencia"
-        bind:value={categoriaIncidencia}
+        bind:value={selectedCategoriaIncidencia}
         class="block w-full mt-1 p-2 border rounded"
       >
         <option value="">Select a category</option>
