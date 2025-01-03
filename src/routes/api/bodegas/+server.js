@@ -1,5 +1,9 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 export const GET = async () => {
   try {
@@ -13,6 +17,7 @@ export const GET = async () => {
     const bodegas = rows.map((row) => row.bodega);
 
     // Return the standardized success response
+    console.log('fetching bodegas', bodegas);
     return successResponse(bodegas, 'Bodegas fetched successfully');
   } catch (error) {
     console.error('Error fetching bodegas:', error);

@@ -1,10 +1,13 @@
 import bcrypt from 'bcrypt';
 import { sql } from '@vercel/postgres';
-import { randomUUID } from 'crypto';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 
 dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret';
+const JWT_EXPIRATION = '1h'; // Token expiration time
 
 const rateLimitStore = new Map(); // Rate-limiting store
 const RATE_LIMIT_WINDOW = 10 * 60 * 1000; // 10 minutes in milliseconds
@@ -65,8 +68,9 @@ export async function POST({ request, getClientAddress }) {
 
   // Fetch user by phone number
   const result = await sql`
-    SELECT id, pin_hash, activo, debe_cambiar_pin
-    FROM usuarios
+    SELECT u.id, pin_hash, activo, debe_cambiar_pin, nombre, r.nombre_rol
+    FROM usuarios u
+    JOIN roles r ON u.rol_id = r.id
     WHERE numero_telefono = ${numero_telefono}
   `;
 
@@ -84,17 +88,20 @@ export async function POST({ request, getClientAddress }) {
   // Reset rate-limiting on successful login
   resetRateLimit(ip);
 
-  // Create a session
-  const sessionId = randomUUID();
-  const sessionLifetime = 3600; // 1 hour in seconds
-  const expiresAt = new Date(Date.now() + sessionLifetime * 1000).toISOString();
+  // Create JWT payload
+  const payload = {
+    userId: user.id,
+    userName: user.nombre,
+    userRole: user.nombre_rol,
+  };
 
-  await sql`
-    INSERT INTO sessions (id, user_id, created_at, expires_at)
-    VALUES (${sessionId}, ${user.id}, NOW(), ${expiresAt})
-  `;
+  console.log("login API payoload", payload);
 
-  const cookie = `sessionId=${sessionId}; HttpOnly; Secure; Path=/; SameSite=Strict; Max-Age=${sessionLifetime}`;
+  // Sign the JWT
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+
+  // Set token in an HttpOnly cookie
+  const cookie = `jwt=${token}; HttpOnly; Secure; Path=/; SameSite=Strict; Max-Age=${60 * 60}`; // 1 hour expiration
 
   return successResponse(
     { user: { debe_cambiar_pin: user.debe_cambiar_pin } },

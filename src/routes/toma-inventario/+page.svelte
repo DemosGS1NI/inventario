@@ -221,40 +221,49 @@ async function fetchProductDetails() {
 
   // Save changes
   async function saveChanges() {
-    try {
-      const payload = {
-        bodega: selectedBodega,
-        ubicacion: ubicacion,
-        marca: selectedMarca,
-        codigo_barras: codigoBarras,
-        inventario_fisico: stockQuantity,
-        categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
-        incidencia: incidencia,
-        actualizado_por: 1,
-      };
+  try {
+    const payload = {
+      bodega: selectedBodega,
+      ubicacion: ubicacion,
+      marca: selectedMarca,
+      codigo_barras: codigoBarras,
+      inventario_fisico: stockQuantity,
+      categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
+      incidencia: incidencia,
+    };
 
-      console.log(payload);
+    console.log("Payload being sent:", payload);
 
-      const res = await fetch('/api/producto', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch('/api/producto', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) throw new Error('Error saving product');
-      alert('Product updated successfully!');
-      resetFieldsAfterSave();
-    } catch (error) {
-      console.error('Error saving product:', error);
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      console.error('Error response from server:', responseData);
+      alert(`Error saving product: ${responseData.message || 'Unknown error'}`);
+      return;
     }
+
+    console.log('Server response:', responseData);
+    alert('Product updated successfully!');
+    resetFieldsAfterSave();
+  } catch (error) {
+    console.error('Unexpected error while saving product:', error);
+    alert('An unexpected error occurred. Please try again.');
   }
+}
+
 
   function resetFieldsAfterSave() {
     codigoBarras = '';
     product = null;
     stockQuantity = 0;
     incidencia = '';
-    SelectedCategoriaIncidencia = ''; // Reset category
+    selectedCategoriaIncidencia = ''; // Reset category
     message = '';
   }
 

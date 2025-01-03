@@ -9,23 +9,23 @@ dotenv.config();
 export async function GET({ url }) {
   const bodega = url.searchParams.get('bodega');
   const marca = url.searchParams.get('marca');
-  const codigoBarras = url.searchParams.get('codigo_barras');
+  const ubicacion = url.searchParams.get('ubicacion');
 
   // Validate query parameters
-  if (!bodega || !marca || !codigoBarras) {
-    return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
+  if (!bodega || !marca || !ubicacion) {
+    return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Ubicacion are required');
   }
 
   try {
     // Fetch product details
     const result = await sql`
       SELECT 
-        numero_parte, descripcion, inventario_fisico, fecha_inventario, categoria_incidencia, incidencia
+        *
       FROM inventario
       WHERE 
         bodega = ${bodega} AND 
         marca = ${marca} AND 
-        codigo_barras = ${codigoBarras}
+        ubicacion = ${ubicacion}
     `;
 
     if (result.rows.length > 0) {
@@ -61,24 +61,13 @@ export async function PUT({ request, locals }) {
      } = await request.json();
 
     // Validate required fields
-    if (!bodega || !marca || !codigo_barras) {
+    if (!bodega || !marca || !ubicacion) {
       return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
     }
 
-    console.log('Updating product:', { bodega, ubicacion, marca, codigo_barras, userId });
+    console.log('Updating product:', { bodega, ubicacion, marca,  userId });
 
-    // Create the current date
-    const now = new Date();
-
-    // Adjust to GMT-6 (CST)
-    const gmtMinus6 = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-
-    // Convert to ISO string (adjusted to GMT-6)
-    const currentDateTime = gmtMinus6.toISOString().replace('Z', '');
-
-    console.log('Current Date and Time:',currentDateTime);
-
-
+    const currentDateTime = new Date().toISOString();
 
     // Update product details
     const result = await sql`

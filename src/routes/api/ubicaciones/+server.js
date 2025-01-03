@@ -7,33 +7,34 @@ dotenv.config();
 
 export async function GET({ url }) {
   const bodega = url.searchParams.get('bodega'); // Get the `bodega` parameter from the query string
+  const marca = url.searchParams.get('marca'); // Get the `bodega` parameter from the query string  
 
   // Validate the query parameter
-  if (!bodega) {
-    return errorResponse(400, 'BAD_REQUEST', 'Bodega parameter is required');
+  if (!bodega && !marca) {
+    return errorResponse(400, 'BAD_REQUEST', 'Bodega and Marca parameters are required');
   }
 
   try {
     // Query to fetch distinct marcas for the given bodega
     const result = await sql`
-      SELECT DISTINCT marca
+      SELECT DISTINCT ubicacion
       FROM inventario
       WHERE bodega = ${bodega}
+        AND marca = ${marca}
     `;
 
     if (result.rows.length > 0) {
-      const marcas = result.rows.map((row) => row.marca);
-      console.log('fetching marcas', marcas);
-      return successResponse(marcas, 'Marcas fetched successfully');
+      const ubicaciones = result.rows.map((row) => row.ubicacion);
+      return successResponse(ubicaciones, 'Ubicaciones fetched successfully');
     } else {
-      return errorResponse(404, 'NOT_FOUND', 'No marcas found for the specified bodega');
+      return errorResponse(404, 'NOT_FOUND', 'No ubicacioines found for the specified bodega and marca');
     }
   } catch (error) {
-    console.error('Error fetching marcas:', error);
+    console.error('Error fetching ubicaciones:', error);
     return errorResponse(
       500,
       'INTERNAL_SERVER_ERROR',
-      'An error occurred while fetching marcas',
+      'An error occurred while fetching ubicaciones',
       error.message
     );
   }

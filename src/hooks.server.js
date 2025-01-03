@@ -1,33 +1,27 @@
-import { sql } from '@vercel/postgres';
-import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
-dotenv.config();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret';
 
 export async function handle({ event, resolve }) {
-  const sessionId = event.cookies.get('sessionId');
+  const token = event.cookies.get('jwt'); // Get JWT from cookie
 
-  if (sessionId) {
+  if (token) {
     try {
-      const result = await sql`
-        SELECT u.id, u.nombre, r.nombre_rol
-        FROM sessions s
-        JOIN usuarios u ON s.user_id = u.id
-        JOIN roles r ON u.rol_id = r.id
-        WHERE s.id = ${sessionId} AND s.expires_at > NOW()
-      `;
+      // Verify the token
+      const user = jwt.verify(token, JWT_SECRET);
 
-      if (result.rows.length > 0) {
-        const user = result.rows[0];
-        event.locals.user = {
-          id: user.id,  // user id
-          nombre: user.nombre, // User's name
-          roleName: user.nombre_rol, // User's role
-        };
-      }
+      // Attach user data to `locals`
+      event.locals.user = {
+        userId: user.userId,
+        userName: user.userName,
+        userRole: user.userRole,
+      };
     } catch (error) {
-      console.error('Error validating session:', error);
+      console.error('Invalid JWT:', error.message);
     }
   }
+
+  console.log("Hooks is making available this info:", event.locals.user);
 
   return resolve(event);
 }

@@ -10,7 +10,8 @@ export async function load({ locals, url }) {
 
   // Provide user information and role to layout
   return {
-    userName: locals.user?.nombre, // `nombre` from the database for the user's name
-    userRole: locals.user?.roleName, // `roleName` from the database for the user's role
+    userId: locals.user?.userId,
+    userName: locals.user?.userName, // `nombre` from the database for the user's name
+    userRole: locals.user?.userRole, // `roleName` from the database for the user's role
   };
 }

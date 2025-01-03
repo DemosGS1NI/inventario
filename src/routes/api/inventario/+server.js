@@ -22,7 +22,7 @@ export async function GET({ url }) {
         `;
 
         // Log countResult to see the structure
-        console.log(countResult);
+        console.log('The total rows in inventario table is: ', countResult.rows);
 
         // Convert total to an integer
         const totalRecords = parseInt(countResult.rows[0].total, 10);
