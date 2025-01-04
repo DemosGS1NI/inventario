@@ -20,12 +20,12 @@ export async function GET({ url }) {
     // Fetch product details
     const result = await sql`
       SELECT 
-        *
-      FROM inventario
+        i.*, u.nombre, u.apellido
+      FROM inventario i LEFT join usuarios u on i.actualizado_por = u.id
       WHERE 
-        bodega = ${bodega} AND 
-        marca = ${marca} AND 
-        ubicacion = ${ubicacion}
+        i.bodega = ${bodega} AND 
+        i.marca = ${marca} AND 
+        i.ubicacion = ${ubicacion}
     `;
 
     if (result.rows.length > 0) {

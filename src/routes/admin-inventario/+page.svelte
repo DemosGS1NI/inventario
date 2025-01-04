@@ -114,8 +114,8 @@
     try {
       const payload = {
         id: record.id,
-        validado_por: record.validado_por, // User ID from JWT
-        validado_en: new Date().toISOString(),
+        validado_por: record.validado_por // User ID from JWT
+        
       };
 
       const res = await fetch('/api/validate-record', {
@@ -183,7 +183,7 @@
     <div>
       <label for="bodega" class="block text-sm font-medium text-gray-700">Bodega</label>
       <select id="bodega" bind:value={selectedBodega} on:change={fetchMarcas} class="w-full border rounded p-2">
-        <option value="">Select Bodega</option>
+        <option value="">Bodega</option>
         {#each bodegas as bodega}
           <option value={bodega}>{bodega}</option>
         {/each}
@@ -192,7 +192,7 @@
     <div>
       <label for="marca" class="block text-sm font-medium text-gray-700">Marca</label>
       <select id="marca" bind:value={selectedMarca} on:change={fetchUbicaciones} class="w-full border rounded p-2">
-        <option value="">Select Marca</option>
+        <option value="">Marca</option>
         {#each marcas as marca}
           <option value={marca}>{marca}</option>
         {/each}
@@ -201,7 +201,7 @@
     <div>
       <label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación</label>
       <select id="ubicacion" bind:value={selectedUbicacion} on:change={fetchRecords} class="w-full border rounded p-2">
-        <option value="">Select Ubicación</option>
+        <option value="">Ubicación</option>
         {#each ubicaciones as ubicacion}
           <option value={ubicacion}>{ubicacion}</option>
         {/each}
@@ -219,12 +219,13 @@
           <th class="p-2 border">Descripcion</th>
           <th class="p-2 border">Inventario Sistema</th>
           <th class="p-2 border">Inventario Físico</th>
-          <th class="p-2 border">Diferencia en Unidades</th>
+          <th class="p-2 border">Diferencia</th>
           <th class="p-2 border">Tipo</th>
           <th class="p-2 border">Incidencia</th>
           <th class="p-2 border">Inventariante</th>
           <th class="p-2 border">Fecha de Inventario</th>
           <th class="p-2 border">Validado</th>
+          <th class="p-2 border">Validado Por</th>
           <th class="p-2 border">Acciones</th>
         </tr>
       </thead>
@@ -239,9 +240,10 @@
             <td class="p-2 border">{calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}</td>
             <td class="p-2 border">{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}</td>
             <td class="p-2 border">{record.incidencia}</td>
-            <td class="p-2 border">{record.actualizado_por}</td>
+            <td class="p-2 border">{record.nombre}</td>
             <td class="p-2 border">{formatTimestamp(record.fecha_inventario)}</td>
-            <td class="p-2 border">{record.validado_por ? 'Sí' : 'No'}</td>
+            <td class="p-2 border">{record.validado ? 'Sí' : 'No'}</td>
+            <td class="p-2 border">{record.validado_por}</td>
             <td class="p-2 border">
               <button
                 class="bg-blue-500 text-white px-4 py-2 rounded"
