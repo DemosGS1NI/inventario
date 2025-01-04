@@ -12,7 +12,8 @@ export async function POST({ request, locals }) {
     const { newPin, confirmNewPin } = await request.json();
 
     // Get user ID from session
-    const userId = locals.user?.id;
+    const userId = locals.user?.userId;
+   
     if (!userId) {
       console.error('Unauthorized: User session not found');
       return errorResponse(

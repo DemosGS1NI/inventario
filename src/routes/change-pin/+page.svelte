@@ -33,6 +33,9 @@
     if (!validateInputs()) return;
 
     try {
+      
+      console.log(newPin, confirmNewPin);
+
       const response = await fetch('/api/auth/change-pin', {
         method: 'POST',
         headers: {

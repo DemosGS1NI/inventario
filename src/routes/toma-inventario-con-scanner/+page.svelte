@@ -21,6 +21,7 @@
       await fetchCategoriasIncidencias();
     });
   
+
     async function fetchBodegas() {
       try {
         const res = await fetch('/api/bodegas');
@@ -189,9 +190,9 @@
         type="text"
         id="barcodeInput"
         bind:value={codigoBarras}
+        bind:this={barcodeInput} 
         placeholder="Escanear el codigo de barras del producto"
         on:blur={fetchProductDetails}
-        bind:this={barcodeInput} 
         class="block w-full border rounded p-2"
       />
     </div>
