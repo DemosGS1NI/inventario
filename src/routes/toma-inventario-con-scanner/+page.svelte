@@ -3,8 +3,7 @@
     import { validateInventoryForm } from '$lib/utils/validation';
     import { onMount, tick } from 'svelte';
     import BackToMenuButton from '$lib/BackToMenu.svelte';
-	  import { request } from 'pandas/lib/flickr';
-  
+	    
     let bodegas = [];
     let marcas = [];
     let categoriasIncidencias = [];
