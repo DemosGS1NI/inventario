@@ -46,7 +46,7 @@ export const POST = async ({ request }) => {
                     ${id}, ${codigo_barras}, ${gtin}, ${bodega}, ${ubicacion}, ${marca},
                     ${numero_parte}, ${descripcion}, ${inventario_sistema}
                 )
-                ON CONFLICT (id) DO NOTHING;
+               ;
             `;
         }
 
