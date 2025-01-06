@@ -6,10 +6,18 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // GET Endpoint - Fetch Product Details
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
   const bodega = url.searchParams.get('bodega');
   const marca = url.searchParams.get('marca');
   const codigoBarras = url.searchParams.get('codigo_barras');
+
+  // Get user ID from session
+     const userId = locals.user?.userId;
+   
+     if (!userId) {
+       console.error('Unauthorized: User session not found');
+       return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
+     }
 
   // Validate query parameters
   if (!bodega || !marca || !codigoBarras) {
@@ -19,8 +27,9 @@ export async function GET({ url }) {
   try {
     // Fetch product details
     const result = await sql`
+      
       SELECT 
-        numero_parte, descripcion, inventario_fisico, fecha_inventario, categoria_incidencia, incidencia
+        numero_parte, descripcion, inventario_sistema, inventario_fisico, fecha_inventario::TEXT AS fecha_inventario, categoria_incidencia, incidencia
       FROM inventario
       WHERE 
         bodega = ${bodega} AND 
@@ -45,9 +54,8 @@ export async function PUT({ request, locals }) {
   //get the session user id
   const userId = locals.user?.userId; // Get the user ID from session
   if (!userId) {
-    return new Response('Unauthorized', { status: 401 });
+      return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
   }
-  
 
   try {
     const {
@@ -65,8 +73,6 @@ export async function PUT({ request, locals }) {
       return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
     }
 
-    console.log('Updating product:', { bodega, ubicacion, marca, codigo_barras, userId });
-
     // Create the current date
     const now = new Date();
 
@@ -75,9 +81,6 @@ export async function PUT({ request, locals }) {
 
     // Convert to ISO string (adjusted to GMT-6)
     const currentDateTime = gmtMinus6.toISOString().replace('Z', '');
-
-    console.log('Current Date and Time:',currentDateTime);
-
 
 
     // Update product details

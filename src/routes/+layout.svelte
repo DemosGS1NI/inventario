@@ -5,6 +5,8 @@
 
     injectSpeedInsights();
 
+	import Toast from '$lib/components/Toast.svelte';
+
 	// Access user-related data if needed
 	const { userName, userRole } = data;
   </script>
@@ -17,6 +19,7 @@
   <div class="flex flex-col min-h-screen">
 	<!-- Main Content -->
 	<main class="flex-grow">
+  		<Toast />	
 	  <slot />
 	</main>
   </div>

@@ -351,7 +351,7 @@ async function fetchProductDetails() {
   <!-- Display Product -->
   {#if product}
     <div class="mb-4">
-      <p><strong>Numero Parte:</strong> {product.numero_parte}</p>
+      <p>Numero Parte: <strong>{product.numero_parte}</strong></p>
       <p><strong>Descripcion:</strong> {product.descripcion}</p>
       <p><strong>Fecha Inventario:</strong> {product.fecha_inventario}</p>
       <label for="stock" class="block text-sm font-medium text-gray-700 mt-2">Inventario Físico</label>
