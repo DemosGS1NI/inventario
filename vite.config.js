@@ -1,13 +1,19 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-	plugins: [sveltekit()], // Ensure only the relevant plugin is included
-	test: {
-		globals: true,
-		environment: 'jsdom', // Use 'jsdom' for browser-like testing environment
-		coverage: {
-			reporter: ['text', 'lcov'], // Optional: Add coverage reporting
-		},
-	},
+    plugins: [sveltekit()],
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./src/tests/setup.js'],
+        include: ['src/**/*.{test,spec}.{js,ts}'],
+        deps: {
+            optimizer: {
+                web: {
+                    include: ['@testing-library/jest-dom']
+                }
+            }
+        }
+    }
 });

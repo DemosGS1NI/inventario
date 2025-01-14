@@ -1,389 +1,324 @@
 <script>
-  import { onMount, tick } from 'svelte';
-  import Quagga from 'quagga';
-  import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
+  import { onMount, onDestroy, tick } from 'svelte';
+  import { inventoryStore } from '$lib/stores/inventory';
+  import { inventoryAPI } from '$lib/services/api';
+  import { addToast } from '$lib/stores/toast';
+  import { formatDateTime } from '$lib/utils/dateFormat';
+  import BackToMenuButton from '$lib/BackToMenu.svelte';
   
-  let bodegas = [];
-  let marcas = [];
-  let categoriasIncidencias = []; // To be fetched from the database
-  let selectedBodega = '';
-  let selectedMarca = '';
-  let ubicacion = '';
-  let codigoBarras = '';
-  let product = null;
+  // Subscribe to the store
+  $: ({ 
+      bodegas, 
+      marcas, 
+      categoriasIncidencias, 
+      loading, 
+      error,
+      selectedBodega,
+      selectedMarca,
+      ubicacion,
+      currentProduct 
+  } = $inventoryStore);
+
+
+      // Add these bindings for two-way binding with the store
+      $: {
+        if (selectedMarca !== $inventoryStore.selectedMarca) {
+            inventoryStore.setSelectedMarca(selectedMarca);
+        }
+    }
+
+    async function handleMarcaChange(event) {
+        inventoryStore.setSelectedMarca(event.target.value);
+    }
+
+    async function handleUbicacionChange(event) {
+        inventoryStore.setUbicacion(event.target.value);
+    }
+
+
+  // Form state variables
+  let barcodeInput;
+  let stockQuantityInput;
   let stockQuantity = 0;
   let incidencia = '';
-  let selectedCategoriaIncidencia = ''; // This will reflect the database value
-  let message = '';
-  let scanner = null;
-  let isScanning = false;
-  let scanningType = ''; // 'ubicacion' or 'codigoBarra'
-  let beep;
-
-  // Fetch bodegas and categorias incidencias on mount
+  let selectedCategoriaIncidencia = '';
+  let codigoBarras = '';
+  
   onMount(async () => {
-    beep = new Audio('store-scanner-beep-90395.mp3');
-    await fetchBodegas();
-    await fetchCategoriasIncidencias();
+
+      //Reset the store when component mounts
+      inventoryStore.reset();
+
+      try {
+          await Promise.all([
+              inventoryAPI.fetchBodegas(),
+              inventoryAPI.fetchCategoriasIncidencias()
+          ]);
+      } catch (error) {
+          addToast('Error loading initial data', 'error');
+      }
   });
 
-  async function fetchBodegas() {
-  try {
-    const res = await fetch('/api/bodegas');
-    const data = await res.json();
-
-    if (res.ok && data.status === 'success') {
-      bodegas = data.data; // Assign the fetched bodega names to the `bodegas` variable
-      console.log('Bodegas fetched:', bodegas);
-    } else {
-      console.error('Error fetching bodegas:', data.message || 'Unknown error');
-    }
-    } catch (error) {
-      console.error('Error fetching bodegas:', error);
-    }
-  }
-
-  // Fetch marcas based on selected bodega
-  async function fetchMarcas() {
-  if (!selectedBodega) {
-    console.error('Error: No bodega selected.');
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
-    const data = await res.json();
-
-    if (res.ok && data.status === 'success') {
-      marcas = data.data; // Assign the fetched marcas to the `marcas` variable
-      console.log('Marcas fetched:', marcas);
-    } else {
-      console.error('Error fetching marcas:', data.message || 'Unknown error');
-      message = 'Error fetching marcas. Please try again.';
-    }
-  } catch (error) {
-    console.error('Error fetching marcas:', error);
-    message = 'An unexpected error occurred while fetching marcas.';
-  }
-}
-
-  async function fetchCategoriasIncidencias() {
-  try {
-    const res = await fetch('/api/db/categorias-incidencias');
-    const data = await res.json();
-
-    console.log('Fetched categories:', data); // Log the response data for debugging
-
-    // Check for success and proper structure
-    if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
-      categoriasIncidencias = data.data.map((item) => item.categoria); // Extract category names
-    } else {
-      console.error(
-        'Error fetching categorias incidencias:',
-        data.message || 'Invalid response structure'
-      );
-    }
-  } catch (error) {
-    console.error('Error fetching categorias incidencias:', error);
-  }
-}
-
-
-  // Start scanner
-  async function startScanner(type) {
-  scanningType = type;
-  isScanning = true;
-
-  await tick(); // Ensure the DOM is updated
-
-  const videoElement = document.querySelector('#scanner-video');
-
-
-  if (!videoElement) {
-    console.error('Scanner video element not found.');
-    return;
-  } 
-
-  try {
-    // Request the video stream with torch support
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        advanced: [{ torch: true }], // Attempt to turn on the torch
-      },
+  onDestroy(() => {
+        // Reset the store when component is destroyed
+        inventoryStore.reset();
     });
 
-    const [track] = stream.getVideoTracks(); // Get the active video track
-    const capabilities = track.getCapabilities();
-
-    // Check if the device supports torch
-    if (capabilities.torch) {
-      track.applyConstraints({
-        advanced: [{ torch: true }],
-      });
-      console.log('Torch activated.');
-    } else {
-      console.warn('Torch is not supported on this device.');
-    }
-
-    // Attach the video stream to the video element
-    videoElement.srcObject = stream;
-    videoElement.play();
-
-    // Initialize QuaggaJS
-    Quagga.init(
-      {
-        inputStream: {
-          type: 'LiveStream',
-          target: videoElement, // Video element
-        },
-        decoder: {
-          readers: ['code_128_reader'], // Code 128 scanner
-        },
-      },
-      (err) => {
-        if (err) {
-          console.error('QuaggaJS Initialization Error:', err);
-          stopScanner();
-          return;
-        }
-        console.log('QuaggaJS initialized');
-        Quagga.start();
+  async function handleBodegaChange(event) {
+      const bodega = event.target.value;
+      inventoryStore.setSelectedBodega(bodega);
+      if (bodega) {
+          try {
+              await inventoryAPI.fetchMarcas(bodega);
+          } catch (error) {
+              addToast('Error loading marcas', 'error');
+          }
       }
-    );
+  }
 
-    // Handle barcode detection
-    Quagga.onDetected((data) => {
+  async function handleBarcodeInput(event) {
+      if (event.key === 'Enter' || event.key === 'Tab') {
+          event.preventDefault();
+          if (!ubicacion || !codigoBarras) {
+              addToast('Favor introduzca ubicación y código del producto', 'error');
+              return;
+          }
 
-      if (beep) beep.play();
-      console.log('Scanned Result:', data.codeResult.code);
+          try {
+              const data = await inventoryAPI.fetchProductDetails(
+                  selectedBodega,
+                  selectedMarca,
+                  codigoBarras
+              );
 
-      if (scanningType === 'ubicacion') {
-        ubicacion = data.codeResult.code;
-      } else if (scanningType === 'codigoBarras') {
-        codigoBarras = data.codeResult.code;
-        console.log(codigoBarras);
-        fetchProductDetails();
+              if (data.status === 'success' && data.data?.length > 0) {
+                  const product = data.data[0];
+                  stockQuantity = product.inventario_fisico || 0;
+                  incidencia = product.incidencia || '';
+                  selectedCategoriaIncidencia = product.categoria_incidencia || '';
+                  await tick();
+                  stockQuantityInput?.focus();
+              } else {
+                  addToast('Producto no existe', 'error');
+                  resetFields();
+              }
+          } catch (error) {
+              addToast('Error inesperado al buscar el producto', 'error');
+              resetFields();
+          }
       }
-
-      stopScanner();
-    });
-
-  } catch (error) {
-    console.error('Error starting scanner:', error);
-    stopScanner();
   }
-}
 
-function stopScanner() {
-  Quagga.stop();
-  isScanning = false;
-  scanningType = '';
-
-  const videoElement = document.querySelector('#scanner-video');
-  if (videoElement?.srcObject) {
-    const tracks = videoElement.srcObject.getTracks();
-    tracks.forEach((track) => track.stop()); // Stop all video tracks
-    videoElement.srcObject = null;
-  }
-}
-
-async function fetchProductDetails() {
-  try {
-    const res = await fetch(
-      `/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
-    );
-
-    const data = await res.json();
-
-    if (res.ok && data.data && data.data.length > 0) {
-      product = data.data[0]; // Access the first product from "data"
-      stockQuantity = product.inventario_fisico || 0;
-      incidencia = product.incidencia || '';
-      selectedCategoriaIncidencia = product.categoria_incidencia || '';
-      message = '';
-    } else {
-      product = null;
-      message = data.message || 'Producto no existe';
-      codigoBarras = '';
-      await tick();
-      startScanner('codigoBarras');
-    }
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    message = 'Producto no existe';
-    codigoBarras = '';
-    await tick();
-    startScanner('codigoBarras');
-  }
-}
-
-
-  // Save changes
   async function saveChanges() {
-  try {
-    const payload = {
-      bodega: selectedBodega,
-      ubicacion: ubicacion,
-      marca: selectedMarca,
-      codigo_barras: codigoBarras,
-      inventario_fisico: stockQuantity,
-      categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
-      incidencia: incidencia,
+    const formData = {
+        bodega: $inventoryStore.selectedBodega,
+        marca: $inventoryStore.selectedMarca,
+        ubicacion: $inventoryStore.ubicacion,
+        codigo_barras: codigoBarras,
+        inventario_fisico: stockQuantity,
+        categoria_incidencia: selectedCategoriaIncidencia,
+        incidencia
     };
 
-    console.log("Payload being sent:", payload);
-
-    const res = await fetch('/api/producto', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-
-    const responseData = await res.json();
-
-    if (!res.ok) {
-      console.error('Error response from server:', responseData);
-      alert(`Error saving product: ${responseData.message || 'Unknown error'}`);
-      return;
+    try {
+        const result = await inventoryAPI.saveProduct(formData);
+        
+        if (result.status === 'success') {
+            addToast('Producto actualizado exitosamente!', 'success');
+            resetFields();
+        } else if (result.error?.code === 'NOT_FOUND') {
+            // Handle the specific "not found" case
+            addToast('Producto no encontrado o no se realizaron cambios', 'warning');
+        } else {
+            // Handle other errors
+            addToast(result.error?.message || 'Error al guardar el producto', 'error');
+        }
+    } catch (error) {
+        addToast('Error de conexión al guardar el producto', 'error');
     }
-
-    console.log('Server response:', responseData);
-    alert('Product updated successfully!');
-    resetFieldsAfterSave();
-  } catch (error) {
-    console.error('Unexpected error while saving product:', error);
-    alert('An unexpected error occurred. Please try again.');
-  }
 }
 
-
-  function resetFieldsAfterSave() {
-    codigoBarras = '';
-    product = null;
-    stockQuantity = 0;
-    incidencia = '';
-    selectedCategoriaIncidencia = ''; // Reset category
-    message = '';
+  function resetFields() {
+      codigoBarras = '';
+      stockQuantity = 0;
+      incidencia = '';
+      selectedCategoriaIncidencia = '';
+      inventoryStore.resetProduct();
+      tick().then(() => barcodeInput?.focus());
   }
 
-  function resetFieldsForNewLocation() {
-    ubicacion = '';
-    resetFieldsAfterSave();
+  function resetLocation() {
+      inventoryStore.resetLocation();
+      resetFields();
   }
-
 </script>
 
+<!-- Show loading state -->
+{#if loading}
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+  </div>
+{/if}
+
 <div class="p-6 bg-gray-100 min-h-screen">
-  <h1 class="text-2xl font-bold mb-4">Toma de Inventario - Codigo Interno</h1>
+  <h1 class="text-2xl font-bold mb-4">Toma de Inventario</h1>
 
   <div>
-    <BackToMenuButton />
-  </div>  
-
-  <!-- Select Bodega -->
-  <div class="mb-4">
-    <label for="bodega" class="block text-sm font-medium text-gray-700">Select Bodega</label>
-    <select id="bodega" bind:value={selectedBodega} on:change={fetchMarcas} class="block w-full mt-1 p-2 border rounded">
-      <option value="">Select a Bodega</option>
-      {#each bodegas as bodega}
-        <option value={bodega}>{bodega}</option>
-      {/each}
-    </select>
+      <BackToMenuButton />
   </div>
 
-  <!-- Select Marca -->
-  {#if selectedBodega}
-    <div class="mb-4">
-      <label for="marca" class="block text-sm font-medium text-gray-700">Select Marca</label>
-      <select id="marca" bind:value={selectedMarca} class="block w-full mt-1 p-2 border rounded">
-        <option value="">Select a Marca</option>
-        {#each marcas as marca}
-          <option value={marca}>{marca}</option>
-        {/each}
-      </select>
-    </div>
+  <!-- Show error messages -->
+  {#if error}
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong class="font-bold">Error!</strong>
+          <span class="block sm:inline">{error}</span>
+      </div>
   {/if}
 
-  <!-- Scan Ubicación -->
-  {#if selectedBodega && selectedMarca && !isScanning && !ubicacion}
-    <div class="flex space-x-4">
+  <!-- Filters -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div>
+          <label for="bodega" class="block text-sm font-medium text-gray-700">Bodega</label>
+          <select 
+              id="bodega" 
+              value={selectedBodega} 
+              on:change={handleBodegaChange}
+              class="w-full border rounded p-2"
+          >
+              <option value="">Seleccione Bodega</option>
+              {#each bodegas as bodega}
+                  <option value={bodega}>{bodega}</option>
+              {/each}
+          </select>
+      </div>
+
+      {#if selectedBodega}
+      <div>
+          <label for="marca" class="block text-sm font-medium text-gray-700">Marca</label>
+          <select 
+              id="marca" 
+              value={$inventoryStore.selectedMarca}
+              on:change={handleMarcaChange}
+              class="w-full border rounded p-2"
+          >
+              <option value="">Seleccione Marca</option>
+              {#each marcas as marca}
+                  <option value={marca}>{marca}</option>
+              {/each}
+          </select>
+      </div>
+  {/if}
+  
+  {#if selectedBodega && selectedMarca}
+      <div>
+          <label for="ubicacion" class="block text-sm font-medium text-gray-700">
+              Ubicación (Estante y Nivel)
+          </label>
+          <input
+              type="text"
+              id="ubicacion"
+              value={$inventoryStore.ubicacion}
+              on:input={handleUbicacionChange}
+              placeholder="Escanear Ubicacion"
+              class="w-full border rounded p-2"
+          />
+      </div>
+  {/if}
+  </div>
+
+  {#if selectedBodega && selectedMarca && ubicacion}      
+      <div class="mb-4">
+          <label for="barcodeInput" class="block text-sm font-medium text-gray-700">
+              Codigo Interno o Numero de Parte
+          </label>
+          <input
+              type="text"
+              id="barcodeInput"
+              bind:value={codigoBarras}
+              bind:this={barcodeInput} 
+              placeholder="Escanear el codigo de barras del producto"
+              on:keydown={handleBarcodeInput}
+              class="block w-full border rounded p-2"
+          />
+      </div>
+  {/if}
+
+  <!-- Product Details -->
+  {#if currentProduct}
+      <div class="mb-4 bg-white p-4 rounded shadow">
+          <div class="grid grid-cols-2 gap-4 mb-4">
+              <p><strong>Codigo de Barras:</strong> {currentProduct.codigo_barras}</p>
+              <p><strong>Numero Parte:</strong> {currentProduct.numero_parte}</p>
+              <p><strong>Descripcion:</strong> {currentProduct.descripcion}</p>
+              <p><strong>Fecha Inventario:</strong> {formatDateTime(currentProduct.fecha_inventario)}</p>
+          </div>
+
+          <div class="space-y-4">
+              <div>
+                  <label for="stockQuantity" class="block text-sm font-medium text-gray-700">
+                      Inventario Físico
+                  </label>
+                  <input 
+                      id="stockQuantity" 
+                      type="number" 
+                      bind:value={stockQuantity} 
+                      bind:this={stockQuantityInput} 
+                      class="block w-full mt-1 p-2 border rounded" 
+                  />
+              </div>
+
+              <div>
+                  <label for="categoriaIncidencia" class="block text-sm font-medium text-gray-700">
+                      Categoría Incidencia
+                  </label>
+                  <select 
+                      id="categoriaIncidencia" 
+                      bind:value={selectedCategoriaIncidencia} 
+                      class="block w-full mt-1 p-2 border rounded"
+                  >
+                      <option value="">Seleccione una Categoria</option>
+                      {#each categoriasIncidencias as categoria}
+                          <option value={categoria}>{categoria}</option>
+                      {/each}
+                  </select>
+              </div>
+
+              <div>
+                  <label for="incidencia" class="block text-sm font-medium text-gray-700">
+                      Notas
+                  </label>
+                  <textarea 
+                      id="incidencia" 
+                      bind:value={incidencia} 
+                      class="block w-full mt-1 p-2 border rounded"
+                  />
+              </div>
+
+              <div class="flex gap-4 mt-4">
+                  <button 
+                      on:click={saveChanges} 
+                      class="bg-green-500 hover:bg-green-600 text-white p-2 rounded transition-colors"
+                  >
+                      Guardar
+                  </button>
+                  <button 
+                      on:click={resetFields} 
+                      class="bg-gray-500 hover:bg-gray-600 text-white p-2 rounded transition-colors"
+                  >
+                      Cancelar
+                  </button>
+              </div>
+          </div>
+      </div>
+  {/if}
+
+  <!-- Location Reset Button -->
+  {#if selectedBodega && selectedMarca && ubicacion && !codigoBarras}
       <button
-        on:click={() => startScanner('ubicacion')}
-        class="mt-4 bg-blue-500 text-white p-2 rounded">
-        Scan Ubicación
-      </button>
-    </div>
-  {/if}
-
-  <!-- Display Ubicación -->
-  {#if ubicacion}
-    <div class="mb-4">
-      <label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación</label>
-      <input id="ubicacion" type="text" bind:value={ubicacion} readonly class="block w-full mt-1 p-2 border rounded" />
-    </div>
-
-    <!-- Buttons for Scanning or Selecting New Location -->
-    <div class="flex space-x-4">
-      {#if !codigoBarras && !isScanning}
-        <button
-          on:click={() => startScanner('codigoBarras')}
-          class="mt-4 bg-green-500 text-white p-2 rounded">
-          Scan Código de Barra
-        </button>
-        <button
-          on:click={resetFieldsForNewLocation}
-          class="mt-4 bg-red-500 text-white p-2 rounded">
-          Seleccione otra Ubicación
-        </button>
-      {/if}
-    </div>
-  {/if}
-
-  <!-- Display Código de Barra -->
-  {#if codigoBarras}
-    <div class="mb-4">
-      <label for="codigoBarras" class="block text-sm font-medium text-gray-700">Código de Barra</label>
-      <input id="codigoBarras" type="text" bind:value={codigoBarras} readonly class="block w-full mt-1 p-2 border rounded" />
-    </div>
-  {/if}
-
-  <!-- Display Product -->
-  {#if product}
-    <div class="mb-4">
-      <p>Numero Parte: <strong>{product.numero_parte}</strong></p>
-      <p><strong>Descripcion:</strong> {product.descripcion}</p>
-      <p><strong>Fecha Inventario:</strong> {product.fecha_inventario}</p>
-      <label for="stock" class="block text-sm font-medium text-gray-700 mt-2">Inventario Físico</label>
-      <input id="stock" type="number" bind:value={stockQuantity} class="block w-full mt-1 p-2 border rounded" />
-
-      <!-- New Combo Box -->
-      <label for="categoriaIncidencia" class="block text-sm font-medium text-gray-700 mt-2">
-        Categoría Incidencia
-      </label>
-      <select
-        id="categoriaIncidencia"
-        bind:value={selectedCategoriaIncidencia}
-        class="block w-full mt-1 p-2 border rounded"
+          on:click={resetLocation}
+          class="mt-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded transition-colors"
       >
-        <option value="">Select a category</option>
-        {#each categoriasIncidencias as categoria}
-          <option value={categoria}>{categoria}</option>
-        {/each}
-      </select>
-
-      <label for="incidencia" class="block text-sm font-medium text-gray-700 mt-2">Incidencia</label>
-      <textarea id="incidencia" bind:value={incidencia} class="block w-full mt-1 p-2 border rounded"></textarea>
-      <button on:click={saveChanges} class="mt-4 bg-green-500 text-white p-2 rounded">Save Changes</button>
-    </div>
-  {:else if message}
-    <p class="text-red-500 mt-4">{message}</p>
-  {/if}
-
-  <!-- Scanner Video -->
-  {#if isScanning}
-    <div class="mt-4">
-      <video id="scanner-video" class="w-full border rounded" autoplay muted playsinline></video>
-    </div>
+          Seleccione otra Ubicación
+      </button>
   {/if}
 </div>

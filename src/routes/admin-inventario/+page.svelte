@@ -1,266 +1,424 @@
 <script>
   import { onMount } from 'svelte';
   import BackToMenu from '$lib/BackToMenu.svelte';
+  import { adminInventoryStore } from '$lib/stores/adminInventory';
+  import { formatDateTime } from '$lib/utils/dateFormat';
+  import { 
+    Maximize2, 
+    Minimize2, 
+    RefreshCw,
+    ChevronDown,
+    AlertTriangle,
+    CheckCircle,
+    XCircle 
+  } from 'lucide-svelte';
 
-  // Data variables
-  let bodegas = [];
-  let marcas = [];
-  let ubicaciones = [];
-  let records = [];
+  // Subscribe to the store
+  $: ({ 
+    bodegas, 
+    marcas, 
+    ubicaciones, 
+    records,
+    selectedBodega,
+    selectedMarca,
+    selectedUbicacion,
+    loading,
+    error,
+    lastUpdated,
+    isFullscreen 
+  } = $adminInventoryStore);
 
-  let selectedBodega = '';
-  let selectedMarca = '';
-  let selectedUbicacion = '';
+  // Touch feedback handlers
+  function handleTouchStart(event) {
+    event.target.classList.add('active');
+  }
 
-  let message = '';
+  function handleTouchEnd(event) {
+    event.target.classList.remove('active');
+  }
 
-  // Fetch warehouses (bodegas)
+  // Handle selection changes
+  function handleBodegaChange(event) {
+    const newBodega = event.target.value;
+    adminInventoryStore.setSelections(newBodega, '', '');
+    if (newBodega) fetchMarcas();
+  }
+
+  function handleMarcaChange(event) {
+    const newMarca = event.target.value;
+    adminInventoryStore.setSelections(selectedBodega, newMarca, '');
+    if (newMarca) fetchUbicaciones();
+  }
+
+  function handleUbicacionChange(event) {
+    const newUbicacion = event.target.value;
+    adminInventoryStore.setSelections(selectedBodega, selectedMarca, newUbicacion);
+    if (newUbicacion) fetchRecords();
+  }
+
+  // Fetch functions
   async function fetchBodegas() {
-  try {
-    const res = await fetch('/api/bodegas');
-    const data = await res.json();
+    adminInventoryStore.setLoading(true);
+    try {
+      const res = await fetch('/api/bodegas');
+      const data = await res.json();
 
-    if (res.ok && data.status === 'success') {
-      bodegas = data.data; // Assign the fetched bodega names to the `bodegas` variable
-      console.log('Bodegas fetched:', bodegas);
-    } else {
-      console.error('Error fetching bodegas:', data.message || 'Unknown error');
-    }
+      if (res.ok && data.status === 'success') {
+        adminInventoryStore.setBodegas(data.data);
+        // If we have stored selections, fetch related data
+        if (selectedBodega) {
+          await fetchMarcas();
+          if (selectedMarca) {
+            await fetchUbicaciones();
+            if (selectedUbicacion) {
+              await fetchRecords();
+            }
+          }
+        }
+      } else {
+        adminInventoryStore.setError('Error fetching bodegas: ' + (data.message || 'Unknown error'));
+      }
     } catch (error) {
-      console.error('Error fetching bodegas:', error);
+      adminInventoryStore.setError('Error fetching bodegas: ' + error.message);
+    } finally {
+      adminInventoryStore.setLoading(false);
     }
   }
 
-  // Fetch marcas based on selected bodega
   async function fetchMarcas() {
-  if (!selectedBodega) {
-    console.error('Error: No bodega selected.');
-    return;
-  }
+    if (!selectedBodega) return;
 
-  try {
-    const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
-    const data = await res.json();
+    adminInventoryStore.setLoading(true);
+    try {
+      const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
+      const data = await res.json();
 
-    if (res.ok && data.status === 'success') {
-      marcas = data.data; // Assign the fetched marcas to the `marcas` variable
-      console.log('Marcas fetched:', marcas);
-    } else {
-      console.error('Error fetching marcas:', data.message || 'Unknown error');
-      message = 'Error fetching marcas. Please try again.';
+      if (res.ok && data.status === 'success') {
+        adminInventoryStore.setMarcas(data.data);
+      } else {
+        adminInventoryStore.setError('Error fetching marcas: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      adminInventoryStore.setError('Error fetching marcas: ' + error.message);
+    } finally {
+      adminInventoryStore.setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching marcas:', error);
-    message = 'An unexpected error occurred while fetching marcas.';
   }
-}
 
-  // Fetch locations (ubicaciones)
   async function fetchUbicaciones() {
-  if (!selectedBodega || !selectedMarca) {
-    console.error('Error: No Bodega or Marca selected.');
-    return;
-  }
-
-  try {
-    const res = await fetch(
-      `/api/ubicaciones?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}`
-    );
-    const data = await res.json();
-
-    if (res.ok && data.status === 'success') {
-      ubicaciones = data.data; // Assign the fetched ubicaciones to the `ubicaciones` variable
-      console.log('Ubicaciones fetched:', ubicaciones);
-    } else {
-      console.error('Error fetching ubicaciones:', data.message || 'Unknown error');
-      message = data.message || 'Error fetching ubicaciones. Please try again.';
+    if (!selectedBodega || !selectedMarca) {
+        console.log('Missing required parameters:', { selectedBodega, selectedMarca });
+        return;
     }
-  } catch (error) {
-    console.error('Error fetching ubicaciones:', error);
-    message = 'An unexpected error occurred while fetching ubicaciones.';
-  }
+
+    adminInventoryStore.setLoading(true);
+    try {
+        // Updated URL to the correct endpoint
+        const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}`;
+        console.log('Fetching ubicaciones:', url);
+
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log('Ubicaciones response:', data); // Debug log
+
+        if (res.ok && data.status === 'success') {
+            adminInventoryStore.setUbicaciones(data.data);
+        } else {
+            console.error('Error response:', data);
+            adminInventoryStore.setError('Error fetching ubicaciones: ' + (data.message || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Fetch error:', error);
+        adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
+    } finally {
+        adminInventoryStore.setLoading(false);
+    }
 }
-
-  // Fetch records
   async function fetchRecords() {
+    if (!selectedBodega || !selectedMarca || !selectedUbicacion) return;
 
-    if (!selectedBodega || !selectedMarca || !selectedUbicacion) {
-    console.error('Error: No Bodega or Marca or Ubicacion selected.');
-    return;
-  }
+    adminInventoryStore.setLoading(true);
+    try {
+      const res = await fetch(
+        `/api/inventory-records?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`
+      );
+      const data = await res.json();
 
-  try {
-    const res = await fetch(
-      `/api/inventory-records?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`
-    );
-    const data = await res.json();
-
-    if (res.ok && data.status === 'success') {
-      records = data.data; // Assign the fetched ubicaciones to the `ubicaciones` variable
-      console.log('Records fetched');
-    } else {
-      console.error('Error fetching records:', data.message || 'Unknown error');
-      message = data.message || 'Error fetching records. Please try again.';
+      if (res.ok && data.status === 'success') {
+        adminInventoryStore.setRecords(data.data);
+      } else {
+        adminInventoryStore.setError('Error fetching records: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      adminInventoryStore.setError('Error fetching records: ' + error.message);
+    } finally {
+      adminInventoryStore.setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching records:', error);
-    message = 'An unexpected error occurred while fetching records.';
   }
 
-  }
-
-  // Validate record
   async function validateRecord(record) {
     try {
-      const payload = {
-        id: record.id,
-        validado_por: record.validado_por // User ID from JWT
-        
-      };
-
+      adminInventoryStore.setLoading(true);
       const res = await fetch('/api/validate-record', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          id: record.id,
+          validado_por: record.validado_por
+        }),
       });
 
-      if (!res.ok) {
-        console.error('Failed to validate record');
-        return;
+      const data = await res.json();
+      
+      if (res.ok && data.status === 'success') {
+        await fetchRecords();
+      } else {
+        adminInventoryStore.setError('Error validating record: ' + (data.message || 'Unknown error'));
       }
-
-      message = 'Record validated successfully';
-      await fetchRecords();
     } catch (error) {
-      console.error('Error validating record:', error);
+      adminInventoryStore.setError('Error validating record: ' + error.message);
+    } finally {
+      adminInventoryStore.setLoading(false);
     }
   }
 
-  // Calculate diferencia
   function calculateDiferencia(inventario_sistema, inventario_fisico) {
     return inventario_fisico - inventario_sistema;
   }
 
-    // Calculate diferencia
   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
-    
     if (inventario_sistema > inventario_fisico) {
-       return 'Faltante'; }
-    else if (inventario_sistema < inventario_fisico) {
-       return 'Sobrante'; } 
-    else {
-      return 'Sin Diferencia';}
+      return 'Faltante';
+    } else if (inventario_sistema < inventario_fisico) {
+      return 'Sobrante';
+    } else {
+      return 'Sin Diferencia';
+    }
   }
 
-  // Format timestamp
-  function formatTimestamp(timestamp) {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const formatter = new Intl.DateTimeFormat('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    return formatter.format(date);
+  // Manual refresh function with debounce
+  let refreshTimeout;
+  async function refreshData() {
+    if (refreshTimeout) clearTimeout(refreshTimeout);
+    
+    if (selectedBodega && selectedMarca && selectedUbicacion) {
+      refreshTimeout = setTimeout(async () => {
+        await fetchRecords();
+      }, 300);
+    }
   }
 
-
-  // Load data on mount
   onMount(async () => {
     await fetchBodegas();
   });
 </script>
 
-<div class="p-6 bg-gray-100 min-h-screen">
-  <h1 class="text-2xl font-bold mb-4">Admin Inventory Validation</h1>
+<div class="p-4 bg-gray-100 min-h-screen {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation">
+  <!-- Header with controls -->
+  <div class="flex justify-between items-center mb-4 sticky top-0 bg-gray-100 p-2 z-10">
+    <div class="flex items-center gap-2">
 
-  <BackToMenu />
+      <h1 class="text-xl font-bold md:text-2xl">Administracion del Inventario</h1>
+    </div>
+    <div><BackToMenu /></div>
+    
+    
+    <div class="flex items-center gap-2">
+      <button 
+        class="p-3 rounded-full hover:bg-gray-200 active:bg-gray-300 transition-colors touch-manipulation"
+        on:click={() => adminInventoryStore.toggleFullscreen()}
+        on:touchstart={handleTouchStart}
+        on:touchend={handleTouchEnd}
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+      >
+        {#if isFullscreen}
+          <Minimize2 size={24} />
+        {:else}
+          <Maximize2 size={24} />
+        {/if}
+      </button>
+      
+      <button 
+        class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg disabled:bg-gray-400
+               hover:bg-blue-600 active:bg-blue-700 transition-colors touch-manipulation"
+        on:click={refreshData}
+        on:touchstart={handleTouchStart}
+        on:touchend={handleTouchEnd}
+        disabled={loading || !selectedUbicacion}
+      >
+        <RefreshCw size={20} class={loading ? 'animate-spin' : ''} />
+        <span class="hidden md:inline">{loading ? 'Refreshing...' : 'Refresh'}</span>
+      </button>
+    </div>
+  </div>
+
   <!-- Filters -->
-  <div class="flex gap-4 mb-6">
-    <div>
-      <label for="bodega" class="block text-sm font-medium text-gray-700">Bodega</label>
-      <select id="bodega" bind:value={selectedBodega} on:change={fetchMarcas} class="w-full border rounded p-2">
-        <option value="">Bodega</option>
+  <div class="flex flex-col md:flex-row gap-4 mb-6 sticky top-16 bg-gray-100 z-10 p-2">
+    <div class="relative flex-1">
+      <select 
+        value={selectedBodega}
+        on:change={handleBodegaChange}
+        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
+               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation"
+      >
+        <option value="">Seleccionar Bodega</option>
         {#each bodegas as bodega}
           <option value={bodega}>{bodega}</option>
         {/each}
       </select>
+      <ChevronDown 
+        size={20} 
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
+      />
     </div>
-    <div>
-      <label for="marca" class="block text-sm font-medium text-gray-700">Marca</label>
-      <select id="marca" bind:value={selectedMarca} on:change={fetchUbicaciones} class="w-full border rounded p-2">
-        <option value="">Marca</option>
+
+    <div class="relative flex-1">
+      <select 
+        value={selectedMarca}
+        on:change={handleMarcaChange}
+        disabled={!selectedBodega}
+        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
+               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
+               disabled:bg-gray-100 disabled:cursor-not-allowed"
+      >
+        <option value="">Seleccionar Marca</option>
         {#each marcas as marca}
           <option value={marca}>{marca}</option>
         {/each}
       </select>
+      <ChevronDown 
+        size={20} 
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
+      />
     </div>
-    <div>
-      <label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación</label>
-      <select id="ubicacion" bind:value={selectedUbicacion} on:change={fetchRecords} class="w-full border rounded p-2">
-        <option value="">Ubicación</option>
+
+    <div class="relative flex-1">
+      <select 
+        value={selectedUbicacion}
+        on:change={handleUbicacionChange}
+        disabled={!selectedMarca}
+        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
+               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
+               disabled:bg-gray-100 disabled:cursor-not-allowed"
+      >
+        <option value="">Seleccionar Ubicación</option>
         {#each ubicaciones as ubicacion}
           <option value={ubicacion}>{ubicacion}</option>
         {/each}
       </select>
+      <ChevronDown 
+        size={20} 
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
+      />
     </div>
   </div>
 
-  <!-- Records Table -->
-  {#if records.length > 0}
-    <table class="table-auto w-full bg-white shadow-md rounded">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="p-2 border">Código de Barras</th>
-          <th class="p-2 border">Numero de Parte</th>
-          <th class="p-2 border">Descripcion</th>
-          <th class="p-2 border">Inventario Sistema</th>
-          <th class="p-2 border">Inventario Físico</th>
-          <th class="p-2 border">Diferencia</th>
-          <th class="p-2 border">Tipo</th>
-          <th class="p-2 border">Incidencia</th>
-          <th class="p-2 border">Inventariante</th>
-          <th class="p-2 border">Fecha de Inventario</th>
-          <th class="p-2 border">Validado</th>
-          <th class="p-2 border">Validado Por</th>
-          <th class="p-2 border">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each records as record}
-          <tr>
-            <td class="p-2 border">{record.codigo_barras}</td>
-            <td class="p-2 border">{record.numero_parte }</td>
-            <td class="p-2 border">{record.descripcion }</td>
-            <td class="p-2 border">{record.inventario_sistema }</td>
-            <td class="p-2 border">{record.inventario_fisico}</td>
-            <td class="p-2 border">{calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}</td>
-            <td class="p-2 border">{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}</td>
-            <td class="p-2 border">{record.incidencia}</td>
-            <td class="p-2 border">{record.nombre}</td>
-            <td class="p-2 border">{formatTimestamp(record.fecha_inventario)}</td>
-            <td class="p-2 border">{record.validado ? 'Sí' : 'No'}</td>
-            <td class="p-2 border">{record.validado_por}</td>
-            <td class="p-2 border">
-              <button
-                class="bg-blue-500 text-white px-4 py-2 rounded"
-                on:click={() => validateRecord(record)}
-              >
-                Validate
-              </button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  {:else}
-    <p class="text-gray-600">No records found.</p>
+  <!-- Status messages -->
+  {#if loading}
+    <div class="fixed bottom-4 right-4 bg-blue-100 text-blue-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
+      <RefreshCw size={20} class="animate-spin" />
+      Actualizando...
+    </div>
   {/if}
 
-  {#if message}
-    <p class="text-green-600 mt-4">{message}</p>
+  {#if error}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+      <AlertTriangle size={20} />
+      {error}
+    </div>
   {/if}
+
+<!-- Last updated info -->
+{#if lastUpdated}
+<div class="text-sm text-gray-600 mb-4">
+  Última actualización: {lastUpdated}
 </div>
+{/if}
+
+<!-- Records Table -->
+{#if records.length > 0}
+<div class="overflow-x-auto bg-white rounded-lg shadow">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Código
+        </th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parte</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diferencia</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventariante</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+        <th class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          Acciones
+        </th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      {#each records as record}
+        <tr class="hover:bg-gray-50 touch-manipulation">
+          <td class="sticky left-0 bg-white px-6 py-4 whitespace-nowrap">{record.codigo_barras}</td>
+          <td class="px-6 py-4 whitespace-nowrap">{record.numero_parte}</td>
+          <td class="px-6 py-4">{record.descripcion}</td>
+          <td class="px-6 py-4 whitespace-nowrap">{record.inventario_sistema}</td>
+          <td class="px-6 py-4 whitespace-nowrap">{record.inventario_fisico}</td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            {calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+              {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
+               record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
+               'bg-green-100 text-green-800'}">
+              {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+            </span>
+          </td>
+          <td class="px-6 py-4">{record.incidencia}</td>
+          <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
+          <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
+          <td class="sticky right-0 bg-white px-6 py-4 whitespace-nowrap">
+            <button
+              class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg 
+                     hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400 transition-colors
+                     touch-manipulation"
+              on:click={() => validateRecord(record)}
+              on:touchstart={handleTouchStart}
+              on:touchend={handleTouchEnd}
+              disabled={record.validado}
+            >
+              {#if record.validado}
+                <CheckCircle size={20} />
+                <span class="hidden md:inline">Validado</span>
+              {:else}
+                <XCircle size={20} />
+                <span class="hidden md:inline">Validar</span>
+              {/if}
+            </button>
+          </td>
+        </tr>
+      {/each}
+    </tbody>
+  </table>
+</div>
+{:else}
+<div class="text-center py-8 text-gray-500">
+  No se encontraron registros.
+</div>
+{/if}
+</div>
+
+<style>
+/* Add touch-specific styles */
+:global(.touch-manipulation) {
+touch-action: manipulation;
+-webkit-tap-highlight-color: transparent;
+}
+
+:global(.active) {
+transform: scale(0.98);
+}
+</style>
