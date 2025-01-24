@@ -1,0 +1,389 @@
+<script>
+  import { onMount, tick } from 'svelte';
+  import Quagga from 'quagga';
+  import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
+  
+  let bodegas = [];
+  let marcas = [];
+  let categoriasIncidencias = []; // To be fetched from the database
+  let selectedBodega = '';
+  let selectedMarca = '';
+  let ubicacion = '';
+  let codigoBarras = '';
+  let product = null;
+  let stockQuantity = 0;
+  let incidencia = '';
+  let selectedCategoriaIncidencia = ''; // This will reflect the database value
+  let message = '';
+  let scanner = null;
+  let isScanning = false;
+  let scanningType = ''; // 'ubicacion' or 'codigoBarra'
+  let beep;
+
+  // Fetch bodegas and categorias incidencias on mount
+  onMount(async () => {
+    beep = new Audio('store-scanner-beep-90395.mp3');
+    await fetchBodegas();
+    await fetchCategoriasIncidencias();
+  });
+
+  async function fetchBodegas() {
+  try {
+    const res = await fetch('/api/bodegas');
+    const data = await res.json();
+
+    if (res.ok && data.status === 'success') {
+      bodegas = data.data; // Assign the fetched bodega names to the `bodegas` variable
+      console.log('Bodegas fetched:', bodegas);
+    } else {
+      console.error('Error fetching bodegas:', data.message || 'Unknown error');
+    }
+    } catch (error) {
+      console.error('Error fetching bodegas:', error);
+    }
+  }
+
+  // Fetch marcas based on selected bodega
+  async function fetchMarcas() {
+  if (!selectedBodega) {
+    console.error('Error: No bodega selected.');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
+    const data = await res.json();
+
+    if (res.ok && data.status === 'success') {
+      marcas = data.data; // Assign the fetched marcas to the `marcas` variable
+      console.log('Marcas fetched:', marcas);
+    } else {
+      console.error('Error fetching marcas:', data.message || 'Unknown error');
+      message = 'Error fetching marcas. Please try again.';
+    }
+  } catch (error) {
+    console.error('Error fetching marcas:', error);
+    message = 'An unexpected error occurred while fetching marcas.';
+  }
+}
+
+  async function fetchCategoriasIncidencias() {
+  try {
+    const res = await fetch('/api/db/categorias-incidencias');
+    const data = await res.json();
+
+    console.log('Fetched categories:', data); // Log the response data for debugging
+
+    // Check for success and proper structure
+    if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
+      categoriasIncidencias = data.data.map((item) => item.categoria); // Extract category names
+    } else {
+      console.error(
+        'Error fetching categorias incidencias:',
+        data.message || 'Invalid response structure'
+      );
+    }
+  } catch (error) {
+    console.error('Error fetching categorias incidencias:', error);
+  }
+}
+
+
+  // Start scanner
+  async function startScanner(type) {
+  scanningType = type;
+  isScanning = true;
+
+  await tick(); // Ensure the DOM is updated
+
+  const videoElement = document.querySelector('#scanner-video');
+
+
+  if (!videoElement) {
+    console.error('Scanner video element not found.');
+    return;
+  } 
+
+  try {
+    // Request the video stream with torch support
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'environment',
+        advanced: [{ torch: true }], // Attempt to turn on the torch
+      },
+    });
+
+    const [track] = stream.getVideoTracks(); // Get the active video track
+    const capabilities = track.getCapabilities();
+
+    // Check if the device supports torch
+    if (capabilities.torch) {
+      track.applyConstraints({
+        advanced: [{ torch: true }],
+      });
+      console.log('Torch activated.');
+    } else {
+      console.warn('Torch is not supported on this device.');
+    }
+
+    // Attach the video stream to the video element
+    videoElement.srcObject = stream;
+    videoElement.play();
+
+    // Initialize QuaggaJS
+    Quagga.init(
+      {
+        inputStream: {
+          type: 'LiveStream',
+          target: videoElement, // Video element
+        },
+        decoder: {
+          readers: ['code_128_reader'], // Code 128 scanner
+        },
+      },
+      (err) => {
+        if (err) {
+          console.error('QuaggaJS Initialization Error:', err);
+          stopScanner();
+          return;
+        }
+        console.log('QuaggaJS initialized');
+        Quagga.start();
+      }
+    );
+
+    // Handle barcode detection
+    Quagga.onDetected((data) => {
+
+      if (beep) beep.play();
+      console.log('Scanned Result:', data.codeResult.code);
+
+      if (scanningType === 'ubicacion') {
+        ubicacion = data.codeResult.code;
+      } else if (scanningType === 'codigoBarras') {
+        codigoBarras = data.codeResult.code;
+        console.log(codigoBarras);
+        fetchProductDetails();
+      }
+
+      stopScanner();
+    });
+
+  } catch (error) {
+    console.error('Error starting scanner:', error);
+    stopScanner();
+  }
+}
+
+function stopScanner() {
+  Quagga.stop();
+  isScanning = false;
+  scanningType = '';
+
+  const videoElement = document.querySelector('#scanner-video');
+  if (videoElement?.srcObject) {
+    const tracks = videoElement.srcObject.getTracks();
+    tracks.forEach((track) => track.stop()); // Stop all video tracks
+    videoElement.srcObject = null;
+  }
+}
+
+async function fetchProductDetails() {
+  try {
+    const res = await fetch(
+      `/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
+    );
+
+    const data = await res.json();
+
+    if (res.ok && data.data && data.data.length > 0) {
+      product = data.data[0]; // Access the first product from "data"
+      stockQuantity = product.inventario_fisico || 0;
+      incidencia = product.incidencia || '';
+      selectedCategoriaIncidencia = product.categoria_incidencia || '';
+      message = '';
+    } else {
+      product = null;
+      message = data.message || 'Producto no existe';
+      codigoBarras = '';
+      await tick();
+      startScanner('codigoBarras');
+    }
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    message = 'Producto no existe';
+    codigoBarras = '';
+    await tick();
+    startScanner('codigoBarras');
+  }
+}
+
+
+  // Save changes
+  async function saveChanges() {
+  try {
+    const payload = {
+      bodega: selectedBodega,
+      ubicacion: ubicacion,
+      marca: selectedMarca,
+      codigo_barras: codigoBarras,
+      inventario_fisico: stockQuantity,
+      categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
+      incidencia: incidencia,
+    };
+
+    console.log("Payload being sent:", payload);
+
+    const res = await fetch('/api/producto', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      console.error('Error response from server:', responseData);
+      alert(`Error saving product: ${responseData.message || 'Unknown error'}`);
+      return;
+    }
+
+    console.log('Server response:', responseData);
+    alert('Product updated successfully!');
+    resetFieldsAfterSave();
+  } catch (error) {
+    console.error('Unexpected error while saving product:', error);
+    alert('An unexpected error occurred. Please try again.');
+  }
+}
+
+
+  function resetFieldsAfterSave() {
+    codigoBarras = '';
+    product = null;
+    stockQuantity = 0;
+    incidencia = '';
+    selectedCategoriaIncidencia = ''; // Reset category
+    message = '';
+  }
+
+  function resetFieldsForNewLocation() {
+    ubicacion = '';
+    resetFieldsAfterSave();
+  }
+
+</script>
+
+<div class="p-6 bg-gray-100 min-h-screen">
+  <h1 class="text-2xl font-bold mb-4">Toma de Inventario - Codigo Interno</h1>
+
+  <div>
+    <BackToMenuButton />
+  </div>  
+
+  <!-- Select Bodega -->
+  <div class="mb-4">
+    <label for="bodega" class="block text-sm font-medium text-gray-700">Select Bodega</label>
+    <select id="bodega" bind:value={selectedBodega} on:change={fetchMarcas} class="block w-full mt-1 p-2 border rounded">
+      <option value="">Select a Bodega</option>
+      {#each bodegas as bodega}
+        <option value={bodega}>{bodega}</option>
+      {/each}
+    </select>
+  </div>
+
+  <!-- Select Marca -->
+  {#if selectedBodega}
+    <div class="mb-4">
+      <label for="marca" class="block text-sm font-medium text-gray-700">Select Marca</label>
+      <select id="marca" bind:value={selectedMarca} class="block w-full mt-1 p-2 border rounded">
+        <option value="">Select a Marca</option>
+        {#each marcas as marca}
+          <option value={marca}>{marca}</option>
+        {/each}
+      </select>
+    </div>
+  {/if}
+
+  <!-- Scan Ubicación -->
+  {#if selectedBodega && selectedMarca && !isScanning && !ubicacion}
+    <div class="flex space-x-4">
+      <button
+        on:click={() => startScanner('ubicacion')}
+        class="mt-4 bg-blue-500 text-white p-2 rounded">
+        Scan Ubicación
+      </button>
+    </div>
+  {/if}
+
+  <!-- Display Ubicación -->
+  {#if ubicacion}
+    <div class="mb-4">
+      <label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación</label>
+      <input id="ubicacion" type="text" bind:value={ubicacion} readonly class="block w-full mt-1 p-2 border rounded" />
+    </div>
+
+    <!-- Buttons for Scanning or Selecting New Location -->
+    <div class="flex space-x-4">
+      {#if !codigoBarras && !isScanning}
+        <button
+          on:click={() => startScanner('codigoBarras')}
+          class="mt-4 bg-green-500 text-white p-2 rounded">
+          Scan Código de Barra
+        </button>
+        <button
+          on:click={resetFieldsForNewLocation}
+          class="mt-4 bg-red-500 text-white p-2 rounded">
+          Seleccione otra Ubicación
+        </button>
+      {/if}
+    </div>
+  {/if}
+
+  <!-- Display Código de Barra -->
+  {#if codigoBarras}
+    <div class="mb-4">
+      <label for="codigoBarras" class="block text-sm font-medium text-gray-700">Código de Barra</label>
+      <input id="codigoBarras" type="text" bind:value={codigoBarras} readonly class="block w-full mt-1 p-2 border rounded" />
+    </div>
+  {/if}
+
+  <!-- Display Product -->
+  {#if product}
+    <div class="mb-4">
+      <p><strong>Numero Parte:</strong> {product.numero_parte}</p>
+      <p><strong>Descripcion:</strong> {product.descripcion}</p>
+      <p><strong>Fecha Inventario:</strong> {product.fecha_inventario}</p>
+      <label for="stock" class="block text-sm font-medium text-gray-700 mt-2">Inventario Físico</label>
+      <input id="stock" type="number" bind:value={stockQuantity} class="block w-full mt-1 p-2 border rounded" />
+
+      <!-- New Combo Box -->
+      <label for="categoriaIncidencia" class="block text-sm font-medium text-gray-700 mt-2">
+        Categoría Incidencia
+      </label>
+      <select
+        id="categoriaIncidencia"
+        bind:value={selectedCategoriaIncidencia}
+        class="block w-full mt-1 p-2 border rounded"
+      >
+        <option value="">Select a category</option>
+        {#each categoriasIncidencias as categoria}
+          <option value={categoria}>{categoria}</option>
+        {/each}
+      </select>
+
+      <label for="incidencia" class="block text-sm font-medium text-gray-700 mt-2">Incidencia</label>
+      <textarea id="incidencia" bind:value={incidencia} class="block w-full mt-1 p-2 border rounded"></textarea>
+      <button on:click={saveChanges} class="mt-4 bg-green-500 text-white p-2 rounded">Save Changes</button>
+    </div>
+  {:else if message}
+    <p class="text-red-500 mt-4">{message}</p>
+  {/if}
+
+  <!-- Scanner Video -->
+  {#if isScanning}
+    <div class="mt-4">
+      <video id="scanner-video" class="w-full border rounded" autoplay muted playsinline></video>
+    </div>
+  {/if}
+</div>

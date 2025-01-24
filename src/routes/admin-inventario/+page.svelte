@@ -84,26 +84,48 @@
       adminInventoryStore.setLoading(false);
     }
   }
-
   async function fetchMarcas() {
-    if (!selectedBodega) return;
-
-    adminInventoryStore.setLoading(true);
-    try {
-      const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
-      const data = await res.json();
-
-      if (res.ok && data.status === 'success') {
-        adminInventoryStore.setMarcas(data.data);
-      } else {
-        adminInventoryStore.setError('Error fetching marcas: ' + (data.message || 'Unknown error'));
-      }
-    } catch (error) {
-      adminInventoryStore.setError('Error fetching marcas: ' + error.message);
-    } finally {
-      adminInventoryStore.setLoading(false);
+  if (!selectedBodega) return;
+  console.log('Fetching marcas for bodega:', selectedBodega);
+  
+  try {
+    const url = `/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`;
+    console.log('Request URL:', url);
+    
+    const res = await fetch(url);
+    const data = await res.json();
+    console.log('Marcas response:', data);
+    
+    if (res.ok && data.status === 'success') {
+      adminInventoryStore.setMarcas(data.data);
+    } else {
+      throw new Error(data.message || 'Unknown error');
     }
+  } catch (error) {
+    console.error('Marcas fetch error:', error);
+    adminInventoryStore.setError('Error fetching marcas: ' + error.message);
   }
+}
+
+  // async function fetchMarcas() {
+  //   if (!selectedBodega) return;
+
+  //   adminInventoryStore.setLoading(true);
+  //   try {
+  //     const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
+  //     const data = await res.json();
+
+  //     if (res.ok && data.status === 'success') {
+  //       adminInventoryStore.setMarcas(data.data);
+  //     } else {
+  //       adminInventoryStore.setError('Error fetching marcas: ' + (data.message || 'Unknown error'));
+  //     }
+  //   } catch (error) {
+  //     adminInventoryStore.setError('Error fetching marcas: ' + error.message);
+  //   } finally {
+  //     adminInventoryStore.setLoading(false);
+  //   }
+  // }
 
   async function fetchUbicaciones() {
     if (!selectedBodega || !selectedMarca) {
@@ -379,6 +401,7 @@
           </td>
           <td class="px-6 py-4">{record.incidencia}</td>
           <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
+          
           <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
           <td class="sticky right-0 bg-white px-6 py-4 whitespace-nowrap">
             <button
