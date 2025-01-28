@@ -6,18 +6,38 @@
     let currentPage = 1;
     let totalPages = 1;
     let pageSize = 10;
+    let totalRecords = 0;
   
     async function fetchPage(page = 1) {
-      try {
-        const res = await fetch(`/api/inventario?page=${page}&limit=${pageSize}`);
-        const { data, totalPages: total } = await res.json();
-        items = data;
-        totalPages = total;
-        currentPage = page;
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    }
+  try {
+    const res = await fetch(`/api/inventario?page=${page}&limit=${pageSize}`);
+    const result = await res.json();
+    
+    // Access the nested data structure
+    items = result.data.items;
+    totalPages = result.data.pagination.totalPages;
+    totalRecords = result.data.pagination.totalRecords; // Add this line to get total records
+    currentPage = page;
+
+    // Calculate the current range of records being displayed
+    const startRecord = (page - 1) * pageSize + 1;
+    const endRecord = Math.min(page * pageSize, totalRecords);
+    
+    // Update your pagination display to show: "registros X-Y de Z"
+    // You can use these variables to update your UI
+    const paginationText = `registros ${startRecord}-${endRecord} de ${totalRecords}`;
+    
+    console.log('Fetched data:', {
+      items,
+      startRecord,
+      endRecord,
+      totalRecords,
+      paginationText
+    });
+  } catch (error) {
+    console.error('Error fetching data:', error);
+  }
+}
   
     onMount(() => {
       fetchPage();
@@ -32,7 +52,7 @@
   
   <div class="p-6 bg-gray-100 min-h-screen flex flex-col">
     <!-- Title -->
-    <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Reporte de Inventario</h1>
+    <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Reporte de Resultado de Carga EXCEL</h1>
   
     <!-- Back to Main Menu Button -->
     <div class="mb-6">
@@ -83,7 +103,13 @@
       </button>
       <span class="text-sm text-gray-700">
         Página {currentPage} de {totalPages}
+        {#if totalRecords > 0}
+          <div class="pagination-info">
+            Registros {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalRecords)} de {totalRecords}
+          </div>
+         {/if}
       </span>
+
       <button 
         on:click={() => changePage(currentPage + 1)} 
         disabled={currentPage === totalPages}
