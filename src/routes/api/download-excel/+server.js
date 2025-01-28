@@ -27,7 +27,7 @@ export async function GET() {
     // Fetch all records from the table
     const result = await sql`
        select i.id, i.codigo_barras, i.bodega, i.ubicacion, i.numero_parte, i.descripcion,
-              i.inventario_sistema, i.inventario_fisico, i.fecha_inventario,i.categoria_incidencia, incidencia,
+              i.inventario_sistema, i.inventario_fisico, i.fecha_inventario,i.categoria_incidencia, i.incidencia, i.single_item_ean13, master_carton_ean13,
               u1.nombre || ' ' || u1.apellido AS actualizado,
               u2.nombre || ' ' || u2.apellido AS validado
         from inventario i 

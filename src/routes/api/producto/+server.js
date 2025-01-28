@@ -34,7 +34,7 @@ export async function GET({ url, locals }) {
       SELECT 
         codigo_barras, numero_parte, descripcion, inventario_sistema, 
         inventario_fisico, fecha_inventario::TEXT AS fecha_inventario, 
-        categoria_incidencia, incidencia
+        categoria_incidencia, incidencia, single_item_ean13, master_carton_ean13
       FROM inventario
       WHERE 
         bodega = ${bodega} AND 
@@ -44,7 +44,7 @@ export async function GET({ url, locals }) {
       SELECT 
         codigo_barras, numero_parte, descripcion, inventario_sistema, 
         inventario_fisico, fecha_inventario::TEXT AS fecha_inventario, 
-        categoria_incidencia, incidencia
+        categoria_incidencia, incidencia, single_item_ean13, master_carton_ean13
       FROM inventario
       WHERE 
         bodega = ${bodega} AND 
@@ -81,6 +81,9 @@ export async function PUT({ request, locals }) {
           inventario_fisico,
           categoria_incidencia,
           incidencia,
+          single_item_ean13, 
+          master_carton_ean13
+          
       } = await request.json();
 
       // Validate required fields
@@ -111,6 +114,8 @@ export async function PUT({ request, locals }) {
               fecha_inventario = ${currentDateTime},
               categoria_incidencia = ${categoria_incidencia},
               incidencia = ${incidencia},
+              single_item_ean13 = ${single_item_ean13},
+              master_carton_ean13 = ${master_carton_ean13},
               actualizado_por = ${userId}
           WHERE 
               bodega = ${bodega} AND 
