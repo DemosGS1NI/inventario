@@ -2,7 +2,7 @@
     import BacktoMenu from '$lib/BackToMenu.svelte';
   
     let file = null;
-    let isLoading = false; // Add loading state
+    let isLoading = false;
   
     const uploadFile = async () => {
         if (!file) {
@@ -10,12 +10,12 @@
             return;
         }
   
-        isLoading = true; // Set loading state to true before starting upload
-  
-        const formData = new FormData();
-        formData.append('file', file);
+        isLoading = true;
   
         try {
+            const formData = new FormData();
+            formData.append('file', file);
+  
             const response = await fetch('/api/upload-excel', {
                 method: 'POST',
                 body: formData,
@@ -24,19 +24,22 @@
             const result = await response.json();
   
             if (response.ok) {
-                alert(result.success);
-                // Optional: Clear the file input after successful upload
+                alert('Datos cargados exitosamente en la base de datos');
+                // Clear the file input after success
                 file = null;
-                // Optional: Clear the file input element
                 document.getElementById('file-input').value = '';
             } else {
-                alert(result.error);
+                let errorMessage = result.error;
+                if (result.details) {
+                    errorMessage = `${result.error}\n\n${result.details}`;
+                }
+                alert(errorMessage);
             }
         } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Ha ocurrido una falla al cargar el archivo.');
+            console.error('Error al cargar archivo:', error);
+            alert('Ha ocurrido un error al cargar el archivo. Por favor intente nuevamente.');
         } finally {
-            isLoading = false; // Reset loading state whether successful or not
+            isLoading = false;
         }
     };
   </script>
@@ -64,16 +67,14 @@
         <button
             on:click={uploadFile}
             disabled={isLoading || !file}
-            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
             {#if isLoading}
-                <span class="inline-flex items-center">
-                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Cargando...
-                </span>
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Cargando...
             {:else}
                 Subir Archivo
             {/if}
