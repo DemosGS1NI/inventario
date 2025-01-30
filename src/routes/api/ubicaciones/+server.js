@@ -21,6 +21,7 @@ export async function GET({ url }) {
       FROM inventario
       WHERE bodega = ${bodega}
         AND marca = ${marca}
+        ORDER BY ubicacion
     `;
 
     if (result.rows.length > 0) {
