@@ -5,8 +5,13 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
-export async function GET({ url }) {
-  const bodega = url.searchParams.get('bodega'); // Get the `bodega` parameter from the query string
+export async function GET({ url, locals }) {
+  // Check if user is authenticated
+  if (!locals.user) {
+    return errorResponse(401, 'UNAUTHORIZED', 'Authentication required');
+  }
+
+  const bodega = url.searchParams.get('bodega');
 
   // Validate the query parameter
   if (!bodega) {
@@ -14,16 +19,19 @@ export async function GET({ url }) {
   }
 
   try {
-    // Query to fetch distinct marcas for the given bodega
+    // Log the request for audit purposes
+    console.log(`User ${locals.user.userName} (${locals.user.userId}) requested marcas for bodega: ${bodega}`);
+
     const result = await sql`
       SELECT DISTINCT marca
       FROM inventario
       WHERE bodega = ${bodega}
+      ORDER BY marca ASC NULLS LAST
     `;
 
     if (result.rows.length > 0) {
       const marcas = result.rows.map((row) => row.marca);
-      console.log('fetching marcas', marcas);
+
       return successResponse(marcas, 'Marcas fetched successfully');
     } else {
       return errorResponse(404, 'NOT_FOUND', 'No marcas found for the specified bodega');

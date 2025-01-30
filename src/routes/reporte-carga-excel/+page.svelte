@@ -10,7 +10,7 @@
   
     async function fetchPage(page = 1) {
   try {
-    const res = await fetch(`/api/inventario?page=${page}&limit=${pageSize}`);
+    const res = await fetch(`/api/reporte-carga-excel?page=${page}&limit=${pageSize}`);
     const result = await res.json();
     
     // Access the nested data structure
@@ -64,13 +64,16 @@
       <table class="min-w-full bg-white border border-gray-300 rounded-lg shadow-md">
         <thead>
           <tr class="bg-gray-100">
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Bodega</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Marca</th>  
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Ubicación</th>          
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">ID</th>
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Código de Barras</th>
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">GTIN</th>
-            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Bodega</th>
-            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Ubicación</th>
-            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Marca</th>
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Número de Parte</th>
+
+
+
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Descripción</th>
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Inventario en Sistema</th>
           </tr>
@@ -78,12 +81,12 @@
         <tbody>
           {#each items as item}
             <tr class="hover:bg-gray-50">
+              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.bodega}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.marca}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.ubicacion}</td>              
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.id}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.codigo_barras}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.gtin}</td>
-              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.bodega}</td>
-              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.ubicacion}</td>
-              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.marca}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.numero_parte}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.descripcion}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.inventario_sistema}</td>
