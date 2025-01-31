@@ -362,8 +362,10 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diferencia</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dif</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ItemEAN13</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CajaEAN13</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventariante</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -391,6 +393,8 @@
                   {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
                 </span>
               </td>
+              <td class="px-6 py-4">{record.single_item_ean13}</td>
+              <td class="px-6 py-4">{record.master_carton_ean13}</td>
               <td class="px-6 py-4">{record.incidencia}</td>
               <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
               <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
