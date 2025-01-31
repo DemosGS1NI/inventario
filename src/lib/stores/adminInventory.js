@@ -45,6 +45,7 @@ function createAdminInventoryStore() {
 
     return {
         subscribe,
+
         setSelections: (bodega, marca, ubicacion) => update(state => {
             const newState = {
                 ...state,

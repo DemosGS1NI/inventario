@@ -38,24 +38,50 @@
   }
 
   // Handle selection changes
-  function handleBodegaChange(event) {
+// Handle selection changes
+function handleBodegaChange(event) {
     const newBodega = event.target.value;
+    
+    // First update selections in store
     adminInventoryStore.setSelections(newBodega, '', '');
-    if (newBodega) fetchUbicaciones();
-  }
+    
+    // Then force an immediate data fetch
+    if (newBodega) {
+        fetchBodegas().then(() => {
+            fetchUbicaciones();
+        });
+    }
+}
 
-  function handleUbicacionChange(event) {
+function handleUbicacionChange(event) {
     const newUbicacion = event.target.value;
+    
+    // First update selections in store
     adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
-    if (newUbicacion) fetchMarcas();
-  }
+    
+    // Then force an immediate data fetch
+    if (newUbicacion) {
+        fetchUbicaciones().then(() => {
+            fetchMarcas();
+        });
+    }
+}
 
-  function handleMarcaChange(event) {
+function handleMarcaChange(event) {
     const newMarca = event.target.value;
+    
+    // First update selections in store
     adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
-    if (newMarca) fetchRecords();
-  }
+    
+    // Then force an immediate data fetch
+    if (newMarca) {
+        fetchMarcas().then(() => {
+            fetchRecords();
+        });
+    }
+}
 
+ 
   // Fetch functions
   async function fetchBodegas() {
     adminInventoryStore.setLoading(true);
@@ -86,57 +112,70 @@
   }
   
   async function fetchMarcas() {
-    if (!selectedBodega || !selectedUbicacion) return;
-    console.log('Fetching marcas for bodega and ubicacion:', { selectedBodega, selectedUbicacion });
-    
-    try {
-      const url = `/api/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
-      console.log('Request URL:', url);
-      
-      const res = await fetch(url);
-      const data = await res.json();
-      console.log('Marcas response:', data);
-      
-      if (res.ok && data.status === 'success') {
-        adminInventoryStore.setMarcas(data.data);
-      } else {
-        throw new Error(data.message || 'Unknown error');
-      }
-    } catch (error) {
-      console.error('Marcas fetch error:', error);
-      adminInventoryStore.setError('Error fetching marcas: ' + error.message);
-    }
+  if (!selectedBodega || !selectedUbicacion) {
+    adminInventoryStore.setMarcas([]);
+    return;
   }
+  
+  adminInventoryStore.setLoading(true);
+  adminInventoryStore.setError(null); // Clear any previous errors
+  
+  try {
+    const url = `/api/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
+    console.log('Fetching marcas:', url);
+    
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (res.ok && data.status === 'success') {
+      // Ensure we're still on the same selection before updating
+      if (selectedBodega && selectedUbicacion) {
+        adminInventoryStore.setMarcas(data.data);
+      }
+    } else {
+      throw new Error(data.message || 'Unknown error');
+    }
+  } catch (error) {
+    console.error('Marcas fetch error:', error);
+    adminInventoryStore.setError('Error fetching marcas: ' + error.message);
+    adminInventoryStore.setMarcas([]); // Clear marcas on error
+  } finally {
+    adminInventoryStore.setLoading(false);
+  }
+}
 
   async function fetchUbicaciones() {
-    if (!selectedBodega) {
-        console.log('Missing required parameters:', { selectedBodega });
-        return;
-    }
-
-    adminInventoryStore.setLoading(true);
-    try {
-        const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
-        console.log('Fetching ubicaciones:', url);
-
-        const res = await fetch(url);
-        const data = await res.json();
-        console.log('Ubicaciones response:', data);
-
-        if (res.ok && data.status === 'success') {
-            adminInventoryStore.setUbicaciones(data.data);
-        } else {
-            console.error('Error response:', data);
-            adminInventoryStore.setError('Error fetching ubicaciones: ' + (data.message || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Fetch error:', error);
-        adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
-    } finally {
-        adminInventoryStore.setLoading(false);
-    }
+  if (!selectedBodega) {
+    adminInventoryStore.setUbicaciones([]);
+    return;
   }
 
+  adminInventoryStore.setLoading(true);
+  adminInventoryStore.setError(null); // Clear any previous errors
+
+  try {
+    const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
+    console.log('Fetching ubicaciones:', url);
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (res.ok && data.status === 'success') {
+      // Ensure we're still on the same bodega before updating
+      if (selectedBodega) {
+        adminInventoryStore.setUbicaciones(data.data);
+      }
+    } else {
+      throw new Error(data.message || 'Unknown error');
+    }
+  } catch (error) {
+    console.error('Ubicaciones fetch error:', error);
+    adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
+    adminInventoryStore.setUbicaciones([]); // Clear ubicaciones on error
+  } finally {
+    adminInventoryStore.setLoading(false);
+  }
+}
   async function fetchRecords() {
     // Check parameters in the correct order of selection
     if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
@@ -225,8 +264,26 @@
   }
 
   onMount(async () => {
+  adminInventoryStore.setLoading(true);
+  try {
     await fetchBodegas();
-  });
+    // Fetch dependent data if we have stored selections
+    if (selectedBodega) {
+      await fetchUbicaciones();
+      if (selectedUbicacion) {
+        await fetchMarcas();
+        if (selectedMarca) {
+          await fetchRecords();
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Initialization error:', error);
+    adminInventoryStore.setError('Error initializing data: ' + error.message);
+  } finally {
+    adminInventoryStore.setLoading(false);
+  }
+});
 </script>
 
 <div class="p-4 bg-gray-100 min-h-screen {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation">
