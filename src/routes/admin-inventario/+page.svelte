@@ -41,19 +41,19 @@
   function handleBodegaChange(event) {
     const newBodega = event.target.value;
     adminInventoryStore.setSelections(newBodega, '', '');
-    if (newBodega) fetchMarcas();
-  }
-
-  function handleMarcaChange(event) {
-    const newMarca = event.target.value;
-    adminInventoryStore.setSelections(selectedBodega, newMarca, '');
-    if (newMarca) fetchUbicaciones();
+    if (newBodega) fetchUbicaciones();
   }
 
   function handleUbicacionChange(event) {
     const newUbicacion = event.target.value;
-    adminInventoryStore.setSelections(selectedBodega, selectedMarca, newUbicacion);
-    if (newUbicacion) fetchRecords();
+    adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
+    if (newUbicacion) fetchMarcas();
+  }
+
+  function handleMarcaChange(event) {
+    const newMarca = event.target.value;
+    adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
+    if (newMarca) fetchRecords();
   }
 
   // Fetch functions
@@ -67,10 +67,10 @@
         adminInventoryStore.setBodegas(data.data);
         // If we have stored selections, fetch related data
         if (selectedBodega) {
-          await fetchMarcas();
-          if (selectedMarca) {
-            await fetchUbicaciones();
-            if (selectedUbicacion) {
+          await fetchUbicaciones();
+          if (selectedUbicacion) {
+            await fetchMarcas();
+            if (selectedMarca) {
               await fetchRecords();
             }
           }
@@ -84,64 +84,44 @@
       adminInventoryStore.setLoading(false);
     }
   }
-  async function fetchMarcas() {
-  if (!selectedBodega) return;
-  console.log('Fetching marcas for bodega:', selectedBodega);
   
-  try {
-    const url = `/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`;
-    console.log('Request URL:', url);
+  async function fetchMarcas() {
+    if (!selectedBodega || !selectedUbicacion) return;
+    console.log('Fetching marcas for bodega and ubicacion:', { selectedBodega, selectedUbicacion });
     
-    const res = await fetch(url);
-    const data = await res.json();
-    console.log('Marcas response:', data);
-    
-    if (res.ok && data.status === 'success') {
-      adminInventoryStore.setMarcas(data.data);
-    } else {
-      throw new Error(data.message || 'Unknown error');
+    try {
+      const url = `/api/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
+      console.log('Request URL:', url);
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      console.log('Marcas response:', data);
+      
+      if (res.ok && data.status === 'success') {
+        adminInventoryStore.setMarcas(data.data);
+      } else {
+        throw new Error(data.message || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Marcas fetch error:', error);
+      adminInventoryStore.setError('Error fetching marcas: ' + error.message);
     }
-  } catch (error) {
-    console.error('Marcas fetch error:', error);
-    adminInventoryStore.setError('Error fetching marcas: ' + error.message);
   }
-}
-
-  // async function fetchMarcas() {
-  //   if (!selectedBodega) return;
-
-  //   adminInventoryStore.setLoading(true);
-  //   try {
-  //     const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
-  //     const data = await res.json();
-
-  //     if (res.ok && data.status === 'success') {
-  //       adminInventoryStore.setMarcas(data.data);
-  //     } else {
-  //       adminInventoryStore.setError('Error fetching marcas: ' + (data.message || 'Unknown error'));
-  //     }
-  //   } catch (error) {
-  //     adminInventoryStore.setError('Error fetching marcas: ' + error.message);
-  //   } finally {
-  //     adminInventoryStore.setLoading(false);
-  //   }
-  // }
 
   async function fetchUbicaciones() {
-    if (!selectedBodega || !selectedMarca) {
-        console.log('Missing required parameters:', { selectedBodega, selectedMarca });
+    if (!selectedBodega) {
+        console.log('Missing required parameters:', { selectedBodega });
         return;
     }
 
     adminInventoryStore.setLoading(true);
     try {
-        // Updated URL to the correct endpoint
-        const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}`;
+        const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
         console.log('Fetching ubicaciones:', url);
 
         const res = await fetch(url);
         const data = await res.json();
-        console.log('Ubicaciones response:', data); // Debug log
+        console.log('Ubicaciones response:', data);
 
         if (res.ok && data.status === 'success') {
             adminInventoryStore.setUbicaciones(data.data);
@@ -155,28 +135,42 @@
     } finally {
         adminInventoryStore.setLoading(false);
     }
-}
+  }
+
   async function fetchRecords() {
-    if (!selectedBodega || !selectedMarca || !selectedUbicacion) return;
+    // Check parameters in the correct order of selection
+    if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
+        console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
+        return;
+    }
 
     adminInventoryStore.setLoading(true);
     try {
-      const res = await fetch(
-        `/api/inventory-records?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`
-      );
-      const data = await res.json();
+        const url = `/api/inventory-records?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+        console.log('Fetching records with URL:', url);
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log('Response data:', data);
 
-      if (res.ok && data.status === 'success') {
-        adminInventoryStore.setRecords(data.data);
-      } else {
-        adminInventoryStore.setError('Error fetching records: ' + (data.message || 'Unknown error'));
-      }
+        if (res.ok && data.status === 'success') {
+            adminInventoryStore.setRecords(data.data);
+        } else if (res.status === 404) {
+            // Handle the "Product not found" case
+            adminInventoryStore.setRecords([]);  // Set empty records array
+            adminInventoryStore.setError('No se encontraron registros para esta selección');
+        } else {
+            // Handle other errors
+            const errorMessage = data.error?.message || 'Error desconocido';
+            adminInventoryStore.setError('Error al cargar registros: ' + errorMessage);
+        }
     } catch (error) {
-      adminInventoryStore.setError('Error fetching records: ' + error.message);
+        console.error('Fetch error:', error);
+        adminInventoryStore.setError('Error al cargar registros: ' + error.message);
     } finally {
-      adminInventoryStore.setLoading(false);
+        adminInventoryStore.setLoading(false);
     }
-  }
+}
 
   async function validateRecord(record) {
     try {
@@ -239,11 +233,9 @@
   <!-- Header with controls -->
   <div class="flex justify-between items-center mb-4 sticky top-0 bg-gray-100 p-2 z-10">
     <div class="flex items-center gap-2">
-
       <h1 class="text-xl font-bold md:text-2xl">Administracion del Inventario</h1>
     </div>
     <div><BackToMenu /></div>
-    
     
     <div class="flex items-center gap-2">
       <button 
@@ -296,16 +288,16 @@
 
     <div class="relative flex-1">
       <select 
-        value={selectedMarca}
-        on:change={handleMarcaChange}
+        value={selectedUbicacion}
+        on:change={handleUbicacionChange}
         disabled={!selectedBodega}
         class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
                focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
                disabled:bg-gray-100 disabled:cursor-not-allowed"
       >
-        <option value="">Seleccionar Marca</option>
-        {#each marcas as marca}
-          <option value={marca}>{marca}</option>
+        <option value="">Seleccionar Ubicación</option>
+        {#each ubicaciones as ubicacion}
+          <option value={ubicacion}>{ubicacion}</option>
         {/each}
       </select>
       <ChevronDown 
@@ -316,16 +308,16 @@
 
     <div class="relative flex-1">
       <select 
-        value={selectedUbicacion}
-        on:change={handleUbicacionChange}
-        disabled={!selectedMarca}
+        value={selectedMarca}
+        on:change={handleMarcaChange}
+        disabled={!selectedUbicacion}
         class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
                focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
                disabled:bg-gray-100 disabled:cursor-not-allowed"
       >
-        <option value="">Seleccionar Ubicación</option>
-        {#each ubicaciones as ubicacion}
-          <option value={ubicacion}>{ubicacion}</option>
+        <option value="">Seleccionar Marca</option>
+        {#each marcas as marca}
+          <option value={marca}>{marca}</option>
         {/each}
       </select>
       <ChevronDown 
@@ -350,98 +342,97 @@
     </div>
   {/if}
 
-<!-- Last updated info -->
-{#if lastUpdated}
-<div class="text-sm text-gray-600 mb-4">
-  Última actualización: {lastUpdated}
-</div>
-{/if}
+  <!-- Last updated info -->
+  {#if lastUpdated}
+    <div class="text-sm text-gray-600 mb-4">
+      Última actualización: {lastUpdated}
+    </div>
+  {/if}
 
-<!-- Records Table -->
-{#if records.length > 0}
-<div class="overflow-x-auto bg-white rounded-lg shadow">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Código
-        </th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parte</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diferencia</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventariante</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-        <th class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Acciones
-        </th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      {#each records as record}
-        <tr class="hover:bg-gray-50 touch-manipulation">
-          <td class="sticky left-0 bg-white px-6 py-4 whitespace-nowrap">{record.codigo_barras}</td>
-          <td class="px-6 py-4 whitespace-nowrap">{record.numero_parte}</td>
-          <td class="px-6 py-4">{record.descripcion}</td>
-          <td class="px-6 py-4 whitespace-nowrap">{record.inventario_sistema}</td>
-          <td class="px-6 py-4 whitespace-nowrap">{record.inventario_fisico}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            {calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-              {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
-               record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
-               'bg-green-100 text-green-800'}">
-              {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
-            </span>
-          </td>
-          <td class="px-6 py-4">{record.incidencia}</td>
-          <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
-          
-          <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
-          <td class="sticky right-0 bg-white px-6 py-4 whitespace-nowrap">
-            <button
-              class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg 
-                     hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400 transition-colors
-                     touch-manipulation"
-              on:click={() => validateRecord(record)}
-              on:touchstart={handleTouchStart}
-              on:touchend={handleTouchEnd}
-              disabled={record.validado}
-            >
-              {#if record.validado}
-                <CheckCircle size={20} />
-                <span class="hidden md:inline">Validado</span>
-              {:else}
-                <XCircle size={20} />
-                <span class="hidden md:inline">Validar</span>
-              {/if}
-            </button>
-          </td>
-        </tr>
-      {/each}
-    </tbody>
-  </table>
-</div>
-{:else}
-<div class="text-center py-8 text-gray-500">
-  No se encontraron registros.
-</div>
-{/if}
+  <!-- Records Table -->
+  {#if records.length > 0}
+    <div class="overflow-x-auto bg-white rounded-lg shadow">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Código
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parte</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Diferencia</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventariante</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+            <th class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Acciones
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {#each records as record}
+            <tr class="hover:bg-gray-50 touch-manipulation">
+              <td class="sticky left-0 bg-white px-6 py-4 whitespace-nowrap">{record.codigo_barras}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{record.numero_parte}</td>
+              <td class="px-6 py-4">{record.descripcion}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{record.inventario_sistema}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{record.inventario_fisico}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                  {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
+                   record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
+                   'bg-green-100 text-green-800'}">
+                  {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                </span>
+              </td>
+              <td class="px-6 py-4">{record.incidencia}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
+              <td class="sticky right-0 bg-white px-6 py-4 whitespace-nowrap">
+                <button
+                  class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg 
+                         hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400 transition-colors
+                         touch-manipulation"
+                  on:click={() => validateRecord(record)}
+                  on:touchstart={handleTouchStart}
+                  on:touchend={handleTouchEnd}
+                  disabled={record.validado}
+                >
+                  {#if record.validado}
+                    <CheckCircle size={20} />
+                    <span class="hidden md:inline">Validado</span>
+                  {:else}
+                    <XCircle size={20} />
+                    <span class="hidden md:inline">Validar</span>
+                  {/if}
+                </button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {:else}
+    <div class="text-center py-8 text-gray-500">
+      No se encontraron registros.
+    </div>
+  {/if}
 </div>
 
 <style>
-/* Add touch-specific styles */
-:global(.touch-manipulation) {
-touch-action: manipulation;
--webkit-tap-highlight-color: transparent;
-}
+  /* Add touch-specific styles */
+  :global(.touch-manipulation) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-:global(.active) {
-transform: scale(0.98);
-}
-</style>
+  :global(.active) {
+    transform: scale(0.98);
+  }
+</style>        

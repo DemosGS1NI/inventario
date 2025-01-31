@@ -13,28 +13,33 @@ export async function GET({ url, locals }) {
 
   const bodega = url.searchParams.get('bodega');
 
-  // Validate the query parameter
+
+  // Validate the query parameters
   if (!bodega) {
     return errorResponse(400, 'BAD_REQUEST', 'Bodega parameter is required');
   }
 
-  try {
+   try {
     // Log the request for audit purposes
-    console.log(`User ${locals.user.userName} (${locals.user.userId}) requested marcas for bodega: ${bodega}`);
+    console.log(`User ${locals.user.userName} (${locals.user.userId}) requested marcas for bodega: ${bodega} `);
 
     const result = await sql`
       SELECT DISTINCT marca
       FROM inventario
       WHERE bodega = ${bodega}
+        AND marca IS NOT NULL
       ORDER BY marca ASC NULLS LAST
     `;
 
     if (result.rows.length > 0) {
       const marcas = result.rows.map((row) => row.marca);
-
       return successResponse(marcas, 'Marcas fetched successfully');
     } else {
-      return errorResponse(404, 'NOT_FOUND', 'No marcas found for the specified bodega');
+      return errorResponse(
+        404, 
+        'NOT_FOUND', 
+        `No marcas found for bodega: ${bodega}`
+      );
     }
   } catch (error) {
     console.error('Error fetching marcas:', error);

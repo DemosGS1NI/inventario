@@ -7,6 +7,9 @@ dotenv.config();
 
 export const GET = async () => {
   try {
+    // Log the connection string for debugging
+    console.log('Connection String:', process.env.POSTGRES_URL);
+
     // Query to fetch distinct bodega names
     const { rows } = await sql`
       SELECT DISTINCT bodega
@@ -20,7 +23,12 @@ export const GET = async () => {
     console.log('fetching bodegas', bodegas);
     return successResponse(bodegas, 'Bodegas fetched successfully');
   } catch (error) {
-    console.error('Error fetching bodegas:', error);
+    console.error('Full Error Details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
 
     // Return a standardized error response
     return errorResponse(

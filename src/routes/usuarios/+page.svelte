@@ -15,24 +15,29 @@
   };
   let showForm = false;
   let message = '';
+  let messageType = 'success';
 
   // Fetch users
   const fetchUsuarios = async () => {
     try {
       const response = await fetch('/api/db/usuarios');
-      if (response.ok) {
-        usuarios = await response.json();
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        usuarios = data.data.users;
+        message = '';
       } else {
-        console.error('Failed to fetch usuarios:', response.statusText);
+        throw new Error(data.error?.message || 'Error fetching users');
       }
     } catch (err) {
       console.error('Error fetching usuarios:', err);
+      message = err.message || 'Error al cargar los usuarios.';
+      messageType = 'error';
     }
   };
 
-
-    // Fetch roles
-    const fetchRoles = async () => {
+  // Fetch roles
+  const fetchRoles = async () => {
     try {
       const res = await fetch('/api/db/roles');
       const data = await res.json();
@@ -44,11 +49,10 @@
       }
     } catch (err) {
       console.error('Error fetching roles:', err);
-      message = 'Ocurrió un error al cargar los roles.';
+      message = err.message || 'Ocurrió un error al cargar los roles.';
       messageType = 'error';
     }
   };
-
 
   // Save or update a user
   const saveUser = async () => {
@@ -60,25 +64,30 @@
         body: JSON.stringify(currentUser),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+
+      if (data.status === 'success') {
         await fetchUsuarios();
         showForm = false;
-        currentUser = { id: null, numero_telefono: '', nombre: '', apellido: '', rol_id: null, activo: true, debe_cambiar_pin: true };
-        message = 'Usuario guardado con éxito!';
+        currentUser = { 
+          id: null, 
+          numero_telefono: '', 
+          nombre: '', 
+          apellido: '', 
+          rol_id: null, 
+          activo: true, 
+          debe_cambiar_pin: true 
+        };
+        message = data.message;
+        messageType = 'success';
       } else {
-        const data = await response.json();
-        message = data.message || 'Error al guardar el usuario.';
+        throw new Error(data.error?.message || 'Error saving user');
       }
     } catch (err) {
       console.error('Error saving user:', err);
-      message = 'Ocurrió un error al guardar el usuario.';
+      message = err.message || 'Ocurrió un error al guardar el usuario.';
+      messageType = 'error';
     }
-  };
-
-  // Edit user
-  const editUser = (user) => {
-    currentUser = { ...user };
-    showForm = true;
   };
 
   // Delete user
@@ -86,18 +95,34 @@
     if (!confirm('¿Está seguro de que desea eliminar este usuario?')) return;
 
     try {
-      const response = await fetch(`/api/db/usuarios/${id}`, { method: 'DELETE' });
-      if (response.ok) {
+      const response = await fetch('/api/db/usuarios', { 
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
         await fetchUsuarios();
-        message = 'Usuario eliminado con éxito!';
+        message = data.message;
+        messageType = 'success';
       } else {
-        const data = await response.json();
-        message = data.message || 'Error al eliminar el usuario.';
+        throw new Error(data.error?.message || 'Error deleting user');
       }
     } catch (err) {
       console.error('Error deleting user:', err);
-      message = 'Ocurrió un error al eliminar el usuario.';
+      message = err.message || 'Ocurrió un error al eliminar el usuario.';
+      messageType = 'error';
     }
+  };
+
+  // Edit user
+  const editUser = (user) => {
+    currentUser = { ...user };
+    showForm = true;
   };
 
   // Load data on mount
@@ -115,7 +140,9 @@
   </div>
 
   {#if message}
-    <p class="text-center text-green-600 mb-4">{message}</p>
+    <p class={`text-center mb-4 ${messageType === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+      {message}
+    </p>
   {/if}
 
   <div class="flex justify-center mb-6">

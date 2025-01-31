@@ -42,7 +42,12 @@ export const inventoryAPI = {
 
     async fetchMarcas(bodega) {
         if (!bodega) return;
-        const data = await apiCall(`/api/marcas?bodega=${encodeURIComponent(bodega)}`);
+        
+        const queryParams = new URLSearchParams({
+            bodega: bodega
+        });
+        
+        const data = await apiCall(`/api/marcas?${queryParams.toString()}`);
         if (data.status === 'success') {
             inventoryStore.setMarcas(data.data);
         }
@@ -59,9 +64,13 @@ export const inventoryAPI = {
 
     async fetchProductDetails(selectedBodega, selectedMarca, codigoBarras) {
         try {
-            const data = await apiCall(
-                `/api/producto?bodega=${encodeURIComponent(selectedBodega)}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
-            );
+            const queryParams = new URLSearchParams({
+                bodega: selectedBodega,
+                marca: selectedMarca,
+                codigo_barras: codigoBarras
+            });
+
+            const data = await apiCall(`/api/producto?${queryParams.toString()}`);
             
             if (data.status === 'success' && data.data?.length > 0) {
                 inventoryStore.setCurrentProduct(data.data[0]);

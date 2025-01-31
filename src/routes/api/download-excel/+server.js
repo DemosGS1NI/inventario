@@ -26,13 +26,14 @@ export async function GET() {
 
     // Fetch all records from the table
     const result = await sql`
-       select i.id, i.codigo_barras, i.bodega, i.ubicacion, i.numero_parte, i.descripcion,
-              i.inventario_sistema, i.inventario_fisico, i.fecha_inventario,i.categoria_incidencia, i.incidencia, i.single_item_ean13, master_carton_ean13,
+       select i.bodega, i.ubicacion, i.marca, i.id, i.codigo_barras, i.numero_parte, i.descripcion,
+              i.inventario_sistema, i.inventario_fisico, i.fecha_inventario, i.categoria_incidencia, i.incidencia, i.single_item_ean13, master_carton_ean13,
               u1.nombre || ' ' || u1.apellido AS actualizado,
               u2.nombre || ' ' || u2.apellido AS validado
         from inventario i 
         left join usuarios u1 on i.actualizado_por = u1.id
         left join usuarios u2 on i.validado_por = u2.id
+        order by i.bodega, i.ubicacion, i.marca, i.id
     `;
 
     if (!result.rows || result.rows.length === 0) {

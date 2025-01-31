@@ -39,7 +39,7 @@ function createInventoryStore() {
             return { 
                 ...state, 
                 selectedMarca: marca,
-                ubicacion: '',
+                
                 currentProduct: null 
             };
         }),

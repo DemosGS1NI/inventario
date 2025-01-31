@@ -1,4 +1,4 @@
-// src/routes/api/fetch-ubicaciones/+server.js
+// src/routes/api/fetch-marcas/+server.js
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import dotenv from 'dotenv';
@@ -16,33 +16,35 @@ export async function GET({ url, locals }) {
 
     // Get query parameters
     const bodega = url.searchParams.get('bodega');
+    const ubicacion = url.searchParams.get('ubicacion');
 
     // Debug logging
-    console.log('API received parameters:', { bodega });
+    console.log('API received parameters:', { bodega, ubicacion });
 
     // Validate required parameters
-    if (!bodega) {
-        return errorResponse(400, 'BAD_REQUEST', 'Bodega and Marca are required');
+    if (!bodega || !ubicacion) {
+        return errorResponse(400, 'BAD_REQUEST', 'Bodega and Ubicacion are required');
     }
 
     try {
-        // Query to get unique ubicaciones for the given bodega and marca
+        // Query to get unique marcas for the given bodega and ubicacion
         const result = await sql`
-            SELECT DISTINCT ubicacion 
+            SELECT DISTINCT marca 
             FROM inventario 
-            WHERE bodega = ${bodega} AND ubicacion IS NOT NULL
-            ORDER BY ubicacion
+            WHERE bodega = ${bodega} 
+            AND ubicacion = ${ubicacion}
+            ORDER BY marca
         `;
 
         // Debug logging
         console.log('Query results:', result.rows);
         
-        // Extract ubicaciones from the result
-        const ubicaciones = result.rows.map(row => row.ubicacion);
+        // Extract marcas from the result
+        const marcas = result.rows.map(row => row.marca);
 
-        return successResponse(ubicaciones, 'Ubicaciones fetched successfully');
+        return successResponse(marcas, 'Marcas fetched successfully');
     } catch (error) {
-        console.error('Error fetching ubicaciones:', error);
-        return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching ubicaciones', error.message);
+        console.error('Error fetching marcas:', error);
+        return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);
     }
 }
