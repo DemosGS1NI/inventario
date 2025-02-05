@@ -91,19 +91,9 @@ export async function PUT({ request, locals }) {
           return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
       }
 
-      // Create the current date
-      const now = new Date();
-     // Create a date string that properly handles timezone
-     const currentDateTime = now.toLocaleString('en-US', { 
-         timeZone: 'America/Guatemala',  // or your specific timezone
-         year: 'numeric',
-         month: '2-digit',
-         day: '2-digit',
-         hour: '2-digit',
-         minute: '2-digit',
-         second: '2-digit',
-         hour12: false  // Use 24-hour format for storage
-      }).replace(/(\d+)\/(\d+)\/(\d+), (\d+):(\d+):(\d+)/, '$3-$1-$2 $4:$5:$6');
+   
+      const currentDateTime = new Date();
+      console.log(currentDateTime);
 
       // Update product details - now checking both codigo_barras and numero_parte
       const result = await sql`
