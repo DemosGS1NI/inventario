@@ -76,6 +76,8 @@
 
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Descripción</th>
             <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Inventario en Sistema</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Master Carton EAN13</th>
+            <th class="px-4 py-2 text-left text-sm font-semibold text-gray-700 border-b">Single Item EAN13</th>
           </tr>
         </thead>
         <tbody>
@@ -90,6 +92,8 @@
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.numero_parte}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.descripcion}</td>
               <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.inventario_sistema}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.master_carton_ean13}</td>
+              <td class="px-4 py-2 text-sm text-gray-800 border-b">{item.single_item_ean13}</td>
             </tr>
           {/each}
         </tbody>

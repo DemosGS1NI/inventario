@@ -49,6 +49,16 @@ export async function GET({ url, locals }) {
       WHERE 
         bodega = ${bodega} AND 
         marca = ${marca} AND 
+        single_item_ean13 = ${codigoBarras}        
+      UNION
+      SELECT 
+        codigo_barras, numero_parte, descripcion, inventario_sistema, 
+        inventario_fisico, fecha_inventario::TEXT AS fecha_inventario, 
+        categoria_incidencia, incidencia, single_item_ean13, master_carton_ean13
+      FROM inventario
+      WHERE 
+        bodega = ${bodega} AND 
+        marca = ${marca} AND 
         numero_parte = ${codigoBarras}
     `;
     
