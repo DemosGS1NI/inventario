@@ -35,13 +35,15 @@ export const POST = async ({ request }) => {
                 ${row.marca ? `'${row.marca}'` : 'NULL'},
                 ${row.numero_parte ? `'${row.numero_parte}'` : 'NULL'},
                 ${row.descripcion ? `'${row.descripcion}'` : 'NULL'},
-                ${row.inventario_sistema || 'NULL'}
+                ${row.inventario_sistema || 'NULL'},
+                ${row.master_carton_ean13 || 'NULL'},
+                ${row.single_item_ean13 || 'NULL'}
             )`).join(',');
 
             await sql.query(`
                 INSERT INTO inventario (
                     id, codigo_barras, gtin, bodega, ubicacion, marca,
-                    numero_parte, descripcion, inventario_sistema
+                    numero_parte, descripcion, inventario_sistema, master_carton_ean13, single_item_ean13
                 ) VALUES ${values};
             `);
 
