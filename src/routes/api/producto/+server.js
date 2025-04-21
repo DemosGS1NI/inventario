@@ -120,7 +120,7 @@ export async function PUT({ request, locals }) {
           WHERE 
               bodega = ${bodega} AND 
               marca = ${marca} AND 
-              (codigo_barras = ${codigo_barras} OR numero_parte = ${codigo_barras})
+              (codigo_barras = ${codigo_barras} OR numero_parte = ${codigo_barras} OR single_item_ean13 = ${codigo_barras})
       `;
 
       if (result.rowCount > 0) {
