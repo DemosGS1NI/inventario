@@ -463,14 +463,32 @@ function handleMarcaChange(event) {
               <td class="px-6 py-4 whitespace-nowrap">
                 {calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}
               </td>
+
               <td class="px-6 py-4 whitespace-nowrap">
+                {#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico) === 'Faltante'}
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                  </span>
+                {:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico) === 'Sobrante'}
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                  </span>
+                {:else}
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                  </span>
+                {/if}
+              </td>
+
+<!--               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                   {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
                    record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
                    'bg-green-100 text-green-800'}">
                   {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
                 </span>
-              </td>
+              </td> -->
+
               <td class="px-6 py-4">{record.single_item_ean13}</td>
               <td class="px-6 py-4">{record.master_carton_ean13}</td>
               <td class="px-6 py-4">{record.incidencia}</td>
