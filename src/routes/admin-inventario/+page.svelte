@@ -241,7 +241,7 @@ function handleMarcaChange(event) {
     return inventario_fisico - inventario_sistema;
   }
 
-  function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
+/*   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
     if (inventario_sistema > inventario_fisico) {
       return 'Faltante';
     } else if (inventario_sistema < inventario_fisico) {
@@ -249,7 +249,28 @@ function handleMarcaChange(event) {
     } else {
       return 'Sin Diferencia';
     }
+  } */
+ 
+  function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
+  // Convert inputs to numbers and calculate the difference
+  const sistema = Number(inventario_sistema);
+  const fisico = Number(inventario_fisico);
+  
+  // Check for NaN values after conversion
+  if (isNaN(sistema) || isNaN(fisico)) {
+    return 'Error: Valores no numéricos';
   }
+  
+  const diferencia = sistema - fisico;
+  
+  if (diferencia > 0) {
+    return 'Faltante';
+  } else if (diferencia < 0) {
+    return 'Sobrante';
+  } else {
+    return 'Sin Diferencia';
+  }
+}
 
   // Manual refresh function with debounce
   let refreshTimeout;
