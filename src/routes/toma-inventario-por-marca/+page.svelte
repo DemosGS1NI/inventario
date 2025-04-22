@@ -230,7 +230,7 @@
     {#if selectedBodega && selectedMarca && ubicacion}      
         <div class="mb-4">
             <label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-                Codigo Interno o Numero de Parte
+                Codigo Interno, Numero de Parte o EAN13
             </label>
             <input
                 type="text"
