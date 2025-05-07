@@ -24,13 +24,13 @@ $: selectedMarca = $inventoryStore.selectedMarca;
 $: ubicacion = $inventoryStore.ubicacion;
 
 // Add debug logging to track store changes
-$: {
-    console.log('Store state changed:', {
-        ubicacion: $inventoryStore.ubicacion,
-        selectedMarca: $inventoryStore.selectedMarca,
-        selectedBodega: $inventoryStore.selectedBodega
-    });
-}
+// $: {
+//     console.log('Store state changed:', {
+//         ubicacion: $inventoryStore.ubicacion,
+//         selectedMarca: $inventoryStore.selectedMarca,
+//         selectedBodega: $inventoryStore.selectedBodega
+//     });
+// }
   
     // Store-synced variables
     let bodegas = [];
@@ -157,10 +157,10 @@ async function handleMarcaChange(event) {
     const marca = event.target.value;
     
     try {
-        console.log('Before marca change:', {
-            ubicacion: $inventoryStore.ubicacion,
-            selectedMarca: marca
-        });
+        // console.log('Before marca change:', {
+        //     ubicacion: $inventoryStore.ubicacion,
+        //     selectedMarca: marca
+        // });
 
         // Update marca in store
         inventoryStore.setSelectedMarca(marca);
@@ -178,10 +178,10 @@ async function handleMarcaChange(event) {
 
         await tick();
         
-        console.log('After marca change:', {
-            ubicacion: $inventoryStore.ubicacion,
-            selectedMarca: $inventoryStore.selectedMarca
-        });
+        // console.log('After marca change:', {
+        //     ubicacion: $inventoryStore.ubicacion,
+        //     selectedMarca: $inventoryStore.selectedMarca
+        // });
 
         // Focus the barcode input
         if (barcodeInput) {

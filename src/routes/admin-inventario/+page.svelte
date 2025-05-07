@@ -237,8 +237,15 @@ function handleMarcaChange(event) {
     }
   }
 
-  function calculateDiferencia(inventario_sistema, inventario_fisico) {
+  function calculateDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
+
+    //if fecha inventario is null then there is no inventory being made so no sobrante or faltante
+    if (fecha_inventario === null) {
+      return '';
+    } else {
+
     return inventario_fisico - inventario_sistema;
+    }
   }
 
 /*   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
@@ -251,11 +258,18 @@ function handleMarcaChange(event) {
     }
   } */
  
-  function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
+  function calculateTipoDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
   // Convert inputs to numbers and calculate the difference
   const sistema = Number(inventario_sistema);
   const fisico = Number(inventario_fisico);
+  const fechai = fecha_inventario
+
+  //if fecha inventario is null then there is no inventory being made so no sobrante or faltante
+  if (fecha_inventario === null) {
+    return '';
+  }
   
+
   // Check for NaN values after conversion
   if (isNaN(sistema) || isNaN(fisico)) {
     return 'Error: Valores no numéricos';
@@ -461,21 +475,21 @@ function handleMarcaChange(event) {
               <td class="px-6 py-4 whitespace-nowrap">{record.inventario_sistema}</td>
               <td class="px-6 py-4 whitespace-nowrap">{record.inventario_fisico}</td>
               <td class="px-6 py-4 whitespace-nowrap">
-                {calculateDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                {calculateDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">
-                {#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico) === 'Faltante'}
+                {#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Faltante'}
                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                     {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
                   </span>
-                {:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico) === 'Sobrante'}
+                {:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Sobrante'}
                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                     {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
                   </span>
                 {:else}
                   <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
                   </span>
                 {/if}
               </td>
