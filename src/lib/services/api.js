@@ -33,7 +33,7 @@ async function apiCall(url, options = {}) {
 
 export const inventoryAPI = {
     async fetchBodegas() {
-        const data = await apiCall('/api/bodegas');
+        const data = await apiCall('/api/inventario/fetch-bodegas');
         if (data.status === 'success') {
             inventoryStore.setBodegas(data.data);
         }
@@ -47,7 +47,7 @@ export const inventoryAPI = {
             bodega: bodega
         });
         
-        const data = await apiCall(`/api/marcas?${queryParams.toString()}`);
+        const data = await apiCall(`/api/inventario/fetch-marcas?${queryParams.toString()}`);
         if (data.status === 'success') {
             inventoryStore.setMarcas(data.data);
         }
@@ -64,34 +64,76 @@ export const inventoryAPI = {
 
     async fetchProductDetails(selectedBodega, selectedMarca, codigoBarras) {
         try {
+            // Format parameters properly
             const queryParams = new URLSearchParams({
+                bodega: selectedBodega,
+                codigo_barras: codigoBarras
+            });
+            
+            // Only add marca if it's a valid value
+            if (selectedMarca && selectedMarca !== "null" && selectedMarca !== "undefined") {
+                queryParams.append('marca', selectedMarca);
+            }
+    
+            console.log('Making API call with params:', {
                 bodega: selectedBodega,
                 marca: selectedMarca,
                 codigo_barras: codigoBarras
             });
-
-            const data = await apiCall(`/api/producto?${queryParams.toString()}`);
             
-            if (data.status === 'success' && data.data?.length > 0) {
-                inventoryStore.setCurrentProduct(data.data[0]);
+            // Make the API call
+            const result = await apiCall(`/api/inventario/registro?${queryParams.toString()}`);
+            console.log('Processed API response:', result);
+            
+            // Handle the response
+            if (result.status === 'success' && result.data) {
+                // Normalize the data format
+                let productData = result.data;
+                
+                // If it's already an array, use the first item
+                if (Array.isArray(productData) && productData.length > 0) {
+                    productData = productData[0];
+                }
+                
+                // Store the product in the inventory store
+                inventoryStore.setCurrentProduct(productData);
+                
+                // Always return in a consistent format
+                return {
+                    status: 'success',
+                    data: [productData], // Always return as array with one item
+                    message: result.message || 'Product found'
+                };
+            } else {
+                // No product found or error
+                console.log('No product found or error:', result);
+                return {
+                    status: 'error',
+                    data: [],
+                    error: result.error || { code: 'NOT_FOUND', message: 'Product not found' },
+                    message: result.message || 'Product not found'
+                };
             }
-            return data;
         } catch (error) {
-            // Only set error for actual API failures
-            if (error.message !== 'not_found') {
-                inventoryStore.setError(error.message);
-            }
+            console.error('Exception in fetchProductDetails:', error);
+            
+            inventoryStore.setError(error.message);
             return {
-                status: 'not_found',
-                message: 'Producto no encontrado'
+                status: 'error',
+                data: [],
+                error: { code: 'EXCEPTION', message: error.message },
+                message: 'An unexpected error occurred'
             };
         }
     },
 
     async saveProduct(formData) {
-        return await apiCall('/api/producto', {
-            method: 'PUT',
-            body: JSON.stringify(formData)
-        });
+
+ 
+    return await apiCall('/api/inventario/registro', {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+    });
+
     }
 };

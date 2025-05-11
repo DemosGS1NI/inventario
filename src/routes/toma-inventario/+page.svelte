@@ -208,11 +208,12 @@ async function handleBarcodeInput(event) {
                 codigoBarras
             );
 
-            if (data.status === 'success' && data.data?.length > 0) {
+
+            if (data.status === 'success' ) {
                 const product = data.data[0];
-                stockQuantity = product.inventario_fisico || 0;
-                incidencia = product.incidencia || '';
-                selectedCategoriaIncidencia = product.categoria_incidencia || '';
+                stockQuantity = product.inventario_fisico ;
+                incidencia = product.incidencia ;
+                selectedCategoriaIncidencia = product.categoria_incidencia;
                 await tick();
                 stockQuantityInput?.focus();
             } else {
@@ -233,18 +234,17 @@ async function handleBarcodeInput(event) {
 }
 
     async function saveChanges() {
+
         const formData = {
-            bodega: $inventoryStore.selectedBodega,
-            marca: $inventoryStore.selectedMarca,
-            ubicacion: $inventoryStore.ubicacion,
-            codigo_barras: codigoBarras,
+            id: $inventoryStore.currentProduct.id,
             inventario_fisico: stockQuantity,
             categoria_incidencia: selectedCategoriaIncidencia,
             incidencia,
             single_item_ean13: currentProduct.single_item_ean13,
             master_carton_ean13: currentProduct.master_carton_ean13
         };
-  
+
+ 
         try {
             const result = await inventoryAPI.saveProduct(formData);
             

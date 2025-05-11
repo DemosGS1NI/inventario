@@ -1,4 +1,4 @@
-// src/routes/api/fetch-ubicaciones/+server.js
+// src/routes/api/inventario/fetch-ubicaciones/+server.js
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import dotenv from 'dotenv';
@@ -29,13 +29,14 @@ export async function GET({ url, locals }) {
         // Query to get unique ubicaciones for the given bodega and marca
         const result = await sql`
             SELECT DISTINCT ubicacion 
-            FROM inventario 
-            WHERE bodega = ${bodega} AND ubicacion IS NOT NULL
-            ORDER BY ubicacion
+              FROM inventario 
+             WHERE bodega = ${bodega} 
+               AND ubicacion IS NOT NULL
+          ORDER BY ubicacion
         `;
 
         // Debug logging
-        console.log('Query results:', result.rows);
+        //console.log('Query results:', result.rows);
         
         // Extract ubicaciones from the result
         const ubicaciones = result.rows.map(row => row.ubicacion);

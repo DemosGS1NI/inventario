@@ -13,7 +13,8 @@ export const GET = async () => {
     // Query to fetch distinct bodega names
     const { rows } = await sql`
       SELECT DISTINCT bodega
-      FROM inventario;
+      FROM inventario
+      ORDER BY bodega;
     `;
 
     // Extract the bodega names into an array
@@ -22,6 +23,7 @@ export const GET = async () => {
     // Return the standardized success response
     console.log('fetching bodegas', bodegas);
     return successResponse(bodegas, 'Bodegas fetched successfully');
+    
   } catch (error) {
     console.error('Full Error Details:', {
       message: error.message,

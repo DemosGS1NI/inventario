@@ -26,13 +26,13 @@
       }
     }
   
-    async function handleMarcaChange(event) {
-        inventoryStore.setSelectedMarca(event.target.value);
-    }
+    // async function handleMarcaChange(event) {
+    //     inventoryStore.setSelectedMarca(event.target.value);
+    // }
   
-    async function handleUbicacionChange(event) {
-        inventoryStore.setUbicacion(event.target.value);
-    }
+    // async function handleUbicacionChange(event) {
+    //     inventoryStore.setUbicacion(event.target.value);
+    // }
   
     // Form state variables
     let barcodeInput;
@@ -76,16 +76,15 @@
     async function handleBarcodeInput(event) {
         if (event.key === 'Enter' || event.key === 'Tab') {
             event.preventDefault();
-            if (!ubicacion || !codigoBarras) {
-                addToast('Favor introduzca ubicación y código del producto', 'error');
+            if (!codigoBarras) {
+                addToast('Favor introduzca código del producto', 'error');
                 return;
             }
   
             try {
                 const data = await inventoryAPI.fetchProductDetails(
-                    selectedBodega,
-                    selectedMarca,
-                    codigoBarras
+                    selectedBodega, null, codigoBarras
+
                 );
   
                 if (data.status === 'success' && data.data?.length > 0) {
@@ -115,8 +114,6 @@
             single_item_ean13: currentProduct.single_item_ean13,
             master_carton_ean13: currentProduct.master_carton_ean13
         };
-
-        
   
         try {
             const result = await inventoryAPI.saveProduct(formData);
@@ -161,7 +158,7 @@
   {/if}
   
   <div class="p-6 bg-gray-100 min-h-screen">
-    <h1 class="text-2xl font-bold mb-4">Toma de Inventario por Marca</h1>
+    <h1 class="text-2xl font-bold mb-4">Toma de Inventario por Producto</h1>
   
     <div>
         <BackToMenuButton />
@@ -192,7 +189,7 @@
             </select>
         </div>
   
-        {#if selectedBodega}
+        <!-- {#if selectedBodega}
             <div>
                 <label for="marca" class="block text-sm font-medium text-gray-700">Marca</label>
                 <select 
@@ -207,9 +204,9 @@
                     {/each}
                 </select>
             </div>
-        {/if}
+        {/if} -->
         
-        {#if selectedBodega && selectedMarca}
+        <!-- {#if selectedBodega && selectedMarca}
             <div>
                 <label for="ubicacion" class="block text-sm font-medium text-gray-700">
                     Ubicación (Estante y Nivel)
@@ -223,10 +220,11 @@
                     class="w-full border rounded p-2"
                 />
             </div>
-        {/if}
-    </div>
+        {/if} -->
+
+    </div> 
   
-    {#if selectedBodega && selectedMarca && ubicacion}      
+    <!-- {#if selectedBodega && selectedMarca && ubicacion}       -->
         <div class="mb-4">
             <label for="barcodeInput" class="block text-sm font-medium text-gray-700">
                 Codigo Interno, Numero de Parte o EAN13
@@ -241,12 +239,14 @@
                 class="block w-full border rounded p-2"
             />
         </div>
-    {/if}
+    <!-- {/if} -->
   
     <!-- Product Details -->
     {#if currentProduct}
         <div class="mb-4 bg-white p-4 rounded shadow">
             <div class="grid grid-cols-2 gap-4 mb-4">
+                <p><strong>Ubicacion:</strong> {currentProduct.ubicacion}</p>
+                <p><strong>Marca:</strong> {currentProduct.marca}</p>
                 <p><strong>Codigo de Barras:</strong> {currentProduct.codigo_barras}</p>
                 <p><strong>Numero Parte:</strong> {currentProduct.numero_parte}</p>
                 <p><strong>Descripcion:</strong> {currentProduct.descripcion}</p>

@@ -1,4 +1,6 @@
-// src/routes/api/fetch-marcas/+server.js
+// src/routes/api/inventario/fetch-marcas/+server.js
+// Obtiene listado de marcas por bodega o bodega + ubicacion
+
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import dotenv from 'dotenv';
@@ -22,27 +24,44 @@ export async function GET({ url, locals }) {
     console.log('API received parameters:', { bodega, ubicacion });
 
     // Validate required parameters
-    if (!bodega || !ubicacion) {
-        return errorResponse(400, 'BAD_REQUEST', 'Bodega and Ubicacion are required');
+    if (!bodega) {
+        return errorResponse(400, 'BAD_REQUEST', 'El parametro Bodega es requerido');
     }
 
+    let result;
+
+
     try {
-        // Query to get unique marcas for the given bodega and ubicacion
-        const result = await sql`
+        // Query to get unique marcas for the given parameter
+
+        if (ubicacion) {
+            result = await sql`
             SELECT DISTINCT marca 
             FROM inventario 
             WHERE bodega = ${bodega} 
             AND ubicacion = ${ubicacion}
             ORDER BY marca
         `;
+    
+    
+         } else {
+            result = await sql`
+            SELECT DISTINCT marca 
+            FROM inventario 
+            WHERE bodega = ${bodega} 
+            ORDER BY marca
+        `;
+            
+         };
 
         // Debug logging
-        console.log('Query results:', result.rows);
+        // console.log('Query results:', result.rows);
         
         // Extract marcas from the result
         const marcas = result.rows.map(row => row.marca);
 
         return successResponse(marcas, 'Marcas fetched successfully');
+
     } catch (error) {
         console.error('Error fetching marcas:', error);
         return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);

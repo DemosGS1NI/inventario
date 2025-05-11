@@ -86,7 +86,7 @@ function handleMarcaChange(event) {
   async function fetchBodegas() {
     adminInventoryStore.setLoading(true);
     try {
-      const res = await fetch('/api/bodegas');
+      const res = await fetch('/api/inventario/fetch-bodegas');
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
@@ -121,7 +121,7 @@ function handleMarcaChange(event) {
   adminInventoryStore.setError(null); // Clear any previous errors
   
   try {
-    const url = `/api/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
+    const url = `/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
     console.log('Fetching marcas:', url);
     
     const res = await fetch(url);
@@ -154,7 +154,7 @@ function handleMarcaChange(event) {
   adminInventoryStore.setError(null); // Clear any previous errors
 
   try {
-    const url = `/api/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
+    const url = `/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
     console.log('Fetching ubicaciones:', url);
 
     const res = await fetch(url);
@@ -185,7 +185,7 @@ function handleMarcaChange(event) {
 
     adminInventoryStore.setLoading(true);
     try {
-        const url = `/api/inventory-records?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+        const url = `/api/inventario/registros?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
         console.log('Fetching records with URL:', url);
         
         const res = await fetch(url);
@@ -214,7 +214,7 @@ function handleMarcaChange(event) {
   async function validateRecord(record) {
     try {
       adminInventoryStore.setLoading(true);
-      const res = await fetch('/api/validate-record', {
+      const res = await fetch('/api/inventario/validate-record', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
