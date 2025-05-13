@@ -11,12 +11,19 @@
   // Import menu options
   import { menuOptions } from '$lib/menu.js';
 
-  // Group menu options by category with collapsed state
+  // Group menu options by category with collapsed state and colors
   let categories = writable([
     {
       id: 'inventory',
       name: 'Inventario',
       icon: 'clipboard-list',
+      color: 'blue',
+      bgColor: 'bg-blue-500',
+      hoverBgColor: 'hover:bg-blue-600',
+      lightBgColor: 'bg-blue-50',
+      hoverLightBgColor: 'hover:bg-blue-100',
+      borderColor: 'border-blue-200',
+      textColor: 'text-blue-500',
       options: [
         'Toma de Inventario',
         'Toma de Inventario por Marca',
@@ -30,6 +37,13 @@
       id: 'data',
       name: 'Datos',
       icon: 'database',
+      color: 'green',
+      bgColor: 'bg-green-500',
+      hoverBgColor: 'hover:bg-green-600',
+      lightBgColor: 'bg-green-50',
+      hoverLightBgColor: 'hover:bg-green-100',
+      borderColor: 'border-green-200',
+      textColor: 'text-green-500',
       options: [
         'Carga Datos desde Archivo Excel',
         'Reporte de Resultado de Carga Excel',
@@ -41,6 +55,13 @@
       id: 'admin',
       name: 'Administración',
       icon: 'cog',
+      color: 'purple',
+      bgColor: 'bg-purple-500',
+      hoverBgColor: 'hover:bg-purple-600',
+      lightBgColor: 'bg-purple-50',
+      hoverLightBgColor: 'hover:bg-purple-100',
+      borderColor: 'border-purple-200',
+      textColor: 'text-purple-500',
       options: [
         'Usuarios',
         'Roles',
@@ -53,6 +74,13 @@
       id: 'account',
       name: 'Cuenta',
       icon: 'user',
+      color: 'amber',
+      bgColor: 'bg-amber-500',
+      hoverBgColor: 'hover:bg-amber-600',
+      lightBgColor: 'bg-amber-50',
+      hoverLightBgColor: 'hover:bg-amber-100',
+      borderColor: 'border-amber-200',
+      textColor: 'text-amber-500',
       options: [
         'Cambiar PIN',
         'Log out'
@@ -134,55 +162,55 @@
   </header>
 
   <!-- Collapsible Menu Categories -->
-  <div class="space-y-4">
+  <div class="space-y-6">
     {#each $categories as category}
       <!-- Only show category if it has visible options for this user -->
       {@const categoryOptions = category.options.filter(label => visibleMenuOptions.some(opt => opt.label === label))}
       {#if categoryOptions.length > 0}
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div class="rounded-xl shadow-sm overflow-hidden">
           <!-- Category Header (Always visible) -->
           <button 
             on:click={() => toggleCategory(category.id)}
-            class="w-full p-4 flex items-center justify-between text-left focus:outline-none focus:bg-blue-50"
+            class="w-full p-4 flex items-center justify-between text-left focus:outline-none {category.bgColor} text-white hover:shadow-md transition-all duration-200"
           >
             <div class="flex items-center">
-              <span class="inline-flex items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-lg mr-3">
+              <span class="inline-flex items-center justify-center w-10 h-10 bg-white {category.textColor} rounded-lg mr-3 shadow">
                 <!-- Use simple Unicode icons as a lightweight solution -->
                 {#if category.icon === 'clipboard-list'}
-                  <span>📋</span>
+                  <span class="text-xl">📋</span>
                 {:else if category.icon === 'database'}
-                  <span>📊</span>
+                  <span class="text-xl">📊</span>
                 {:else if category.icon === 'cog'}
-                  <span>⚙️</span>
+                  <span class="text-xl">⚙️</span>
                 {:else if category.icon === 'user'}
-                  <span>👤</span>
+                  <span class="text-xl">👤</span>
                 {/if}
               </span>
-              <h2 class="text-lg font-semibold text-gray-800">{category.name}</h2>
+              <h2 class="text-lg font-semibold">{category.name}</h2>
             </div>
             <!-- Chevron indicator -->
-            <span class="text-blue-500 transition-transform duration-300 transform {category.isOpen ? 'rotate-180' : ''}">
+            <span class="text-white transition-transform duration-300 transform {category.isOpen ? 'rotate-180' : ''}">
               ▼
             </span>
           </button>
           
           <!-- Category Options (Collapsible) -->
           {#if category.isOpen}
-            <div class="transition-all duration-300 ease-in-out border-t border-gray-100">
+            <div class="transition-all duration-300 ease-in-out border border-t-0 {category.borderColor} {category.lightBgColor} rounded-b-xl">
               <div class="p-4 grid gap-3">
                 {#each categoryOptions as optionLabel}
                   {@const option = findMenuOption(optionLabel)}
                   {#if option}
                     <button 
                       on:click={() => handleMenuClick(option.label)}
-                      class="w-full py-3 px-4 text-left rounded-lg bg-gray-50 hover:bg-blue-50 flex justify-between items-center transition-colors border border-gray-100 hover:border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                      class="w-full py-3 px-4 text-left rounded-lg bg-white {category.hoverLightBgColor} flex justify-between items-center transition-colors border {category.borderColor} focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-{category.color}-500"
                     >
                       <span class="font-medium text-gray-700">{option.label}</span>
-                      <span class="text-gray-400 text-sm">
+                      <span class="{category.textColor}">
                         {#if option.action}
-                          <span class="text-blue-500">⚙️</span>
+                          <span>⚙️</span>
                         {:else}
-                          <span class="text-blue-500">➡️</span>
+                          <span>➡️</span>
                         {/if}
                       </span>
                     </button>
@@ -207,6 +235,7 @@
   /* Add custom styles specific to menu */
   :global(.menu-page) {
     background-color: #f5f7fa;
+    background-image: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
   }
   
   /* Add subtle animation to the chevron indicator */
