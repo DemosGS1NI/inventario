@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret';
+const JWT_SECRET = process.env.JWT_SECRET ;
 
 export async function handle({ event, resolve }) {
   const token = event.cookies.get('jwt'); // Get JWT from cookie
@@ -9,6 +9,12 @@ export async function handle({ event, resolve }) {
     try {
       // Verify the token
       const user = jwt.verify(token, JWT_SECRET);
+
+      // Add validation
+      if (!JWT_SECRET) {
+        console.error('JWT_SECRET environment variable is not set!');
+        throw new Error('JWT_SECRET must be set for secure authentication');
+      }      
 
       // Attach user data to `locals`
       event.locals.user = {
@@ -21,7 +27,10 @@ export async function handle({ event, resolve }) {
     }
   }
 
-  console.log("Hooks is making available this info:", event.locals.user);
+  if (process.env.NODE_ENV === 'development') {
+      console.log("User authenticated:", event.locals.user.userId);
+  }
+
 
   return resolve(event);
 }
