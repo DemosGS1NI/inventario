@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { jwtConfig } from '$lib/jwt'; 
+import { jwtConfig } from '$lib/jwt';
+import { isTokenRevoked } from '$lib/services/tokenService';
 
 export async function handle({ event, resolve }) {
   const token = event.cookies.get(jwtConfig.cookie.name);
@@ -9,7 +10,16 @@ export async function handle({ event, resolve }) {
       // Verify the token with the shared configuration
       const user = jwt.verify(token, jwtConfig.secret, jwtConfig.getVerifyOptions());
 
-      // Attach user data to `locals`
+      // Check if token has been revoked
+      if (user.jti && await isTokenRevoked(user.jti)) {
+        console.log('Revoked token detected, clearing cookie');
+        // Clear the revoked token cookie
+        event.cookies.delete(jwtConfig.cookie.name, { path: jwtConfig.cookie.path });
+        // Don't set user data - treat as unauthenticated
+        return resolve(event);
+      }
+
+      // Token is valid and not revoked - set user data
       event.locals.user = {
         userId: user.userId,
         userName: user.userName,
@@ -17,11 +27,6 @@ export async function handle({ event, resolve }) {
         tokenId: user.jti
       };
       
-      // Code for token revocation would go here
-      // if (await isTokenRevoked(user.jti)) {
-      //   event.cookies.delete(jwtConfig.cookie.name, { path: jwtConfig.cookie.path });
-      //   return resolve(event);
-      // }
     } catch (error) {
       // Handle different types of JWT errors
       if (error.name === 'TokenExpiredError') {
@@ -30,6 +35,8 @@ export async function handle({ event, resolve }) {
         event.cookies.delete(jwtConfig.cookie.name, { path: jwtConfig.cookie.path });
       } else if (error.name === 'JsonWebTokenError') {
         console.log('Invalid token');
+        // Clear the invalid token
+        event.cookies.delete(jwtConfig.cookie.name, { path: jwtConfig.cookie.path });
       } else {
         console.error('JWT verification error:', error.message);
       }

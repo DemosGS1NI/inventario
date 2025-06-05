@@ -66,7 +66,8 @@
         'Usuarios',
         'Roles',
         'Categorias de Incidencias',
-        'Limpieza de Tablas'
+        'Limpieza de Tablas',
+        'Limpieza de Tokens Vencidos'  // New option added
       ],
       isOpen: false
     },

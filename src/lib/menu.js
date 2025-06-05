@@ -2,6 +2,7 @@
 
 export const menuOptions = [
     { label: 'Limpieza de Tablas', href: '/limpieza-tablas', roles: ['Admin'] }, 
+    { label: 'Limpieza de Tokens Vencidos', href: '/limpieza-tokens', roles: ['Admin'] }, // Add this line
     { label: 'Carga Datos desde Archivo Excel', href: '/carga-datos-excel', roles: ['Admin', 'Supervisor'] },
     { label: 'Reporte de Resultado de Carga Excel', href: '/reporte-carga-excel', roles: ['Admin', 'Supervisor'] },
     { label: 'Toma de Inventario', href: '/toma-inventario', roles: ['Admin', 'Supervisor', 'Inventario'] },
@@ -14,5 +15,4 @@ export const menuOptions = [
     { label: 'Categorias de Incidencias', href: '/categorias-incidencias', roles: ['Admin', 'Supervisor'] },
     { label: 'Cambiar PIN', href: '/change-pin', roles: ['Admin', 'Inventario', 'Supervisor'] }, 
     { label: 'Log out', action: 'logout', roles: ['Admin', 'Inventario', 'Supervisor'] }, 
-  ];
-  
+];
