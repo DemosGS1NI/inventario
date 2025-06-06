@@ -84,7 +84,7 @@
       textColor: 'text-amber-500',
       options: [
         'Cambiar PIN',
-        'Log out'
+        'Salir del Sistema'
       ],
       isOpen: false
     }

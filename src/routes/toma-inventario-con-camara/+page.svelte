@@ -27,6 +27,16 @@
     await fetchCategoriasIncidencias();
   });
 
+  onDestroy(() => {
+  if (isScanning) {
+    stopScanner();
+  }
+  
+  if (beep) {
+    beep = null;
+  }
+});
+
   async function fetchBodegas() {
   try {
     const res = await fetch('/api/bodegas');
@@ -272,18 +282,7 @@ async function fetchProductDetails() {
     resetFieldsAfterSave();
   }
 
-  // Add this cleanup function before </script>
-onDestroy(() => {
-  // Clean up scanner when component is destroyed
-  if (isScanning) {
-    stopScanner();
-  }
-  
-  // Clean up audio object
-  if (beep) {
-    beep = null;
-  }
-});
+
 
 </script>
 
