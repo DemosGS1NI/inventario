@@ -4,6 +4,7 @@
 
   let usuarios = [];
   let roles = [];
+  let loading = false;
   let currentUser = {
     id: null,
     numero_telefono: '',
@@ -56,7 +57,9 @@
 
   // Save or update a user
   const saveUser = async () => {
+    if (loading) return;  //prevent double submissions
     const method = currentUser.id ? 'PUT' : 'POST';
+    loading = true;
     try {
       const response = await fetch('/api/db/usuarios', {
         method,
@@ -87,6 +90,8 @@
       console.error('Error saving user:', err);
       message = err.message || 'Ocurrió un error al guardar el usuario.';
       messageType = 'error';
+    } finally {
+      loading = false;
     }
   };
 
@@ -238,9 +243,14 @@
           </button>
           <button
             type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-bold"
+            disabled={loading}
+            class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-bold"
           >
-            Guardar
+            {#if loading}
+              Guardando...
+            {:else}
+              Guardar
+            {/if}
           </button>
         </div>
       </form>

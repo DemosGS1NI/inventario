@@ -1,5 +1,5 @@
 <script>
-  import { onMount, tick } from 'svelte';
+  import { onMount, tick, onDestroy } from 'svelte';
   import Quagga from 'quagga';
   import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
   
@@ -271,6 +271,19 @@ async function fetchProductDetails() {
     ubicacion = '';
     resetFieldsAfterSave();
   }
+
+  // Add this cleanup function before </script>
+onDestroy(() => {
+  // Clean up scanner when component is destroyed
+  if (isScanning) {
+    stopScanner();
+  }
+  
+  // Clean up audio object
+  if (beep) {
+    beep = null;
+  }
+});
 
 </script>
 

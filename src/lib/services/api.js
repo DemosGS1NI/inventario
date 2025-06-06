@@ -1,6 +1,12 @@
 import { inventoryStore } from '../stores/inventory';
 
 // Helper function for API calls
+/**
+ * Makes authenticated API calls with standardized error handling
+ * @param {string} url - The API endpoint URL
+ * @param {Object} options - Fetch options (method, headers, body, etc.)
+ * @returns {Promise<Object>} Standardized API response
+ */
 async function apiCall(url, options = {}) {
     try {
         inventoryStore.setLoading(true);
@@ -54,6 +60,13 @@ export const inventoryAPI = {
         return data;
     },
 
+    /**
+     * Fetches product details by barcode from inventory
+     * @param {string} selectedBodega - The warehouse/bodega name
+     * @param {string|null} selectedMarca - The brand name (optional)
+     * @param {string} codigoBarras - The product barcode/part number
+     * @returns {Promise<Object>} Response with product data or error
+     */
     async fetchCategoriasIncidencias() {
         const data = await apiCall('/api/db/categorias-incidencias');
         if (data.status === 'success') {

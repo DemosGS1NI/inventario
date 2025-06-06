@@ -3,6 +3,7 @@ import { sql } from '@vercel/postgres';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { json } from '@sveltejs/kit';
+import { AUTH } from '$lib/constants.js'; 
 
 dotenv.config();
 
@@ -49,7 +50,7 @@ export async function POST({ request, locals }) {
 
     // Hash the new PIN
     console.log('Hashing the new PIN...');
-    const hashedPin = await bcrypt.hash(newPin, 12);
+    const hashedPin = await bcrypt.hash(newPin, AUTH.BCRYPT_ROUNDS);
 
     // Update the user's PIN in the database
     console.log('Executing SQL query to update PIN...');

@@ -1,3 +1,6 @@
+
+import { onDestroy } from 'svelte'; // Add this to imports if not present
+
 <script>
     import BacktoMenu from '$lib/BackToMenu.svelte';
   
@@ -42,6 +45,12 @@
             isLoading = false;
         }
     };
+
+    // Clean up file input reference
+    onDestroy(() => {
+    file = null;
+    });
+
   </script>
   
   <div class="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-6">

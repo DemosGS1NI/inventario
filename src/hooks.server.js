@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { jwtConfig } from '$lib/jwt';
 import { isTokenRevoked } from '$lib/services/tokenService';
+import { validateEnvironment } from '$lib/environment'; // Clear what this validates
+
+// Validate environment on startup
+validateEnvironment();
 
 export async function handle({ event, resolve }) {
   const token = event.cookies.get(jwtConfig.cookie.name);

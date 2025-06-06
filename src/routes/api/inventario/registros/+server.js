@@ -6,6 +6,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // GET Endpoint - Fetch Product Details
+/**
+ * Retrieves inventory records for a specific bodega, marca, and ubicacion
+ * @param {Object} params - Request parameters
+ * @param {URL} params.url - Request URL with search parameters
+ * @returns {Promise<Response>} JSON response with inventory records
+ */
 export async function GET({ url }) {
   const bodega = url.searchParams.get('bodega');
   const marca = url.searchParams.get('marca');
@@ -40,6 +46,13 @@ export async function GET({ url }) {
 }
 
 // PUT Endpoint - Update Product Details
+/**
+ * Updates inventory records with physical count and incident information
+ * @param {Object} params - Request parameters
+ * @param {Request} params.request - HTTP request object
+ * @param {Object} params.locals - Local variables including user session
+ * @returns {Promise<Response>} JSON response confirming update
+ */
 export async function PUT({ request, locals }) {
 
   //get the session user id

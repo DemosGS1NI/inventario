@@ -1,8 +1,13 @@
+// External dependencies
 import bcrypt from 'bcrypt';
-import { sql } from '@vercel/postgres';
 import jwt from 'jsonwebtoken';
-import { jwtConfig } from '$lib/jwt';
 import dotenv from 'dotenv';
+
+// Database
+import { sql } from '@vercel/postgres';
+
+// Internal utilities
+import { jwtConfig } from '$lib/jwt';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 
 dotenv.config();

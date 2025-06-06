@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import BackToMenu from '$lib/BackToMenu.svelte';
   import { adminInventoryStore } from '$lib/stores/adminInventory';
   import { formatDateTime } from '$lib/utils/dateFormat';
@@ -319,6 +319,14 @@ function handleMarcaChange(event) {
     adminInventoryStore.setLoading(false);
   }
 });
+
+// Cleanup when component is destroyed
+onDestroy(() => {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+  }
+});
+
 </script>
 
 <div class="p-4 bg-gray-100 min-h-screen {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation">

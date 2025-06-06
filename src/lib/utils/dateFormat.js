@@ -1,3 +1,10 @@
+/**
+ * Formats a date string to a localized format (DD-MMM-YY HH:MM:SS)
+ * @param {string|null} dateString - ISO date string or null
+ * @returns {string} Formatted date string or empty string if input is null
+ * @example
+ * formatDateTime('2024-01-13T14:30:45+06:00') // Returns '13-ENE-24 02:30:45'
+ */
 export function formatDateTime(dateString) {
     if (!dateString) return '';
     

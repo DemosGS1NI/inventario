@@ -78,6 +78,12 @@ $: ubicacion = $inventoryStore.ubicacion;
   
     onDestroy(() => {
         inventoryStore.reset();
+
+        // Clear any pending form data
+        codigoBarras = '';
+        stockQuantity = 0;
+        incidencia = '';
+        selectedCategoriaIncidencia = '';
     });
   
     async function handleBodegaChange(event) {

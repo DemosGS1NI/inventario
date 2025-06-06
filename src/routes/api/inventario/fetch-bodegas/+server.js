@@ -8,7 +8,7 @@ dotenv.config();
 export const GET = async () => {
   try {
     // Log the connection string for debugging
-    console.log('Connection String:', process.env.POSTGRES_URL);
+    console.log('fetching bodegas from database');
 
     // Query to fetch distinct bodega names
     const { rows } = await sql`

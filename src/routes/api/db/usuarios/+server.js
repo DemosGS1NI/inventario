@@ -2,6 +2,7 @@ import { sql } from '@vercel/postgres';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { AUTH } from '$lib/constants.js';
 
 dotenv.config();
 
@@ -58,8 +59,7 @@ export async function POST(event) {
     }
 
     // Hash the default PIN "0000"
-    const defaultPinHash = await bcrypt.hash('0000', 12);
-
+    const defaultPinHash = await bcrypt.hash(AUTH.DEFAULT_PIN, AUTH.BCRYPT_ROUNDS); 
     await sql`
       INSERT INTO usuarios (
         nombre, 

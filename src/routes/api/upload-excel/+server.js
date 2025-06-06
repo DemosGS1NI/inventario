@@ -1,7 +1,12 @@
-import { json } from '@sveltejs/kit';
-import { sql } from '@vercel/postgres';
+// External dependencies
 import dotenv from 'dotenv';
 import xlsx from 'xlsx';
+
+// Database
+import { sql } from '@vercel/postgres';
+
+// Internal utilities  
+import { successResponse, errorResponse } from '$lib/responseUtils';
 
 dotenv.config();
 
@@ -11,7 +16,7 @@ export const POST = async ({ request }) => {
         const file = formData.get('file');
 
         if (!file) {
-            return json({ error: 'No se ha seleccionado ningún archivo' }, { status: 400 });
+            return errorResponse(400, 'NO_FILE', 'No se ha seleccionado ningún archivo');
         }
 
         const buffer = await file.arrayBuffer();
@@ -19,7 +24,7 @@ export const POST = async ({ request }) => {
         const sheet = workbook.Sheets['Sheet1'];
         
         if (!sheet) {
-            return json({ error: 'No se encontró la hoja "Sheet1" en el archivo Excel' }, { status: 400 });
+            return errorResponse(400, 'INVALID_SHEET', 'No se encontró la hoja "Sheet1" en el archivo Excel');
         }
 
         const data = xlsx.utils.sheet_to_json(sheet);
@@ -47,28 +52,29 @@ export const POST = async ({ request }) => {
                 ) VALUES ${values};
             `);
 
-            return json({ success: 'Datos cargados exitosamente en la base de datos' });
+            return successResponse(null,'Datos cargados exitosamente en la base de datos');
         } catch (error) {
-            console.error('Error al procesar el archivo:', error);
-            
-            // Handle duplicate key error
-            if (error.code === '23505') {  // Unique violation
-                return json({ 
-                    error: 'Error: Registro duplicado encontrado. Corrija los datos e intente nuevamente.',
-                    details: error.detail  // This will show the exact duplicate key values
-                }, { status: 400 });
-            }
+    console.error('Error al procesar el archivo:', error);
+    
+    // Handle duplicate key error
+    if (error.code === '23505') {  // Unique violation
+        return errorResponse(
+            409, 
+            'DUPLICATE_ENTRY',
+            'Registro duplicado encontrado. Corrija los datos e intente nuevamente.',
+            error.detail
+        );
+    }
 
-            return json({ 
-                error: 'Error al procesar el archivo. Verifique el formato de los datos.',
-                details: error.message 
-            }, { status: 500 });
-        }
+    return errorResponse(
+        500,
+        'FILE_PROCESSING_ERROR',
+        'Error al procesar el archivo. Verifique el formato de los datos.',
+        error.message
+    );
+}
     } catch (error) {
         console.error('Error general:', error);
-        return json({ 
-            error: 'Error al procesar el archivo Excel',
-            details: error.message
-        }, { status: 500 });
+        return errorResponse( 500,'FILE_PROCESSING_ERROR', 'Error al procesar el archivo Excel', error.message);
     }
 };

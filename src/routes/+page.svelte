@@ -14,10 +14,24 @@
   async function login() {
     message = ''; // Reset the message
 
-    // Validate inputs before sending request
+    // Validate inputs before sending request (Improved)
     if (!numero_telefono.trim() || !pin.trim()) {
       messageType = 'error';
       message = 'Por favor, complete todos los campos.';
+      return;
+    }
+
+    // Validate phone number format
+    if (!/^\d{8,15}$/.test(numero_telefono.trim())) {
+      messageType = 'error';
+      message = 'El número de teléfono debe contener solo dígitos (8-15 caracteres).';
+      return;
+    }
+
+    // Validate PIN format
+    if (pin.length < 4 || pin.length > 20) {
+      messageType = 'error';
+      message = 'El PIN debe tener entre 4 y 20 caracteres.';
       return;
     }
 
@@ -67,10 +81,13 @@
           Numero de Teléfono
         </label>
         <input
-          type="text"
+          type="tel"
           id="numero_telefono"
           bind:value={numero_telefono}
           placeholder="Ingrese su numero de teléfono"
+          maxlength="15"
+          pattern="[0-9]*"
+          inputmode="numeric"
           class="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           required
           aria-describedby="telefono-help"

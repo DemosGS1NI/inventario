@@ -8,8 +8,12 @@ export const jwtConfig = {
   get secret() {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
-      console.error('JWT_SECRET environment variable is not set!');
+      console.error('🚨 CRITICAL: JWT_SECRET environment variable is not set!');
+      console.error('Please add JWT_SECRET to your .env file');
       throw new Error('JWT_SECRET must be set for secure authentication');
+    }
+    if (secret.length < 32) {
+      console.warn('⚠️  WARNING: JWT_SECRET should be at least 32 characters for security');
     }
     return secret;
   },
