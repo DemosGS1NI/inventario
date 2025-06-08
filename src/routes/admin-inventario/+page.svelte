@@ -176,7 +176,7 @@ function handleMarcaChange(event) {
     adminInventoryStore.setLoading(false);
   }
 }
-  async function fetchRecords() {
+async function fetchRecords() {
     // Check parameters in the correct order of selection
     if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
         console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
@@ -188,13 +188,30 @@ function handleMarcaChange(event) {
         const url = `/api/inventario/registros?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
         console.log('Fetching records with URL:', url);
         
-        const res = await fetch(url);
-        const data = await res.json();
+        // Fetch both inventory records and movements in parallel
+        const [inventoryRes, movementsData] = await Promise.all([
+          fetch(url),
+          fetchMovements()
+        ]);
+        
+        const data = await inventoryRes.json();
         console.log('Response data:', data);
 
-        if (res.ok && data.status === 'success') {
-            adminInventoryStore.setRecords(data.data);
-        } else if (res.status === 404) {
+        if (inventoryRes.ok && data.status === 'success') {
+            // Add movement data to each record
+            const recordsWithMovements = data.data.map(record => ({
+              ...record,
+              movements: movementsData[record.codigo_barras] || { 
+                entradas: [], 
+                salidas: [], 
+                totalEntradas: 0, 
+                totalSalidas: 0, 
+                neto: 0 
+              }
+            }));
+            
+            adminInventoryStore.setRecords(recordsWithMovements);
+        } else if (inventoryRes.status === 404) {
             // Handle the "Product not found" case
             adminInventoryStore.setRecords([]);  // Set empty records array
             adminInventoryStore.setError('No se encontraron registros para esta selección');
@@ -211,6 +228,61 @@ function handleMarcaChange(event) {
     }
 }
 
+// Enhanced function to fetch movements with document details
+async function fetchMovements() {
+  if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
+    return {};
+  }
+
+  try {
+    const url = `/api/db/movimientos?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if (res.ok && data.status === 'success') {
+      // Group movements by product code with detailed information
+      const movementsByProduct = {};
+      
+      data.data.forEach(movement => {
+        const key = movement.codigo_barras;
+        if (!movementsByProduct[key]) {
+          movementsByProduct[key] = { 
+            entradas: [], 
+            salidas: [], 
+            totalEntradas: 0, 
+            totalSalidas: 0, 
+            neto: 0 
+          };
+        }
+        
+        const movementDetail = {
+          cantidad: movement.cantidad,
+          documento: movement.numero_documento || 'Sin doc.',
+          fecha: movement.fecha_movimiento,
+          usuario: movement.usuario_nombre || 'Usuario'
+        };
+        
+        if (movement.tipo_movimiento === 'IN') {
+          movementsByProduct[key].entradas.push(movementDetail);
+          movementsByProduct[key].totalEntradas += movement.cantidad;
+        } else {
+          movementsByProduct[key].salidas.push(movementDetail);
+          movementsByProduct[key].totalSalidas += movement.cantidad;
+        }
+        
+        movementsByProduct[key].neto = movementsByProduct[key].totalEntradas - movementsByProduct[key].totalSalidas;
+      });
+      
+      return movementsByProduct;
+    } else {
+      console.error('Error fetching movements:', data.message);
+      return {};
+    }
+  } catch (error) {
+    console.error('Error fetching movements:', error);
+    return {};
+  }
+}
   async function validateRecord(record) {
     try {
       adminInventoryStore.setLoading(true);
@@ -326,6 +398,22 @@ onDestroy(() => {
     clearTimeout(refreshTimeout);
   }
 });
+
+function getMovementSummary(movements) {
+  if (!movements || (movements.in === 0 && movements.out === 0)) {
+    return '-';
+  }
+  
+  const parts = [];
+  if (movements.in > 0) parts.push(`IN: +${movements.in}`);
+  if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
+  if (movements.total !== 0) {
+    const sign = movements.total > 0 ? '+' : '';
+    parts.push(`Net: ${sign}${movements.total}`);
+  }
+  
+  return parts.join(', ');
+}
 
 </script>
 
@@ -463,7 +551,13 @@ onDestroy(() => {
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dif</th>
+            
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+
+            <!-- In the table header section, add this new header after your existing ones -->
+<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+  Movimientos
+</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ItemEAN13</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CajaEAN13</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
@@ -510,6 +604,60 @@ onDestroy(() => {
                   {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
                 </span>
               </td> -->
+
+              <!-- Add this new cell in your table row, after your existing cells -->
+<!-- Enhanced movements cell with Spanish labels, colors, and document numbers -->
+<td class="px-6 py-4 text-sm text-gray-900">
+  {#if record.movements && (record.movements.totalEntradas > 0 || record.movements.totalSalidas > 0)}
+    <div class="space-y-2 max-w-xs">
+      
+      <!-- Entradas (IN movements) -->
+      {#if record.movements.entradas.length > 0}
+        <div class="bg-green-50 p-2 rounded border border-green-200">
+          <div class="font-semibold text-green-800 text-xs mb-1">
+            Entradas: {record.movements.totalEntradas}
+          </div>
+          {#each record.movements.entradas as entrada}
+            <div class="text-xs text-green-700">
+              <span class="font-medium">+{entrada.cantidad}</span>
+              {#if entrada.documento !== 'Sin doc.'}
+                <span class="text-green-600">({entrada.documento})</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Salidas (OUT movements) -->
+      {#if record.movements.salidas.length > 0}
+        <div class="bg-red-50 p-2 rounded border border-red-200">
+          <div class="font-semibold text-red-800 text-xs mb-1">
+            Salidas: {record.movements.totalSalidas}
+          </div>
+          {#each record.movements.salidas as salida}
+            <div class="text-xs text-red-700">
+              <span class="font-medium">-{salida.cantidad}</span>
+              {#if salida.documento !== 'Sin doc.'}
+                <span class="text-red-600">({salida.documento})</span>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      {/if}
+
+      <!-- Net Total -->
+      {#if record.movements.neto !== 0}
+        <div class="text-center">
+          <span class="inline-block px-2 py-1 rounded text-xs font-bold {record.movements.neto > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            Neto: {record.movements.neto > 0 ? '+' : ''}{record.movements.neto}
+          </span>
+        </div>
+      {/if}
+    </div>
+  {:else}
+    <span class="text-gray-400 text-center block">Sin movimientos</span>
+  {/if}
+</td>
 
               <td class="px-6 py-4">{record.single_item_ean13}</td>
               <td class="px-6 py-4">{record.master_carton_ean13}</td>

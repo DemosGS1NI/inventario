@@ -29,7 +29,10 @@
         'Toma de Inventario por Marca',
         'Toma de Inventario por Producto',
         'Toma de Inventario con Scanner',
-        'Administracion de Toma de Inventario'
+        'Administracion de Toma de Inventario',
+        'Gestión de Movimientos',
+        'Historial de Movimientos',
+        'Reporte de Reconciliación'  // <-- Add this
       ],
       isOpen: false
     },
