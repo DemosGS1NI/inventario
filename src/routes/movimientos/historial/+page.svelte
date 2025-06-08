@@ -1,6 +1,4 @@
 <script>
-
-
   import { onMount } from 'svelte';
   import { addToast } from '$lib/stores/toast';
   import { formatDateTime } from '$lib/utils/dateFormat';
@@ -193,10 +191,6 @@
     }
   }
 
-
-  // Add this variable to track user role
-export let data = {}; // Will receive user data from layout
-$: userRole = data?.userRole || '';
 
 // Add delete function
 async function deleteMovement(movementId, movementDescription) {
