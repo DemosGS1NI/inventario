@@ -77,7 +77,7 @@ export async function POST({ request, getClientAddress }) {
   const ip = getClientAddress();
 
   if (isRateLimited(ip)) {
-    return errorResponse(429, 'TOO_MANY_REQUESTS', 'Too many login attempts. Please try again later.');
+    return errorResponse(429, 'TOO_MANY_REQUESTS', 'Demasiados intentos de Login. Favor intente nuevamente en 10 minutos.');
   }
 
   try {
@@ -85,7 +85,7 @@ export async function POST({ request, getClientAddress }) {
 
     // Validate input
     if (!numero_telefono || !pin) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'Phone number and PIN are required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'Numero de Telefono y Pin son requeridos');
     }
 
     // Fetch user by phone number
@@ -101,12 +101,12 @@ export async function POST({ request, getClientAddress }) {
     // Check if user exists and PIN is correct
     if (!user || !(await bcrypt.compare(pin, user.pin_hash))) {
       recordFailedAttempt(ip);
-      return errorResponse(401, 'INVALID_CREDENTIALS', 'Invalid phone number or PIN');
+      return errorResponse(401, 'INVALID_CREDENTIALS', 'Numero de Telefono o PIN invalido');
     }
 
     // Check if user account is active
     if (!user.activo) {
-      return errorResponse(403, 'ACCOUNT_INACTIVE', 'Account is inactive');
+      return errorResponse(403, 'ACCOUNT_INACTIVE', 'La cuenta esta Inactivada');
     }
 
     // Reset rate-limiting on successful login
