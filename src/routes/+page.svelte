@@ -1,10 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-
+  import { addToast } from '$lib/stores/toast'; 
+  
   let numero_telefono = '';
   let pin = '';
-  let message = '';
-  let messageType = ''; // 'success' or 'error'
+
 
   // Focus the first input field on load
   onMount(() => {
@@ -12,26 +12,22 @@
   });
 
   async function login() {
-    message = ''; // Reset the message
 
     // Validate inputs before sending request (Improved)
     if (!numero_telefono.trim() || !pin.trim()) {
-      messageType = 'error';
-      message = 'Por favor, complete todos los campos.';
+      addToast('Por favor, complete todos los campos.', 'error');
       return;
     }
 
     // Validate phone number format
     if (!/^\d{8,15}$/.test(numero_telefono.trim())) {
-      messageType = 'error';
-      message = 'El número de teléfono debe contener solo dígitos (8-15 caracteres).';
+      addToast('El número de teléfono debe contener solo dígitos (8-15 caracteres).', 'error');
       return;
     }
 
     // Validate PIN format
     if (pin.length < 4 || pin.length > 20) {
-      messageType = 'error';
-      message = 'El PIN debe tener entre 4 y 20 caracteres.';
+      addToast('El PIN debe tener entre 4 y 20 caracteres.', 'error');
       return;
     }
 
@@ -48,22 +44,22 @@
 
       if (response.ok && result.status === 'success') {
         if (result.data.user.debe_cambiar_pin) {
-          messageType = 'success';
-          message = 'Necesitas cambiar tu PIN.';
-          window.location.href = '/change-pin'; // Redirect to "Change PIN" page
+          addToast('Necesitas cambiar tu PIN. Redirigiendo...', 'warning');
+          setTimeout(() => {
+            window.location.href = '/change-pin';
+          }, 1500);
           return;
         }
 
-        messageType = 'success';
-        message = result.message || 'Login satisfactorio!';
-        window.location.href = '/menu'; // Redirect to the dashboard
+        addToast('Login exitoso! Redirigiendo...', 'success');
+        setTimeout(() => {
+          window.location.href = '/menu';
+        }, 1500);
       } else {
-        messageType = 'error';
-        message = result.error?.message || 'Credenciales incorrectas. Intente nuevamente.';
+        addToast(result.error?.message || 'Credenciales incorrectas. Intente nuevamente.', 'error');
       }
     } catch (err) {
-      messageType = 'error';
-      message = 'Un error ha ocurrido. Favor intente nuevamente.';
+      addToast('Un error ha ocurrido. Favor intente nuevamente.', 'error');
     }
   }
 </script>
@@ -115,14 +111,5 @@
       </button>
     </form>
 
-    {#if message}
-      <p
-        class="mt-4 text-center text-sm font-medium"
-        class:text-green-600={messageType === 'success'}
-        class:text-red-600={messageType === 'error'}
-      >
-        {message}
-      </p>
-    {/if}
   </div>
 </div>
