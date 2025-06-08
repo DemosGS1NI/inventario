@@ -72,7 +72,7 @@ export async function POST({ request, locals }) {
       );
     }
 
-    return successResponse(json, null, 'PIN successfully changed');
+    return successResponse(json, null, 'PIN cambiado satisfactoriamente');
 
   } catch (error) {
     console.error('Error during PIN change:', error);

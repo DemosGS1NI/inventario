@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import BackToMenuButton from '$lib/BackToMenu.svelte';
+  import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
 
   let usuarios = [];
   let roles = [];
@@ -15,8 +16,8 @@
     debe_cambiar_pin: false
   };
   let showForm = false;
-  let message = '';
-  let messageType = 'success';
+  // REMOVE: let message = '';
+  // REMOVE: let messageType = 'success';
 
   // Fetch users
   const fetchUsuarios = async () => {
@@ -26,14 +27,13 @@
       
       if (data.status === 'success') {
         usuarios = data.data.users;
-        message = '';
+        // REMOVE: message = '';
       } else {
-        throw new Error(data.error?.message || 'Error fetching users');
+        addToast(data.error?.message || 'Error al cargar los usuarios.', 'error');
       }
     } catch (err) {
       console.error('Error fetching usuarios:', err);
-      message = err.message || 'Error al cargar los usuarios.';
-      messageType = 'error';
+      addToast(err.message || 'Error al cargar los usuarios.', 'error');
     }
   };
 
@@ -44,14 +44,13 @@
       const data = await res.json();
       if (data.status === 'success') {
         roles = data.data;
-        message = '';
+        // REMOVE: message = '';
       } else {
-        throw new Error(data.error?.message || 'Error fetching roles');
+        addToast(data.error?.message || 'Error al cargar los roles.', 'error');
       }
     } catch (err) {
       console.error('Error fetching roles:', err);
-      message = err.message || 'Ocurrió un error al cargar los roles.';
-      messageType = 'error';
+      addToast(err.message || 'Ocurrió un error al cargar los roles.', 'error');
     }
   };
 
@@ -70,6 +69,10 @@
       const data = await response.json();
 
       if (data.status === 'success') {
+        const successMessage = currentUser.id 
+          ? 'Usuario actualizado con éxito!' 
+          : 'Usuario creado con éxito!';
+        addToast(successMessage, 'success');
         await fetchUsuarios();
         showForm = false;
         currentUser = { 
@@ -81,15 +84,12 @@
           activo: true, 
           debe_cambiar_pin: true 
         };
-        message = data.message;
-        messageType = 'success';
       } else {
-        throw new Error(data.error?.message || 'Error saving user');
+        addToast(data.error?.message || 'Error al guardar el usuario.', 'error');
       }
     } catch (err) {
       console.error('Error saving user:', err);
-      message = err.message || 'Ocurrió un error al guardar el usuario.';
-      messageType = 'error';
+      addToast(err.message || 'Ocurrió un error al guardar el usuario.', 'error');
     } finally {
       loading = false;
     }
@@ -111,16 +111,14 @@
       const data = await response.json();
 
       if (data.status === 'success') {
+        addToast('Usuario eliminado con éxito!', 'success');
         await fetchUsuarios();
-        message = data.message;
-        messageType = 'success';
       } else {
-        throw new Error(data.error?.message || 'Error deleting user');
+        addToast(data.error?.message || 'Error al eliminar el usuario.', 'error');
       }
     } catch (err) {
       console.error('Error deleting user:', err);
-      message = err.message || 'Ocurrió un error al eliminar el usuario.';
-      messageType = 'error';
+      addToast(err.message || 'Ocurrió un error al eliminar el usuario.', 'error');
     }
   };
 
@@ -144,11 +142,13 @@
     <BackToMenuButton />
   </div>
 
+  <!-- REMOVE THIS ENTIRE MESSAGE SECTION:
   {#if message}
     <p class={`text-center mb-4 ${messageType === 'error' ? 'text-red-600' : 'text-green-600'}`}>
       {message}
     </p>
   {/if}
+  -->
 
   <div class="flex justify-center mb-6">
     <button

@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import BackToMenuButton from '$lib/BackToMenu.svelte';
+  import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
 
   let roles = [];
   let currentRole = {
@@ -11,8 +12,8 @@
     accesos_api: '{}',
   };
   let showForm = false;
-  let message = '';
-  let messageType = ''; // 'success' or 'error'
+  // REMOVE: let message = '';
+  // REMOVE: let messageType = ''; // 'success' or 'error'
 
   // Fetch roles
   const fetchRoles = async () => {
@@ -21,14 +22,13 @@
       const data = await res.json();
       if (data.status === 'success') {
         roles = data.data;
-        message = '';
+        // REMOVE: message = '';
       } else {
-        throw new Error(data.error?.message || 'Error fetching roles');
+        addToast(data.error?.message || 'Error al cargar los roles.', 'error');
       }
     } catch (err) {
       console.error('Error fetching roles:', err);
-      message = 'Ocurrió un error al cargar los roles.';
-      messageType = 'error';
+      addToast('Ocurrió un error al cargar los roles.', 'error');
     }
   };
 
@@ -45,8 +45,7 @@
   // Save or update a role
   const saveRole = async () => {
     if (!isValidJSON(currentRole.opciones_menu) || !isValidJSON(currentRole.accesos_api)) {
-      message = 'Opciones de menú y Accesos a API deben ser JSON válidos.';
-      messageType = 'error';
+      addToast('Opciones de menú y Accesos a API deben ser JSON válidos.', 'error');
       return;
     }
 
@@ -60,18 +59,19 @@
 
       const data = await res.json();
       if (data.status === 'success') {
-        message = 'Rol guardado con éxito!';
-        messageType = 'success';
+        const successMessage = currentRole.id 
+          ? 'Rol actualizado con éxito!' 
+          : 'Rol creado con éxito!';
+        addToast(successMessage, 'success');
         await fetchRoles();
         resetForm();
         showForm = false;
       } else {
-        throw new Error(data.error?.message || 'Error al guardar el rol.');
+        addToast(data.error?.message || 'Error al guardar el rol.', 'error');
       }
     } catch (err) {
       console.error('Error saving role:', err);
-      message = 'Ocurrió un error al guardar el rol.';
-      messageType = 'error';
+      addToast('Ocurrió un error al guardar el rol.', 'error');
     }
   };
 
@@ -88,16 +88,14 @@
 
       const data = await res.json();
       if (data.status === 'success') {
-        message = 'Rol eliminado con éxito!';
-        messageType = 'success';
+        addToast('Rol eliminado con éxito!', 'success');
         await fetchRoles();
       } else {
-        throw new Error(data.error?.message || 'Error al eliminar el rol.');
+        addToast(data.error?.message || 'Error al eliminar el rol.', 'error');
       }
     } catch (err) {
       console.error('Error deleting role:', err);
-      message = 'Ocurrió un error al eliminar el rol.';
-      messageType = 'error';
+      addToast('Ocurrió un error al eliminar el rol.', 'error');
     }
   };
 
@@ -111,15 +109,15 @@
     };
   };
 
-  // Reset message after a delay
-  const resetMessage = () => {
-    setTimeout(() => {
-      message = '';
-      messageType = '';
-    }, 5000);
-  };
+  // REMOVE: Reset message after a delay
+  // REMOVE: const resetMessage = () => {
+  // REMOVE:   setTimeout(() => {
+  // REMOVE:     message = '';
+  // REMOVE:     messageType = '';
+  // REMOVE:   }, 5000);
+  // REMOVE: };
 
-  $: if (message) resetMessage();
+  // REMOVE: $: if (message) resetMessage();
 
   onMount(fetchRoles);
 </script>
@@ -132,6 +130,7 @@
     <BackToMenuButton />
   </div>
 
+  <!-- REMOVE THIS ENTIRE MESSAGE SECTION:
   {#if message}
     <p
       class="text-center mb-4"
@@ -141,6 +140,7 @@
       {message}
     </p>
   {/if}
+  -->
 
   <div class="flex justify-center mb-6">
     <button

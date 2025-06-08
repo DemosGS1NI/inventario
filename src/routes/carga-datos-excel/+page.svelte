@@ -1,15 +1,14 @@
-
-import { onDestroy } from 'svelte'; // Add this to imports if not present
-
 <script>
+    import { onDestroy } from 'svelte';
     import BacktoMenu from '$lib/BackToMenu.svelte';
+    import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
   
     let file = null;
     let isLoading = false;
   
     const uploadFile = async () => {
         if (!file) {
-            alert('Por favor seleccione un archivo.');
+            addToast('Por favor seleccione un archivo.', 'error');
             return;
         }
   
@@ -27,20 +26,37 @@ import { onDestroy } from 'svelte'; // Add this to imports if not present
             const result = await response.json();
   
             if (response.ok) {
-                alert('Datos cargados exitosamente en la base de datos');
+                addToast('Datos cargados exitosamente en la base de datos', 'success');
                 // Clear the file input after success
                 file = null;
                 document.getElementById('file-input').value = '';
             } else {
-                let errorMessage = result.error;
-                if (result.details) {
-                    errorMessage = `${result.error}\n\n${result.details}`;
+                // Handle different types of error responses
+                let errorMessage = 'Error al procesar el archivo';
+                
+                if (result.error) {
+                    // If error is a string, use it directly
+                    if (typeof result.error === 'string') {
+                        errorMessage = result.error;
+                    } 
+                    // If error is an object, extract the message
+                    else if (typeof result.error === 'object' && result.error.message) {
+                        errorMessage = result.error.message;
+                    }
+                    // If we have details, append them
+                    if (result.details) {
+                        errorMessage += `\n\nDetalles: ${result.details}`;
+                    }
+                } else if (result.message) {
+                    // Fallback to message field
+                    errorMessage = result.message;
                 }
-                alert(errorMessage);
+                
+                addToast(errorMessage, 'error');
             }
         } catch (error) {
             console.error('Error al cargar archivo:', error);
-            alert('Ha ocurrido un error al cargar el archivo. Por favor intente nuevamente.');
+            addToast('Ha ocurrido un error al cargar el archivo. Por favor intente nuevamente.', 'error');
         } finally {
             isLoading = false;
         }
@@ -48,12 +64,11 @@ import { onDestroy } from 'svelte'; // Add this to imports if not present
 
     // Clean up file input reference
     onDestroy(() => {
-    file = null;
+        file = null;
     });
-
-  </script>
+</script>
   
-  <div class="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-6">
+<div class="min-h-screen bg-gray-100 flex flex-col items-center px-4 py-6">
     <h1 class="text-2xl font-bold text-center mb-6">Carga Datos Desde Archivo Excel</h1>
     
     <BacktoMenu />
@@ -89,4 +104,4 @@ import { onDestroy } from 'svelte'; // Add this to imports if not present
             {/if}
         </button>
     </div>
-  </div>
+</div>

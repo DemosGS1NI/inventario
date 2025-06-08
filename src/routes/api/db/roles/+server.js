@@ -8,10 +8,10 @@ dotenv.config();
 export async function GET() {
   try {
     const result = await sql`SELECT * FROM roles ORDER BY fecha_creacion DESC`;
-    return successResponse(result.rows, 'Roles fetched successfully');
+    return successResponse(result.rows, 'Roles obtenidos satisfactoriamente');
   } catch (error) {
     console.error('Error fetching roles:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to fetch roles', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error al obtener roles', error.message);
   }
 }
 
@@ -22,7 +22,7 @@ export async function POST({ request }) {
     const { nombre_rol, descripcion, opciones_menu, accesos_api } = body;
 
     if (!nombre_rol || !descripcion || !opciones_menu || !accesos_api) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'All fields are required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'Todos los campos son requeridos');
     }
 
     const result = await sql`
@@ -30,10 +30,10 @@ export async function POST({ request }) {
       VALUES (${nombre_rol}, ${descripcion}, ${JSON.stringify(opciones_menu)}, ${JSON.stringify(accesos_api)})
       RETURNING *`;
 
-    return successResponse(result.rows[0], 'Role created successfully');
+    return successResponse(result.rows[0], 'Rol creado satisfactoriamente');
   } catch (error) {
     console.error('Error creating role:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to create role', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error al crear rol', error.message);
   }
 }
 
@@ -44,7 +44,7 @@ export async function PUT({ request }) {
     const { id, nombre_rol, descripcion, opciones_menu, accesos_api } = body;
 
     if (!id || !nombre_rol || !descripcion || !opciones_menu || !accesos_api) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'All fields are required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'Todos los campos son requeridos');
     }
 
     const result = await sql`
@@ -76,7 +76,7 @@ export async function DELETE({ request }) {
     const { id } = body;
 
     if (!id) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'Role ID is required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'ID de rol es requerido');
     }
 
     const result = await sql`
@@ -85,12 +85,12 @@ export async function DELETE({ request }) {
       RETURNING *`;
 
     if (result.rowCount === 0) {
-      return errorResponse(404, 'NOT_FOUND', 'Role not found');
+      return errorResponse(404, 'NOT_FOUND', 'Rol no encontrado');
     }
 
-    return successResponse(result.rows[0], 'Role deleted successfully');
+    return successResponse(result.rows[0], 'Rol eliminado satisfactoriamente');
   } catch (error) {
     console.error('Error deleting role:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to delete role', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error al tratar de eliminar rol', error.message);
   }
 }
