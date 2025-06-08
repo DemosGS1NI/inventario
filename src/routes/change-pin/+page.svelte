@@ -1,11 +1,11 @@
 <script>
-  import { goto } from '$app/navigation'; // Import the goto function
+  import { goto } from '$app/navigation';
   import BackToMenu from '$lib/BackToMenu.svelte';
+  import { addToast } from '$lib/stores/toast';
 
   let newPin = '';
   let confirmNewPin = '';
-  let errorMessage = '';
-
+  
   const validateInputs = () => {
     // Trim inputs to avoid blank spaces
     newPin = newPin.trim();
@@ -13,18 +13,17 @@
 
     // Check for empty inputs
     if (!newPin || !confirmNewPin) {
-      errorMessage = 'Todos los campos son obligatorios.';
+      addToast('Todos los campos son obligatorios.', 'error');
       return false;
     }
 
     // Check for mismatched PINs
     if (newPin !== confirmNewPin) {
-      errorMessage = 'Los PINs no coinciden.';
+      addToast('Los PINs no coinciden.', 'error');
       return false;
     }
 
-    // Clear error if everything is valid
-    errorMessage = '';
+    // Clear any previous error state (no longer needed with toast)
     return true;
   };
 
@@ -33,7 +32,6 @@
     if (!validateInputs()) return;
 
     try {
-      
       console.log(newPin, confirmNewPin);
 
       const response = await fetch('/api/auth/change-pin', {
@@ -48,14 +46,16 @@
       });
 
       if (response.ok) {
-        alert('¡PIN ha sido cambiado satisfactoriamente!');
-        goto('/menu'); // Redirect to menu
+        addToast('¡PIN ha sido cambiado satisfactoriamente!', 'success');
+        setTimeout(() => {
+          goto('/menu');
+        }, 1500); // Give user time to see the success message
       } else {
         const data = await response.json();
-        errorMessage = data.message || 'Error al cambiar el PIN.';
+        addToast(data.error?.message || 'Error al cambiar el PIN.', 'error');
       }
     } catch (error) {
-      errorMessage = 'Ocurrió un error inesperado. Por favor, inténtelo más tarde.';
+      addToast('Ocurrió un error inesperado. Por favor, inténtelo más tarde.', 'error');
     }
   };
 </script>
@@ -91,9 +91,7 @@
         bind:value={confirmNewPin}
       />
     </div>
-    {#if errorMessage}
-      <p class="text-red-500 text-sm mb-4">{errorMessage}</p>
-    {/if}
+    
     <button
       type="submit"
       class="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600"

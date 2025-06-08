@@ -54,25 +54,24 @@ export const POST = async ({ request }) => {
 
             return successResponse(null,'Datos cargados exitosamente en la base de datos');
         } catch (error) {
-    console.error('Error al procesar el archivo:', error);
     
-    // Handle duplicate key error
-    if (error.code === '23505') {  // Unique violation
-        return errorResponse(
-            409, 
-            'DUPLICATE_ENTRY',
-            'Registro duplicado encontrado. Corrija los datos e intente nuevamente.',
-            error.detail
-        );
-    }
+                // Handle duplicate key error
+                if (error.code === '23505') {  // Unique violation
+                    return errorResponse(
+                        409, 
+                        'DUPLICATE_ENTRY',
+                        'Registro duplicado encontrado. Corrija los datos e intente nuevamente.',
+                        error.detail
+                    );
+                }
 
-    return errorResponse(
-        500,
-        'FILE_PROCESSING_ERROR',
-        'Error al procesar el archivo. Verifique el formato de los datos.',
-        error.message
-    );
-}
+                return errorResponse(
+                    500,
+                    'FILE_PROCESSING_ERROR',
+                    'Error al procesar el archivo. Verifique el formato de los datos.',
+                    error.message
+                );
+            }
     } catch (error) {
         console.error('Error general:', error);
         return errorResponse( 500,'FILE_PROCESSING_ERROR', 'Error al procesar el archivo Excel', error.message);

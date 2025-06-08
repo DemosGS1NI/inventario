@@ -1,12 +1,13 @@
 <script>
   import { onMount } from 'svelte';
-  import BackToMenuButton from '$lib/BackToMenu.svelte'; // Reusable back-to-menu button
+  import BackToMenuButton from '$lib/BackToMenu.svelte';
+  import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
 
   let categories = [];
   let currentCategory = { id: null, categoria: '', descripcion: '' };
   let showForm = false;
-  let message = '';
-  let messageType = ''; // 'success' or 'error'
+  // REMOVE: let message = '';
+  // REMOVE: let messageType = ''; // 'success' or 'error'
 
   // Fetch all categories
   async function fetchCategories() {
@@ -15,17 +16,15 @@
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
-        categories = data.data; // Access the `data` field in the standardized response
-        message = '';
-        messageType = '';
+        categories = data.data;
+        // REMOVE: message = '';
+        // REMOVE: messageType = '';
       } else {
-        message = data.message || 'Error al cargar categorías.';
-        messageType = 'error';
+        addToast(data.message || 'Error al cargar categorías.', 'error');
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      message = 'Ocurrió un error al cargar categorías.';
-      messageType = 'error';
+      addToast('Ocurrió un error al cargar categorías.', 'error');
     }
   }
 
@@ -42,21 +41,19 @@
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
-        message = currentCategory.id
+        const successMessage = currentCategory.id
           ? 'Categoría actualizada con éxito!'
           : 'Categoría creada con éxito!';
-        messageType = 'success';
+        addToast(successMessage, 'success');
         await fetchCategories();
         resetForm();
         showForm = false;
       } else {
-        message = data.message || 'Error al guardar la categoría.';
-        messageType = 'error';
+        addToast(data.message || 'Error al guardar la categoría.', 'error');
       }
     } catch (error) {
       console.error('Error saving category:', error);
-      message = 'Ocurrió un error al guardar la categoría.';
-      messageType = 'error';
+      addToast('Ocurrió un error al guardar la categoría.', 'error');
     }
   }
 
@@ -74,17 +71,14 @@
       const data = await res.json();
 
       if (res.ok && data.status === 'success') {
-        message = 'Categoría eliminada con éxito!';
-        messageType = 'success';
+        addToast('Categoría eliminada con éxito!', 'success');
         await fetchCategories();
       } else {
-        message = data.message || 'Error al eliminar la categoría.';
-        messageType = 'error';
+        addToast(data.message || 'Error al eliminar la categoría.', 'error');
       }
     } catch (error) {
       console.error('Error deleting category:', error);
-      message = 'Ocurrió un error al eliminar la categoría.';
-      messageType = 'error';
+      addToast('Ocurrió un error al eliminar la categoría.', 'error');
     }
   }
 
@@ -98,15 +92,15 @@
     showForm = false;
   }
 
-  // Reset message after a delay
-  function resetMessage() {
-    setTimeout(() => {
-      message = '';
-      messageType = '';
-    }, 5000);
-  }
+  // REMOVE: Reset message after a delay
+  // REMOVE: function resetMessage() {
+  // REMOVE:   setTimeout(() => {
+  // REMOVE:     message = '';
+  // REMOVE:     messageType = '';
+  // REMOVE:   }, 5000);
+  // REMOVE: }
 
-  $: if (message) resetMessage();
+  // REMOVE: $: if (message) resetMessage();
 
   onMount(fetchCategories);
 </script>
@@ -121,6 +115,7 @@
     <BackToMenuButton />
   </div>
 
+  <!-- REMOVE THIS ENTIRE MESSAGE SECTION:
   {#if message}
     <p
       class="text-center mb-4"
@@ -130,6 +125,7 @@
       {message}
     </p>
   {/if}
+  -->
 
   <div class="flex justify-center mb-6">
     <button

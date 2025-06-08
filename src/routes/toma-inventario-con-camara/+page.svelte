@@ -1,11 +1,12 @@
 <script>
   import { onMount, tick, onDestroy } from 'svelte';
   import Quagga from 'quagga';
-  import BackToMenuButton from '$lib/BackToMenu.svelte'; // Import the reusable button component
+  import BackToMenuButton from '$lib/BackToMenu.svelte';
+  import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
   
   let bodegas = [];
   let marcas = [];
-  let categoriasIncidencias = []; // To be fetched from the database
+  let categoriasIncidencias = [];
   let selectedBodega = '';
   let selectedMarca = '';
   let ubicacion = '';
@@ -13,11 +14,11 @@
   let product = null;
   let stockQuantity = 0;
   let incidencia = '';
-  let selectedCategoriaIncidencia = ''; // This will reflect the database value
+  let selectedCategoriaIncidencia = '';
   let message = '';
   let scanner = null;
   let isScanning = false;
-  let scanningType = ''; // 'ubicacion' or 'codigoBarra'
+  let scanningType = '';
   let beep;
 
   // Fetch bodegas and categorias incidencias on mount
@@ -28,252 +29,254 @@
   });
 
   onDestroy(() => {
-  if (isScanning) {
-    stopScanner();
-  }
-  
-  if (beep) {
-    beep = null;
-  }
-});
+    if (isScanning) {
+      stopScanner();
+    }
+    
+    if (beep) {
+      beep = null;
+    }
+  });
 
   async function fetchBodegas() {
-  try {
-    const res = await fetch('/api/bodegas');
-    const data = await res.json();
+    try {
+      const res = await fetch('/api/bodegas');
+      const data = await res.json();
 
-    if (res.ok && data.status === 'success') {
-      bodegas = data.data; // Assign the fetched bodega names to the `bodegas` variable
-      console.log('Bodegas fetched:', bodegas);
-    } else {
-      console.error('Error fetching bodegas:', data.message || 'Unknown error');
-    }
+      if (res.ok && data.status === 'success') {
+        bodegas = data.data;
+        console.log('Bodegas fetched:', bodegas);
+      } else {
+        addToast('Error al cargar bodegas: ' + (data.message || 'Error desconocido'), 'error');
+      }
     } catch (error) {
-      console.error('Error fetching bodegas:', error);
+      addToast('Error al cargar bodegas: ' + error.message, 'error');
     }
   }
 
   // Fetch marcas based on selected bodega
   async function fetchMarcas() {
-  if (!selectedBodega) {
-    console.error('Error: No bodega selected.');
-    return;
-  }
-
-  try {
-    const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
-    const data = await res.json();
-
-    if (res.ok && data.status === 'success') {
-      marcas = data.data; // Assign the fetched marcas to the `marcas` variable
-      console.log('Marcas fetched:', marcas);
-    } else {
-      console.error('Error fetching marcas:', data.message || 'Unknown error');
-      message = 'Error fetching marcas. Please try again.';
+    if (!selectedBodega) {
+      addToast('Error: No hay bodega seleccionada.', 'error');
+      return;
     }
-  } catch (error) {
-    console.error('Error fetching marcas:', error);
-    message = 'An unexpected error occurred while fetching marcas.';
+
+    try {
+      const res = await fetch(`/api/marcas?bodega=${encodeURIComponent(selectedBodega)}`);
+      const data = await res.json();
+
+      if (res.ok && data.status === 'success') {
+        marcas = data.data;
+        console.log('Marcas fetched:', marcas);
+      } else {
+        addToast('Error al cargar marcas: ' + (data.message || 'Error desconocido'), 'error');
+        message = 'Error fetching marcas. Please try again.';
+      }
+    } catch (error) {
+      addToast('Error al cargar marcas: ' + error.message, 'error');
+      message = 'An unexpected error occurred while fetching marcas.';
+    }
   }
-}
 
   async function fetchCategoriasIncidencias() {
-  try {
-    const res = await fetch('/api/db/categorias-incidencias');
-    const data = await res.json();
+    try {
+      const res = await fetch('/api/db/categorias-incidencias');
+      const data = await res.json();
 
-    console.log('Fetched categories:', data); // Log the response data for debugging
+      console.log('Fetched categories:', data);
 
-    // Check for success and proper structure
-    if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
-      categoriasIncidencias = data.data.map((item) => item.categoria); // Extract category names
-    } else {
-      console.error(
-        'Error fetching categorias incidencias:',
-        data.message || 'Invalid response structure'
-      );
+      if (res.ok && data.status === 'success' && Array.isArray(data.data)) {
+        categoriasIncidencias = data.data.map((item) => item.categoria);
+      } else {
+        addToast('Error al cargar categorías: ' + (data.message || 'Estructura de respuesta inválida'), 'error');
+      }
+    } catch (error) {
+      addToast('Error al cargar categorías: ' + error.message, 'error');
     }
-  } catch (error) {
-    console.error('Error fetching categorias incidencias:', error);
   }
-}
-
 
   // Start scanner
   async function startScanner(type) {
-  scanningType = type;
-  isScanning = true;
+    scanningType = type;
+    isScanning = true;
 
-  await tick(); // Ensure the DOM is updated
+    await tick();
 
-  const videoElement = document.querySelector('#scanner-video');
+    const videoElement = document.querySelector('#scanner-video');
 
+    if (!videoElement) {
+      addToast('Error: Elemento de video del scanner no encontrado.', 'error');
+      return;
+    } 
 
-  if (!videoElement) {
-    console.error('Scanner video element not found.');
-    return;
-  } 
-
-  try {
-    // Request the video stream with torch support
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        advanced: [{ torch: true }], // Attempt to turn on the torch
-      },
-    });
-
-    const [track] = stream.getVideoTracks(); // Get the active video track
-    const capabilities = track.getCapabilities();
-
-    // Check if the device supports torch
-    if (capabilities.torch) {
-      track.applyConstraints({
-        advanced: [{ torch: true }],
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          advanced: [{ torch: true }],
+        },
       });
-      console.log('Torch activated.');
-    } else {
-      console.warn('Torch is not supported on this device.');
-    }
 
-    // Attach the video stream to the video element
-    videoElement.srcObject = stream;
-    videoElement.play();
+      const [track] = stream.getVideoTracks();
+      const capabilities = track.getCapabilities();
 
-    // Initialize QuaggaJS
-    Quagga.init(
-      {
-        inputStream: {
-          type: 'LiveStream',
-          target: videoElement, // Video element
+      if (capabilities.torch) {
+        track.applyConstraints({
+          advanced: [{ torch: true }],
+        });
+        console.log('Torch activated.');
+      } else {
+        console.warn('Torch is not supported on this device.');
+      }
+
+      videoElement.srcObject = stream;
+      videoElement.play();
+
+      Quagga.init(
+        {
+          inputStream: {
+            type: 'LiveStream',
+            target: videoElement,
+          },
+          decoder: {
+            readers: ['code_128_reader'],
+          },
         },
-        decoder: {
-          readers: ['code_128_reader'], // Code 128 scanner
-        },
-      },
-      (err) => {
-        if (err) {
-          console.error('QuaggaJS Initialization Error:', err);
-          stopScanner();
-          return;
+        (err) => {
+          if (err) {
+            console.error('QuaggaJS Initialization Error:', err);
+            addToast('Error al inicializar el scanner: ' + err.message, 'error');
+            stopScanner();
+            return;
+          }
+          console.log('QuaggaJS initialized');
+          Quagga.start();
         }
-        console.log('QuaggaJS initialized');
-        Quagga.start();
-      }
-    );
+      );
 
-    // Handle barcode detection
-    Quagga.onDetected((data) => {
+      Quagga.onDetected((data) => {
+        if (beep) beep.play();
+        console.log('Scanned Result:', data.codeResult.code);
 
-      if (beep) beep.play();
-      console.log('Scanned Result:', data.codeResult.code);
+        if (scanningType === 'ubicacion') {
+          ubicacion = data.codeResult.code;
+          addToast('Ubicación escaneada: ' + ubicacion, 'success');
+        } else if (scanningType === 'codigoBarras') {
+          codigoBarras = data.codeResult.code;
+          console.log(codigoBarras);
+          fetchProductDetails();
+        }
 
-      if (scanningType === 'ubicacion') {
-        ubicacion = data.codeResult.code;
-      } else if (scanningType === 'codigoBarras') {
-        codigoBarras = data.codeResult.code;
-        console.log(codigoBarras);
-        fetchProductDetails();
-      }
+        stopScanner();
+      });
 
+    } catch (error) {
+      console.error('Error starting scanner:', error);
+      addToast('Error al iniciar el scanner: ' + error.message, 'error');
       stopScanner();
-    });
-
-  } catch (error) {
-    console.error('Error starting scanner:', error);
-    stopScanner();
+    }
   }
-}
 
-function stopScanner() {
-  Quagga.stop();
-  isScanning = false;
-  scanningType = '';
+  function stopScanner() {
+    Quagga.stop();
+    isScanning = false;
+    scanningType = '';
 
-  const videoElement = document.querySelector('#scanner-video');
-  if (videoElement?.srcObject) {
-    const tracks = videoElement.srcObject.getTracks();
-    tracks.forEach((track) => track.stop()); // Stop all video tracks
-    videoElement.srcObject = null;
+    const videoElement = document.querySelector('#scanner-video');
+    if (videoElement?.srcObject) {
+      const tracks = videoElement.srcObject.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoElement.srcObject = null;
+    }
   }
-}
 
-async function fetchProductDetails() {
-  try {
-    const res = await fetch(
-      `/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
-    );
+  async function fetchProductDetails() {
+    try {
+      const res = await fetch(
+        `/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
+      );
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (res.ok && data.data && data.data.length > 0) {
-      product = data.data[0]; // Access the first product from "data"
-      stockQuantity = product.inventario_fisico || 0;
-      incidencia = product.incidencia || '';
-      selectedCategoriaIncidencia = product.categoria_incidencia || '';
-      message = '';
-    } else {
-      product = null;
-      message = data.message || 'Producto no existe';
+      if (res.ok && data.data && data.data.length > 0) {
+        product = data.data[0];
+        stockQuantity = product.inventario_fisico || 0;
+        incidencia = product.incidencia || '';
+        selectedCategoriaIncidencia = product.categoria_incidencia || '';
+        message = '';
+        addToast('Producto encontrado: ' + product.numero_parte, 'success');
+      } else {
+        product = null;
+        message = data.message || 'Producto no existe';
+        addToast(message, 'error');
+        codigoBarras = '';
+        await tick();
+        startScanner('codigoBarras');
+      }
+    } catch (error) {
+      addToast('Error al buscar producto: ' + error.message, 'error');
+      message = 'Producto no existe';
       codigoBarras = '';
       await tick();
       startScanner('codigoBarras');
     }
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    message = 'Producto no existe';
-    codigoBarras = '';
-    await tick();
-    startScanner('codigoBarras');
   }
-}
-
 
   // Save changes
   async function saveChanges() {
-  try {
-    const payload = {
-      bodega: selectedBodega,
-      ubicacion: ubicacion,
-      marca: selectedMarca,
-      codigo_barras: codigoBarras,
-      inventario_fisico: stockQuantity,
-      categoria_incidencia: selectedCategoriaIncidencia, // Include categoria incidencia in the payload        
-      incidencia: incidencia,
-    };
+    try {
+      const payload = {
+        bodega: selectedBodega,
+        ubicacion: ubicacion,
+        marca: selectedMarca,
+        codigo_barras: codigoBarras,
+        inventario_fisico: stockQuantity,
+        categoria_incidencia: selectedCategoriaIncidencia,
+        incidencia: incidencia,
+      };
 
-    console.log("Payload being sent:", payload);
+      console.log("Payload being sent:", payload);
 
-    const res = await fetch('/api/producto', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+      const res = await fetch('/api/producto', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    const responseData = await res.json();
+      const responseData = await res.json();
 
-    if (!res.ok) {
-      console.error('Error response from server:', responseData);
-      alert(`Error saving product: ${responseData.message || 'Unknown error'}`);
-      return;
+      if (!res.ok) {
+        console.error('Error response from server:', responseData);
+        // Handle different error response formats
+        let errorMessage = 'Error al guardar producto';
+        if (responseData.error) {
+          if (typeof responseData.error === 'string') {
+            errorMessage = responseData.error;
+          } else if (typeof responseData.error === 'object' && responseData.error.message) {
+            errorMessage = responseData.error.message;
+          }
+        } else if (responseData.message) {
+          errorMessage = responseData.message;
+        }
+        addToast(errorMessage, 'error');
+        return;
+      }
+
+      console.log('Server response:', responseData);
+      addToast('Producto actualizado exitosamente!', 'success');
+      resetFieldsAfterSave();
+    } catch (error) {
+      console.error('Unexpected error while saving product:', error);
+      addToast('Error inesperado al guardar producto: ' + error.message, 'error');
     }
-
-    console.log('Server response:', responseData);
-    alert('Product updated successfully!');
-    resetFieldsAfterSave();
-  } catch (error) {
-    console.error('Unexpected error while saving product:', error);
-    alert('An unexpected error occurred. Please try again.');
   }
-}
-
 
   function resetFieldsAfterSave() {
     codigoBarras = '';
     product = null;
     stockQuantity = 0;
     incidencia = '';
-    selectedCategoriaIncidencia = ''; // Reset category
+    selectedCategoriaIncidencia = '';
     message = '';
   }
 
@@ -281,9 +284,6 @@ async function fetchProductDetails() {
     ubicacion = '';
     resetFieldsAfterSave();
   }
-
-
-
 </script>
 
 <div class="p-6 bg-gray-100 min-h-screen">

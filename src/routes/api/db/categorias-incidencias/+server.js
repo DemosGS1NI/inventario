@@ -11,7 +11,7 @@ export async function POST({ request }) {
 
     // Validate input
     if (!categoria) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'Categoria is required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'Categoria es requerida');
     }
 
     const result = await sql`
@@ -20,10 +20,10 @@ export async function POST({ request }) {
       RETURNING *;
     `;
 
-    return successResponse(result.rows[0], 'Category created successfully', { status: 201 });
+    return successResponse(result.rows[0], 'Categoria creada satisfactoriamente', { status: 201 });
   } catch (error) {
     console.error('Error creating category:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to create category', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al crear una categoria', error.message);
   }
 }
 
@@ -35,7 +35,7 @@ export async function GET() {
     return successResponse(result.rows, 'Categories fetched successfully');
   } catch (error) {
     console.error('Error fetching categories:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to fetch categories', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al obtener categorias', error.message);
   }
 }
 
@@ -46,7 +46,7 @@ export async function PUT({ request }) {
 
     // Validate input
     if (!id || !categoria) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'ID and Categoria are required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'ID y categoria son requeridos');
     }
 
     const result = await sql`
@@ -57,13 +57,13 @@ export async function PUT({ request }) {
     `;
 
     if (result.rows.length === 0) {
-      return errorResponse(404, 'NOT_FOUND', 'Category not found');
+      return errorResponse(404, 'NOT_FOUND', 'Categoria no encontrada');
     }
 
-    return successResponse(result.rows[0], 'Category updated successfully');
+    return successResponse(result.rows[0], 'Categoria actualizada satisfactoriamente');
   } catch (error) {
     console.error('Error updating category:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to update category', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al actualizar categoria', error.message);
   }
 }
 
@@ -74,7 +74,7 @@ export async function DELETE({ request }) {
 
     // Validate input
     if (!id) {
-      return errorResponse(400, 'VALIDATION_ERROR', 'ID is required');
+      return errorResponse(400, 'VALIDATION_ERROR', 'ID is requerido');
     }
 
     const result = await sql`
@@ -84,12 +84,12 @@ export async function DELETE({ request }) {
     `;
 
     if (result.rows.length === 0) {
-      return errorResponse(404, 'NOT_FOUND', 'Category not found');
+      return errorResponse(404, 'NOT_FOUND', 'Categoria no encontrada');
     }
 
-    return successResponse(null, 'Category deleted successfully');
+    return successResponse(null, 'Categoria eliminada satisfactoriamente');
   } catch (error) {
     console.error('Error deleting category:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to delete category', error.message);
+    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al eliminar categoria', error.message);
   }
 }

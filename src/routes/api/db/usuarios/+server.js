@@ -10,7 +10,7 @@ dotenv.config();
 function requireAuth(event) {
   const user = event.locals.user;
   if (!user) {
-    throw errorResponse(401, 'UNAUTHORIZED', 'Authentication required');
+    throw errorResponse(401, 'UNAUTHORIZED', 'Se requiere autenticacion');
   }
   return user;
 }
@@ -37,12 +37,12 @@ export async function GET(event) {
     
     return successResponse(
       { users: result.rows },
-      'Users retrieved successfully'
+      'Usuarios obtenidos satisfactoriamente'
     );
   } catch (error) {
-    console.error('Error fetching usuarios:', error);
+    console.error('Error obteniendo usuarios:', error);
     if (error.status) return error; // Return error response if it's already formatted
-    return errorResponse(500, 'INTERNAL_ERROR', 'Error retrieving users');
+    return errorResponse(500, 'INTERNAL_ERROR', 'Error obteniendo usuarios');
   }
 }
 
@@ -55,7 +55,7 @@ export async function POST(event) {
 
     // Validate required fields
     if (!nombre || !apellido || !numero_telefono || !rol_id) {
-      return errorResponse(400, 'INVALID_INPUT', 'Missing required fields');
+      return errorResponse(400, 'INVALID_INPUT', 'Falta algun campo requerido (Nombre, Apellido, Telefono, Rol)');
     }
 
     // Hash the default PIN "0000"
@@ -87,13 +87,13 @@ export async function POST(event) {
 
     return successResponse(
       null,
-      'User created successfully',
+      'Usuario creado satisfactoriamente',
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creando usuario:', error);
     if (error.status) return error;
-    return errorResponse(500, 'INTERNAL_ERROR', 'Error creating user');
+    return errorResponse(500, 'INTERNAL_ERROR', 'Error creando usuario');
   }
 }
 
@@ -106,7 +106,7 @@ export async function PUT(event) {
 
     // Validate required fields
     if (!id || !nombre || !apellido || !numero_telefono || !rol_id) {
-      return errorResponse(400, 'INVALID_INPUT', 'Missing required fields');
+      return errorResponse(400, 'INVALID_INPUT', 'Falta algun campo requerido (Nombre, Apellido, Telefono, Rol)');
     }
 
     await sql`
@@ -125,12 +125,12 @@ export async function PUT(event) {
 
     return successResponse(
       null,
-      'User updated successfully'
+      'Usuario actualizado satisfactoriamente'
     );
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('Error actualizando usuario:', error);
     if (error.status) return error;
-    return errorResponse(500, 'INTERNAL_ERROR', 'Error updating user');
+    return errorResponse(500, 'INTERNAL_ERROR', 'Error actualizando usuario');
   }
 }
 
@@ -168,6 +168,6 @@ export async function DELETE(event) {
   } catch (error) {
     console.error('Error eliminando usuario:', error);
     if (error.status) return error;
-    return errorResponse(500, 'INTERNAL_ERROR', 'Error deleting user');
+    return errorResponse(500, 'INTERNAL_ERROR', 'Error eliminando usuario');
   }
 }
