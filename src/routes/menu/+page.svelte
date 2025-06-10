@@ -8,93 +8,61 @@
   // Destructure user data
   const { userId, userName, userRole } = data;
 
-  // Import menu options
-  import { menuOptions } from '$lib/menu.js';
+  // Store for menu data
+  let menu = {};
+  let loading = true;
+  let error = null;
 
-  // Group menu options by category with collapsed state and colors
-  let categories = writable([
-    {
-      id: 'inventory',
-      name: 'Inventario',
-      icon: 'clipboard-list',
-      color: 'blue',
+  // Store for category states
+  const categoryStates = writable({});
+
+  // Color palettes for categories
+  const colorPalettes = {
+    'Inventario': {
       bgColor: 'bg-blue-500',
       hoverBgColor: 'hover:bg-blue-600',
       lightBgColor: 'bg-blue-50',
       hoverLightBgColor: 'hover:bg-blue-100',
       borderColor: 'border-blue-200',
       textColor: 'text-blue-500',
-      options: [
-        'Toma de Inventario',
-        'Toma de Inventario por Marca',
-        'Toma de Inventario por Producto',
-        'Toma de Inventario con Scanner',
-        'Administracion de Toma de Inventario',
-        'Gestión de Movimientos',
-        'Historial de Movimientos',
-        'Reporte de Reconciliación'  // <-- Add this
-      ],
-      isOpen: false
+      icon: '📋'
     },
-    {
-      id: 'data',
-      name: 'Datos',
-      icon: 'database',
-      color: 'green',
+    'Datos': {
       bgColor: 'bg-green-500',
       hoverBgColor: 'hover:bg-green-600',
       lightBgColor: 'bg-green-50',
       hoverLightBgColor: 'hover:bg-green-100',
       borderColor: 'border-green-200',
       textColor: 'text-green-500',
-      options: [
-        'Carga Datos desde Archivo Excel',
-        'Reporte de Resultado de Carga Excel',
-        'Descargar Datos a Archivo Excel'
-      ],
-      isOpen: false
+      icon: '📊'
     },
-    {
-      id: 'admin',
-      name: 'Administración',
-      icon: 'cog',
-      color: 'purple',
+    'Administración': {
       bgColor: 'bg-purple-500',
       hoverBgColor: 'hover:bg-purple-600',
       lightBgColor: 'bg-purple-50',
       hoverLightBgColor: 'hover:bg-purple-100',
       borderColor: 'border-purple-200',
       textColor: 'text-purple-500',
-      options: [
-        'Usuarios',
-        'Roles',
-        'Categorias de Incidencias',
-        'Limpieza de Tablas',
-        'Limpieza de Tokens Vencidos'  // New option added
-      ],
-      isOpen: false
+      icon: '⚙️'
     },
-    {
-      id: 'account',
-      name: 'Cuenta',
-      icon: 'user',
-      color: 'amber',
+    'Cuenta': {
       bgColor: 'bg-amber-500',
       hoverBgColor: 'hover:bg-amber-600',
       lightBgColor: 'bg-amber-50',
       hoverLightBgColor: 'hover:bg-amber-100',
       borderColor: 'border-amber-200',
       textColor: 'text-amber-500',
-      options: [
-        'Cambiar PIN',
-        'Salir del Sistema'
-      ],
-      isOpen: false
+      icon: '👤'
     }
-  ]);
+  };
 
-  // Filter menu options based on the user's role
-  $: visibleMenuOptions = menuOptions.filter(option => option.roles.includes(userRole));
+  // Function to toggle category
+  function toggleCategory(category) {
+    categoryStates.update(states => ({
+      ...states,
+      [category]: !states[category]
+    }));
+  }
 
   // Function to log out the user
   async function logout() {
@@ -112,44 +80,39 @@
     }
   }
 
-  // Map of actions for dynamic handling
-  const actions = {
-    logout // Map 'logout' to the logout function
-  };
-
-  // Function to find menu option by label
-  function findMenuOption(label) {
-    return visibleMenuOptions.find(option => option.label === label);
-  }
-
   // Function to handle menu item click
-  function handleMenuClick(label) {
-    const option = findMenuOption(label);
-    if (!option) return;
-    
-    if (option.action) {
-      actions[option.action]();
-    } else if (option.href) {
-      goto(option.href);
+  function handleMenuClick(href, label) {
+    if (label === 'Salir del Sistema') {
+      logout();
+    } else if (href) {
+      goto(href);
     }
   }
-  
-  // Function to toggle category open/closed
-  function toggleCategory(categoryId) {
-    categories.update(cats => {
-      return cats.map(category => ({
-        ...category,
-        isOpen: category.id === categoryId ? !category.isOpen : category.isOpen
-      }));
-    });
-  }
-  
-  // Set body background for menu page
-  onMount(() => {
-    document.body.classList.add('menu-page');
-    return () => {
-      document.body.classList.remove('menu-page');
-    };
+
+  // Load menu data
+  onMount(async () => {
+    try {
+      const response = await fetch('/api/menu');
+      const result = await response.json();
+      
+      if (result.status === 'error') {
+        throw new Error(result.error.message);
+      }
+      
+      menu = result.data;
+      
+      // Initialize all categories as closed
+      const initialState = {};
+      Object.keys(menu).forEach(category => {
+        initialState[category] = false;
+      });
+      categoryStates.set(initialState);
+    } catch (err) {
+      error = err.message;
+      console.error('Error loading menu:', err);
+    } finally {
+      loading = false;
+    }
   });
 </script>
 
@@ -165,68 +128,63 @@
     </div>
   </header>
 
-  <!-- Collapsible Menu Categories -->
-  <div class="space-y-6">
-    {#each $categories as category}
-      <!-- Only show category if it has visible options for this user -->
-      {@const categoryOptions = category.options.filter(label => visibleMenuOptions.some(opt => opt.label === label))}
-      {#if categoryOptions.length > 0}
+  {#if loading}
+    <div class="flex justify-center items-center h-64">
+      <p class="text-lg">Loading menu...</p>
+    </div>
+  {:else if error}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+      {error}
+    </div>
+  {:else}
+    <!-- Menu Categories -->
+    <div class="space-y-6">
+      {#each Object.entries(menu) as [category, items]}
+        {@const palette = colorPalettes[category] || colorPalettes['Inventario']}
         <div class="rounded-xl shadow-sm overflow-hidden">
-          <!-- Category Header (Always visible) -->
+          <!-- Category Header -->
           <button 
-            on:click={() => toggleCategory(category.id)}
-            class="w-full p-4 flex items-center justify-between text-left focus:outline-none {category.bgColor} text-white hover:shadow-md transition-all duration-200"
+            on:click={() => toggleCategory(category)}
+            class="w-full p-4 flex items-center justify-between text-left focus:outline-none {palette.bgColor} text-white hover:shadow-md transition-all duration-200"
           >
             <div class="flex items-center">
-              <span class="inline-flex items-center justify-center w-10 h-10 bg-white {category.textColor} rounded-lg mr-3 shadow">
-                <!-- Use simple Unicode icons as a lightweight solution -->
-                {#if category.icon === 'clipboard-list'}
-                  <span class="text-xl">📋</span>
-                {:else if category.icon === 'database'}
-                  <span class="text-xl">📊</span>
-                {:else if category.icon === 'cog'}
-                  <span class="text-xl">⚙️</span>
-                {:else if category.icon === 'user'}
-                  <span class="text-xl">👤</span>
-                {/if}
+              <span class="inline-flex items-center justify-center w-10 h-10 bg-white {palette.textColor} rounded-lg mr-3 shadow">
+                <span class="text-xl">{palette.icon}</span>
               </span>
-              <h2 class="text-lg font-semibold">{category.name}</h2>
+              <h2 class="text-lg font-semibold">{category}</h2>
             </div>
             <!-- Chevron indicator -->
-            <span class="text-white transition-transform duration-300 transform {category.isOpen ? 'rotate-180' : ''}">
+            <span class="text-white transition-transform duration-300 transform {$categoryStates[category] ? 'rotate-180' : ''}">
               ▼
             </span>
           </button>
           
-          <!-- Category Options (Collapsible) -->
-          {#if category.isOpen}
-            <div class="transition-all duration-300 ease-in-out border border-t-0 {category.borderColor} {category.lightBgColor} rounded-b-xl">
+          <!-- Category Items (Collapsible) -->
+          {#if $categoryStates[category]}
+            <div class="transition-all duration-300 ease-in-out border border-t-0 {palette.borderColor} {palette.lightBgColor} rounded-b-xl">
               <div class="p-4 grid gap-3">
-                {#each categoryOptions as optionLabel}
-                  {@const option = findMenuOption(optionLabel)}
-                  {#if option}
-                    <button 
-                      on:click={() => handleMenuClick(option.label)}
-                      class="w-full py-3 px-4 text-left rounded-lg bg-white {category.hoverLightBgColor} flex justify-between items-center transition-colors border {category.borderColor} focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-{category.color}-500"
-                    >
-                      <span class="font-medium text-gray-700">{option.label}</span>
-                      <span class="{category.textColor}">
-                        {#if option.action}
-                          <span>⚙️</span>
-                        {:else}
-                          <span>➡️</span>
-                        {/if}
-                      </span>
-                    </button>
-                  {/if}
+                {#each items as item}
+                  <button 
+                    on:click={() => handleMenuClick(item.href, item.label)}
+                    class="w-full py-3 px-4 text-left rounded-lg bg-white {palette.hoverLightBgColor} flex justify-between items-center transition-colors border {palette.borderColor} focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:ring-{palette.textColor.split('-')[1]}"
+                  >
+                    <span class="font-medium text-gray-700">{item.label}</span>
+                    <span class="{palette.textColor}">
+                      {#if item.label === 'Salir del Sistema'}
+                        <span>⚙️</span>
+                      {:else}
+                        <span>➡️</span>
+                      {/if}
+                    </span>
+                  </button>
                 {/each}
               </div>
             </div>
           {/if}
         </div>
-      {/if}
-    {/each}
-  </div>
+      {/each}
+    </div>
+  {/if}
   
   <!-- Footer with version info -->
   <footer class="mt-8 pt-6 text-center text-sm text-gray-500">

@@ -1,43 +1,46 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
 const STORAGE_KEY = 'adminInventorySelections';
 
+const initialState = {
+    bodegas: [],
+    marcas: [],
+    ubicaciones: [],
+    records: [],
+    selectedBodega: '',
+    selectedMarca: '',
+    selectedUbicacion: '',
+    loading: false,
+    error: null,
+    lastUpdated: null,
+    isFullscreen: false
+};
+
 function getInitialState() {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            const { selectedBodega, selectedMarca, selectedUbicacion } = JSON.parse(stored);
-            return {
-                bodegas: [],
-                marcas: [],
-                ubicaciones: [],
-                records: [],
-                selectedBodega: selectedBodega || '',
-                selectedMarca: selectedMarca || '',
-                selectedUbicacion: selectedUbicacion || '',
-                loading: false,
-                error: null,
-                lastUpdated: null,
-                isFullscreen: false
-            };
+    console.log('AdminInventory Store: Getting initial state');
+    
+    // Only try to access localStorage in browser environment
+    if (browser) {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                console.log('AdminInventory Store: Found stored state:', stored);
+                const { selectedBodega, selectedMarca, selectedUbicacion } = JSON.parse(stored);
+                return {
+                    ...initialState,
+                    selectedBodega: selectedBodega || '',
+                    selectedMarca: selectedMarca || '',
+                    selectedUbicacion: selectedUbicacion || ''
+                };
+            }
+        } catch (error) {
+            console.error('AdminInventory Store: Error loading stored selections:', error);
         }
-    } catch (error) {
-        console.error('Error loading stored selections:', error);
     }
     
-    return {
-        bodegas: [],
-        marcas: [],
-        ubicaciones: [],
-        records: [],
-        selectedBodega: '',
-        selectedMarca: '',
-        selectedUbicacion: '',
-        loading: false,
-        error: null,
-        lastUpdated: null,
-        isFullscreen: false
-    };
+    console.log('AdminInventory Store: Using default state');
+    return initialState;
 }
 
 function createAdminInventoryStore() {
@@ -45,38 +48,67 @@ function createAdminInventoryStore() {
 
     return {
         subscribe,
-
-        setSelections: (bodega, marca, ubicacion) => update(state => {
-            const newState = {
-                ...state,
-                selectedBodega: bodega,
-                selectedMarca: marca,
-                selectedUbicacion: ubicacion
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                selectedBodega: bodega,
-                selectedMarca: marca,
-                selectedUbicacion: ubicacion
+        setSelections: (bodega, marca, ubicacion) => {
+            console.log('AdminInventory Store: Setting selections:', { bodega, marca, ubicacion });
+            update(state => {
+                const newState = {
+                    ...state,
+                    selectedBodega: bodega,
+                    selectedMarca: marca,
+                    selectedUbicacion: ubicacion
+                };
+                // Only try to access localStorage in browser environment
+                if (browser) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        selectedBodega: bodega,
+                        selectedMarca: marca,
+                        selectedUbicacion: ubicacion
+                    }));
+                }
+                return newState;
+            });
+        },
+        setLoading: (loading) => {
+            console.log('AdminInventory Store: Setting loading:', loading);
+            update(state => ({ ...state, loading }));
+        },
+        setError: (error) => {
+            console.log('AdminInventory Store: Setting error:', error);
+            update(state => ({ ...state, error }));
+        },
+        setBodegas: (bodegas) => {
+            console.log('AdminInventory Store: Setting bodegas:', bodegas);
+            update(state => ({ ...state, bodegas }));
+        },
+        setMarcas: (marcas) => {
+            console.log('AdminInventory Store: Setting marcas:', marcas);
+            update(state => ({ ...state, marcas }));
+        },
+        setUbicaciones: (ubicaciones) => {
+            console.log('AdminInventory Store: Setting ubicaciones:', ubicaciones);
+            update(state => ({ ...state, ubicaciones }));
+        },
+        setRecords: (records) => {
+            console.log('AdminInventory Store: Setting records:', records);
+            update(state => ({ 
+                ...state, 
+                records,
+                lastUpdated: new Date().toLocaleString()
             }));
-            return newState;
-        }),
-        setLoading: (loading) => update(state => ({ ...state, loading })),
-        setError: (error) => update(state => ({ ...state, error })),
-        setBodegas: (bodegas) => update(state => ({ ...state, bodegas })),
-        setMarcas: (marcas) => update(state => ({ ...state, marcas })),
-        setUbicaciones: (ubicaciones) => update(state => ({ ...state, ubicaciones })),
-        setRecords: (records) => update(state => ({ 
-            ...state, 
-            records,
-            lastUpdated: new Date().toLocaleString()
-        })),
-        toggleFullscreen: () => update(state => ({
-            ...state,
-            isFullscreen: !state.isFullscreen
-        })),
+        },
+        toggleFullscreen: () => {
+            console.log('AdminInventory Store: Toggling fullscreen');
+            update(state => ({
+                ...state,
+                isFullscreen: !state.isFullscreen
+            }));
+        },
         reset: () => {
-            localStorage.removeItem(STORAGE_KEY);
-            set(getInitialState());
+            console.log('AdminInventory Store: Resetting store');
+            if (browser) {
+                localStorage.removeItem(STORAGE_KEY);
+            }
+            set(initialState);
         }
     };
 }

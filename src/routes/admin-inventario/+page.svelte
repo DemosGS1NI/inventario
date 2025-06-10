@@ -13,11 +13,13 @@
     XCircle 
   } from 'lucide-svelte';
 
-  // Subscribe to the store
+  console.log('Admin Inventory Component: Initializing');
+
+  // Use Svelte's store subscription with destructuring
   $: ({ 
-    bodegas, 
-    marcas, 
-    ubicaciones, 
+    bodegas,
+    marcas,
+    ubicaciones,
     records,
     selectedBodega,
     selectedMarca,
@@ -25,7 +27,7 @@
     loading,
     error,
     lastUpdated,
-    isFullscreen 
+    isFullscreen
   } = $adminInventoryStore);
 
   // Touch feedback handlers
@@ -38,8 +40,8 @@
   }
 
   // Handle selection changes
-// Handle selection changes
-function handleBodegaChange(event) {
+  function handleBodegaChange(event) {
+    console.log('Bodega changed:', event.target.value);
     const newBodega = event.target.value;
     
     // First update selections in store
@@ -51,9 +53,9 @@ function handleBodegaChange(event) {
             fetchUbicaciones();
         });
     }
-}
+  }
 
-function handleUbicacionChange(event) {
+  function handleUbicacionChange(event) {
     const newUbicacion = event.target.value;
     
     // First update selections in store
@@ -65,9 +67,9 @@ function handleUbicacionChange(event) {
             fetchMarcas();
         });
     }
-}
+  }
 
-function handleMarcaChange(event) {
+  function handleMarcaChange(event) {
     const newMarca = event.target.value;
     
     // First update selections in store
@@ -79,9 +81,8 @@ function handleMarcaChange(event) {
             fetchRecords();
         });
     }
-}
+  }
 
- 
   // Fetch functions
   async function fetchBodegas() {
     adminInventoryStore.setLoading(true);
@@ -371,49 +372,50 @@ async function fetchMovements() {
   }
 
   onMount(async () => {
-  adminInventoryStore.setLoading(true);
-  try {
-    await fetchBodegas();
-    // Fetch dependent data if we have stored selections
-    if (selectedBodega) {
-      await fetchUbicaciones();
-      if (selectedUbicacion) {
-        await fetchMarcas();
-        if (selectedMarca) {
-          await fetchRecords();
+    console.log('Admin Inventory Component: onMount');
+    adminInventoryStore.setLoading(true);
+    try {
+      await fetchBodegas();
+      // Fetch dependent data if we have stored selections
+      if (selectedBodega) {
+        await fetchUbicaciones();
+        if (selectedUbicacion) {
+          await fetchMarcas();
+          if (selectedMarca) {
+            await fetchRecords();
+          }
         }
       }
+    } catch (error) {
+      console.error('Initialization error:', error);
+      adminInventoryStore.setError('Error initializing data: ' + error.message);
+    } finally {
+      adminInventoryStore.setLoading(false);
     }
-  } catch (error) {
-    console.error('Initialization error:', error);
-    adminInventoryStore.setError('Error initializing data: ' + error.message);
-  } finally {
-    adminInventoryStore.setLoading(false);
-  }
-});
+  });
 
-// Cleanup when component is destroyed
-onDestroy(() => {
-  if (refreshTimeout) {
-    clearTimeout(refreshTimeout);
-  }
-});
+  // Cleanup when component is destroyed
+  onDestroy(() => {
+    if (refreshTimeout) {
+      clearTimeout(refreshTimeout);
+    }
+  });
 
-function getMovementSummary(movements) {
-  if (!movements || (movements.in === 0 && movements.out === 0)) {
-    return '-';
+  function getMovementSummary(movements) {
+    if (!movements || (movements.in === 0 && movements.out === 0)) {
+      return '-';
+    }
+    
+    const parts = [];
+    if (movements.in > 0) parts.push(`IN: +${movements.in}`);
+    if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
+    if (movements.total !== 0) {
+      const sign = movements.total > 0 ? '+' : '';
+      parts.push(`Net: ${sign}${movements.total}`);
+    }
+    
+    return parts.join(', ');
   }
-  
-  const parts = [];
-  if (movements.in > 0) parts.push(`IN: +${movements.in}`);
-  if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
-  if (movements.total !== 0) {
-    const sign = movements.total > 0 ? '+' : '';
-    parts.push(`Net: ${sign}${movements.total}`);
-  }
-  
-  return parts.join(', ');
-}
 
 </script>
 
