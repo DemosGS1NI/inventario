@@ -5,8 +5,9 @@
 
   let loading = false;
 
-  async function cleanInventoryTable() {
-    if (!confirm('¿Está seguro que desea limpiar la tabla de inventario? Esta acción no se puede deshacer.')) {
+  
+async function cleanInventoryTable() {
+    if (!confirm('¿Está seguro que desea limpiar las tablas de inventario y movimientos? Esta acción no se puede deshacer.')) {
       return;
     }
 
@@ -22,13 +23,15 @@
       const data = await response.json();
 
       if (response.ok && data.status === 'success') {
-        addToast(`Limpieza completada. ${data.data.deletedCount} registros eliminados.`, 'success');
+        const inventarioCount = data.data.deletedInventarioCount;
+        const movimientosCount = data.data.deletedMovimientosCount;
+        addToast(`Limpieza completada. ${inventarioCount} registros de inventario y ${movimientosCount} registros de movimientos eliminados.`, 'success');
       } else {
-        throw new Error(data.message || 'Error al limpiar el inventario');
+        throw new Error(data.message || 'Error al limpiar las tablas');
       }
     } catch (error) {
       console.error('Error:', error);
-      addToast('Error al limpiar el inventario: ' + error.message, 'error');
+      addToast('Error al limpiar las tablas: ' + error.message, 'error');
     } finally {
       loading = false;
     }
@@ -42,25 +45,28 @@
 
   <div class="mt-6 space-y-6">
     <!-- Inventory Table Cleanup -->
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h2 class="text-xl font-semibold mb-4">Tabla de Inventario</h2>
-      <p class="text-gray-600 mb-4">
-        Esta opción limpiará todos los registros de la tabla de inventario. 
-        Use esta opción cuando necesite iniciar un nuevo proceso de inventario.
-      </p>
-      <button
-        class="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 
-               disabled:bg-gray-400 disabled:cursor-not-allowed
-               transition-colors"
-        on:click={cleanInventoryTable}
-        disabled={loading}
-      >
-        {#if loading}
-          <span class="inline-block">Limpiando...</span>
-        {:else}
-          <span class="inline-block">Limpiar Tabla de Inventario</span>
-        {/if}
-      </button>
-    </div>
+
+<!-- Update the description in limpieza-tablas/+page.svelte -->
+<div class="bg-white p-6 rounded-lg shadow">
+  <h2 class="text-xl font-semibold mb-4">Tablas de Inventario y Movimientos</h2>
+  <p class="text-gray-600 mb-4">
+    Esta opción limpiará todos los registros de las tablas de inventario y movimientos. 
+    Use esta opción cuando necesite iniciar un nuevo proceso de inventario.
+  </p>
+  <button
+    class="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 
+           disabled:bg-gray-400 disabled:cursor-not-allowed
+           transition-colors"
+    on:click={cleanInventoryTable}
+    disabled={loading}
+  >
+    {#if loading}
+      <span class="inline-block">Limpiando...</span>
+    {:else}
+      <span class="inline-block">Limpiar Tablas de Inventario y Movimientos</span>
+    {/if}
+  </button>
+</div>
+
   </div>
 </div>

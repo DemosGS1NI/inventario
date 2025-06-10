@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// This endpoint handles deletion of ALL inventory records
+// This endpoint handles deletion of ALL inventory records AND movements
 // It should be used with extreme caution
 export async function DELETE({ request, locals }) {
     // Get user ID from session for security
@@ -32,13 +32,23 @@ export async function DELETE({ request, locals }) {
             );
         }
 
-        // First, get the count for logging purposes
-        const countResult = await sql`
+        // First, get the counts for logging purposes
+        const inventarioCountResult = await sql`
             SELECT COUNT(*) as count FROM inventario
         `;
-        const count = countResult.rows[0].count;
+        const movimientosCountResult = await sql`
+            SELECT COUNT(*) as count FROM movimientos
+        `;
+        
+        const inventarioCount = inventarioCountResult.rows[0].count;
+        const movimientosCount = movimientosCountResult.rows[0].count;
 
-        // Then delete the records
+        // Delete in correct order (movimientos first to avoid any potential FK constraint issues)
+        await sql`
+            DELETE FROM movimientos 
+            WHERE 1=1
+        `;
+
         await sql`
             DELETE FROM inventario 
             WHERE 1=1
@@ -54,24 +64,26 @@ export async function DELETE({ request, locals }) {
             ) VALUES (
                 'INVENTORY_CLEANUP',
                 ${userId},
-                ${'Inventory table cleaned up. Records deleted: ' + count},
+                ${`Inventory and movements tables cleaned up. Inventario records deleted: ${inventarioCount}, Movimientos records deleted: ${movimientosCount}`},
                 CURRENT_TIMESTAMP
             )
         `;
 
         return successResponse(
             { 
-                deletedCount: count,
+                deletedInventarioCount: parseInt(inventarioCount),
+                deletedMovimientosCount: parseInt(movimientosCount),
+                totalDeleted: parseInt(inventarioCount) + parseInt(movimientosCount),
                 timestamp: new Date().toISOString(),
                 user: {
                     id: userId,
                     role: locals.user.userRole
                 }
             },
-            'Inventory cleaned successfully'
+            `Tables cleaned successfully: ${inventarioCount} inventory records and ${movimientosCount} movement records deleted`
         );
     } catch (error) {
-        console.error('Error cleaning inventory:', error);
-        return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error cleaning inventory', error.message);
+        console.error('Error cleaning tables:', error);
+        return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error cleaning tables', error.message);
     }
 }
