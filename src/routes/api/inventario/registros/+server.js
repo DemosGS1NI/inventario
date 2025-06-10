@@ -13,18 +13,18 @@ dotenv.config();
  * @returns {Promise<Response>} JSON response with inventory records
  */
 export async function GET({ url }) {
-  const bodega = url.searchParams.get('bodega');
-  const marca = url.searchParams.get('marca');
-  const ubicacion = url.searchParams.get('ubicacion');
+	const bodega = url.searchParams.get('bodega');
+	const marca = url.searchParams.get('marca');
+	const ubicacion = url.searchParams.get('ubicacion');
 
-  // Validate query parameters
-  if (!bodega || !marca || !ubicacion) {
-    return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Ubicacion are required');
-  }
+	// Validate query parameters
+	if (!bodega || !marca || !ubicacion) {
+		return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Ubicacion are required');
+	}
 
-  try {
-    // Fetch product details
-    const result = await sql`
+	try {
+		// Fetch product details
+		const result = await sql`
       SELECT 
         i.*, u.nombre, u.apellido
       FROM inventario i LEFT join usuarios u on i.actualizado_por = u.id
@@ -34,15 +34,15 @@ export async function GET({ url }) {
         i.ubicacion = ${ubicacion}
     `;
 
-    if (result.rows.length > 0) {
-      return successResponse(result.rows, 'Product fetched successfully');
-    } else {
-      return errorResponse(404, 'NOT_FOUND', 'Product not found');
-    }
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching product', error.message);
-  }
+		if (result.rows.length > 0) {
+			return successResponse(result.rows, 'Product fetched successfully');
+		} else {
+			return errorResponse(404, 'NOT_FOUND', 'Product not found');
+		}
+	} catch (error) {
+		console.error('Error fetching product:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching product', error.message);
+	}
 }
 
 // PUT Endpoint - Update Product Details
@@ -54,36 +54,34 @@ export async function GET({ url }) {
  * @returns {Promise<Response>} JSON response confirming update
  */
 export async function PUT({ request, locals }) {
+	//get the session user id
+	const userId = locals.user?.userId; // Get the user ID from session
+	if (!userId) {
+		return new Response('Unauthorized', { status: 401 });
+	}
 
-  //get the session user id
-  const userId = locals.user?.userId; // Get the user ID from session
-  if (!userId) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-  
+	try {
+		const {
+			bodega,
+			ubicacion,
+			marca,
+			codigo_barras,
+			inventario_fisico,
+			categoria_incidencia,
+			incidencia
+		} = await request.json();
 
-  try {
-    const {
-      bodega,
-      ubicacion,
-      marca,
-      codigo_barras,
-      inventario_fisico,
-      categoria_incidencia,
-      incidencia,
-     } = await request.json();
+		// Validate required fields
+		if (!bodega || !marca || !ubicacion) {
+			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
+		}
 
-    // Validate required fields
-    if (!bodega || !marca || !ubicacion) {
-      return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
-    }
+		console.log('Updating product:', { bodega, ubicacion, marca, userId });
 
-    console.log('Updating product:', { bodega, ubicacion, marca,  userId });
+		const currentDateTime = new Date().toISOString();
 
-    const currentDateTime = new Date().toISOString();
-
-    // Update product details
-    const result = await sql`
+		// Update product details
+		const result = await sql`
       UPDATE inventario
       SET 
         ubicacion = ${ubicacion},
@@ -98,13 +96,13 @@ export async function PUT({ request, locals }) {
         codigo_barras = ${codigo_barras}
     `;
 
-    if (result.rowCount > 0) {
-      return successResponse(null, 'Product updated successfully');
-    } else {
-      return errorResponse(404, 'NOT_FOUND', 'Product not found or no changes made');
-    }
-  } catch (error) {
-    console.error('Error updating product:', error);
-    return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error updating product', error.message);
-  }
+		if (result.rowCount > 0) {
+			return successResponse(null, 'Product updated successfully');
+		} else {
+			return errorResponse(404, 'NOT_FOUND', 'Product not found or no changes made');
+		}
+	} catch (error) {
+		console.error('Error updating product:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error updating product', error.message);
+	}
 }

@@ -9,61 +9,56 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export async function GET({ url, locals }) {
-    // Get user ID from session for security
-    const userId = locals.user?.userId;
-    if (!userId) {
-        console.error('Unauthorized: User session not found');
-        return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-    }
+	// Get user ID from session for security
+	const userId = locals.user?.userId;
+	if (!userId) {
+		console.error('Unauthorized: User session not found');
+		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
+	}
 
-    // Get query parameters
-    const bodega = url.searchParams.get('bodega');
-    const ubicacion = url.searchParams.get('ubicacion');
+	// Get query parameters
+	const bodega = url.searchParams.get('bodega');
+	const ubicacion = url.searchParams.get('ubicacion');
 
-    // Debug logging
-    console.log('API received parameters:', { bodega, ubicacion });
+	// Debug logging
+	console.log('API received parameters:', { bodega, ubicacion });
 
-    // Validate required parameters
-    if (!bodega) {
-        return errorResponse(400, 'BAD_REQUEST', 'El parametro Bodega es requerido');
-    }
+	// Validate required parameters
+	if (!bodega) {
+		return errorResponse(400, 'BAD_REQUEST', 'El parametro Bodega es requerido');
+	}
 
-    let result;
+	let result;
 
+	try {
+		// Query to get unique marcas for the given parameter
 
-    try {
-        // Query to get unique marcas for the given parameter
-
-        if (ubicacion) {
-            result = await sql`
+		if (ubicacion) {
+			result = await sql`
             SELECT DISTINCT marca 
             FROM inventario 
             WHERE bodega = ${bodega} 
             AND ubicacion = ${ubicacion}
             ORDER BY marca
         `;
-    
-    
-         } else {
-            result = await sql`
+		} else {
+			result = await sql`
             SELECT DISTINCT marca 
             FROM inventario 
             WHERE bodega = ${bodega} 
             ORDER BY marca
         `;
-            
-         };
+		}
 
-        // Debug logging
-        // console.log('Query results:', result.rows);
-        
-        // Extract marcas from the result
-        const marcas = result.rows.map(row => row.marca);
+		// Debug logging
+		// console.log('Query results:', result.rows);
 
-        return successResponse(marcas, 'Marcas fetched successfully');
+		// Extract marcas from the result
+		const marcas = result.rows.map((row) => row.marca);
 
-    } catch (error) {
-        console.error('Error fetching marcas:', error);
-        return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);
-    }
+		return successResponse(marcas, 'Marcas fetched successfully');
+	} catch (error) {
+		console.error('Error fetching marcas:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);
+	}
 }

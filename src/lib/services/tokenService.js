@@ -11,22 +11,22 @@ dotenv.config();
  * @param {number} expiry - When the token expires (Unix timestamp in seconds)
  */
 export async function revokeToken(jti, expiry) {
-  try {
-    // Convert Unix timestamp to JavaScript Date
-    const expiryDate = new Date(expiry * 1000);
-    
-    // Insert the token into the revoked_tokens table
-    await sql`
+	try {
+		// Convert Unix timestamp to JavaScript Date
+		const expiryDate = new Date(expiry * 1000);
+
+		// Insert the token into the revoked_tokens table
+		await sql`
       INSERT INTO revoked_tokens (jti, expiry)
       VALUES (${jti}, ${expiryDate})
       ON CONFLICT (jti) DO NOTHING
     `;
-    
-    console.log(`Token ${jti} revoked successfully`);
-  } catch (error) {
-    console.error('Error revoking token:', error);
-    throw error;
-  }
+
+		console.log(`Token ${jti} revoked successfully`);
+	} catch (error) {
+		console.error('Error revoking token:', error);
+		throw error;
+	}
 }
 
 /**
@@ -35,19 +35,19 @@ export async function revokeToken(jti, expiry) {
  * @returns {Promise<boolean>} - Whether the token is revoked
  */
 export async function isTokenRevoked(jti) {
-  try {
-    const result = await sql`
+	try {
+		const result = await sql`
       SELECT 1 FROM revoked_tokens
       WHERE jti = ${jti} AND expiry > NOW()
     `;
-    
-    return result.rowCount > 0;
-  } catch (error) {
-    console.error('Error checking token revocation:', error);
-    // In case of database errors, we should be conservative and assume the token is valid
-    // This prevents legitimate users from being locked out due to database issues
-    return false;
-  }
+
+		return result.rowCount > 0;
+	} catch (error) {
+		console.error('Error checking token revocation:', error);
+		// In case of database errors, we should be conservative and assume the token is valid
+		// This prevents legitimate users from being locked out due to database issues
+		return false;
+	}
 }
 
 /**
@@ -56,18 +56,18 @@ export async function isTokenRevoked(jti) {
  * @returns {Promise<number>} - Number of tokens cleaned up
  */
 export async function cleanupExpiredTokens() {
-  try {
-    const result = await sql`
+	try {
+		const result = await sql`
       DELETE FROM revoked_tokens 
       WHERE expiry < NOW()
     `;
-    
-    console.log(`Cleaned up ${result.rowCount} expired tokens`);
-    return result.rowCount;
-  } catch (error) {
-    console.error('Error cleaning up expired tokens:', error);
-    throw error;
-  }
+
+		console.log(`Cleaned up ${result.rowCount} expired tokens`);
+		return result.rowCount;
+	} catch (error) {
+		console.error('Error cleaning up expired tokens:', error);
+		throw error;
+	}
 }
 
 /**
@@ -75,13 +75,13 @@ export async function cleanupExpiredTokens() {
  * @param {number} userId - The user's ID
  */
 export async function revokeAllUserTokens(userId) {
-  try {
-    // This would require storing userId in the revoked_tokens table
-    // For now, we'll use the token versioning approach for this functionality
-    // We'll implement this in a future step if needed
-    console.log(`Revoking all tokens for user ${userId} - not yet implemented`);
-  } catch (error) {
-    console.error('Error revoking all user tokens:', error);
-    throw error;
-  }
+	try {
+		// This would require storing userId in the revoked_tokens table
+		// For now, we'll use the token versioning approach for this functionality
+		// We'll implement this in a future step if needed
+		console.log(`Revoking all tokens for user ${userId} - not yet implemented`);
+	} catch (error) {
+		console.error('Error revoking all user tokens:', error);
+		throw error;
+	}
 }

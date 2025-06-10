@@ -1,327 +1,327 @@
 <script>
-  import { onMount, onDestroy } from 'svelte';
-  import BackToMenu from '$lib/BackToMenu.svelte';
-  import { adminInventoryStore } from '$lib/stores/adminInventory';
-  import { formatDateTime } from '$lib/utils/dateFormat';
-  import { 
-    Maximize2, 
-    Minimize2, 
-    RefreshCw,
-    ChevronDown,
-    AlertTriangle,
-    CheckCircle,
-    XCircle 
-  } from 'lucide-svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import BackToMenu from '$lib/BackToMenu.svelte';
+	import { adminInventoryStore } from '$lib/stores/adminInventory';
+	import { formatDateTime } from '$lib/utils/dateFormat';
+	import {
+		Maximize2,
+		Minimize2,
+		RefreshCw,
+		ChevronDown,
+		AlertTriangle,
+		CheckCircle,
+		XCircle
+	} from 'lucide-svelte';
 
-  console.log('Admin Inventory Component: Initializing');
+	console.log('Admin Inventory Component: Initializing');
 
-  // Use Svelte's store subscription with destructuring
-  $: ({ 
-    bodegas,
-    marcas,
-    ubicaciones,
-    records,
-    selectedBodega,
-    selectedMarca,
-    selectedUbicacion,
-    loading,
-    error,
-    lastUpdated,
-    isFullscreen
-  } = $adminInventoryStore);
+	// Use Svelte's store subscription with destructuring
+	$: ({
+		bodegas,
+		marcas,
+		ubicaciones,
+		records,
+		selectedBodega,
+		selectedMarca,
+		selectedUbicacion,
+		loading,
+		error,
+		lastUpdated,
+		isFullscreen
+	} = $adminInventoryStore);
 
-  // Touch feedback handlers
-  function handleTouchStart(event) {
-    event.target.classList.add('active');
-  }
+	// Touch feedback handlers
+	function handleTouchStart(event) {
+		event.target.classList.add('active');
+	}
 
-  function handleTouchEnd(event) {
-    event.target.classList.remove('active');
-  }
+	function handleTouchEnd(event) {
+		event.target.classList.remove('active');
+	}
 
-  // Handle selection changes
-  function handleBodegaChange(event) {
-    console.log('Bodega changed:', event.target.value);
-    const newBodega = event.target.value;
-    
-    // First update selections in store
-    adminInventoryStore.setSelections(newBodega, '', '');
-    
-    // Then force an immediate data fetch
-    if (newBodega) {
-        fetchBodegas().then(() => {
-            fetchUbicaciones();
-        });
-    }
-  }
+	// Handle selection changes
+	function handleBodegaChange(event) {
+		console.log('Bodega changed:', event.target.value);
+		const newBodega = event.target.value;
 
-  function handleUbicacionChange(event) {
-    const newUbicacion = event.target.value;
-    
-    // First update selections in store
-    adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
-    
-    // Then force an immediate data fetch
-    if (newUbicacion) {
-        fetchUbicaciones().then(() => {
-            fetchMarcas();
-        });
-    }
-  }
+		// First update selections in store
+		adminInventoryStore.setSelections(newBodega, '', '');
 
-  function handleMarcaChange(event) {
-    const newMarca = event.target.value;
-    
-    // First update selections in store
-    adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
-    
-    // Then force an immediate data fetch
-    if (newMarca) {
-        fetchMarcas().then(() => {
-            fetchRecords();
-        });
-    }
-  }
+		// Then force an immediate data fetch
+		if (newBodega) {
+			fetchBodegas().then(() => {
+				fetchUbicaciones();
+			});
+		}
+	}
 
-  // Fetch functions
-  async function fetchBodegas() {
-    adminInventoryStore.setLoading(true);
-    try {
-      const res = await fetch('/api/inventario/fetch-bodegas');
-      const data = await res.json();
+	function handleUbicacionChange(event) {
+		const newUbicacion = event.target.value;
 
-      if (res.ok && data.status === 'success') {
-        adminInventoryStore.setBodegas(data.data);
-        // If we have stored selections, fetch related data
-        if (selectedBodega) {
-          await fetchUbicaciones();
-          if (selectedUbicacion) {
-            await fetchMarcas();
-            if (selectedMarca) {
-              await fetchRecords();
-            }
-          }
-        }
-      } else {
-        adminInventoryStore.setError('Error fetching bodegas: ' + (data.message || 'Unknown error'));
-      }
-    } catch (error) {
-      adminInventoryStore.setError('Error fetching bodegas: ' + error.message);
-    } finally {
-      adminInventoryStore.setLoading(false);
-    }
-  }
-  
-  async function fetchMarcas() {
-  if (!selectedBodega || !selectedUbicacion) {
-    adminInventoryStore.setMarcas([]);
-    return;
-  }
-  
-  adminInventoryStore.setLoading(true);
-  adminInventoryStore.setError(null); // Clear any previous errors
-  
-  try {
-    const url = `/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
-    console.log('Fetching marcas:', url);
-    
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    if (res.ok && data.status === 'success') {
-      // Ensure we're still on the same selection before updating
-      if (selectedBodega && selectedUbicacion) {
-        adminInventoryStore.setMarcas(data.data);
-      }
-    } else {
-      throw new Error(data.message || 'Unknown error');
-    }
-  } catch (error) {
-    console.error('Marcas fetch error:', error);
-    adminInventoryStore.setError('Error fetching marcas: ' + error.message);
-    adminInventoryStore.setMarcas([]); // Clear marcas on error
-  } finally {
-    adminInventoryStore.setLoading(false);
-  }
-}
+		// First update selections in store
+		adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
 
-  async function fetchUbicaciones() {
-  if (!selectedBodega) {
-    adminInventoryStore.setUbicaciones([]);
-    return;
-  }
+		// Then force an immediate data fetch
+		if (newUbicacion) {
+			fetchUbicaciones().then(() => {
+				fetchMarcas();
+			});
+		}
+	}
 
-  adminInventoryStore.setLoading(true);
-  adminInventoryStore.setError(null); // Clear any previous errors
+	function handleMarcaChange(event) {
+		const newMarca = event.target.value;
 
-  try {
-    const url = `/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
-    console.log('Fetching ubicaciones:', url);
+		// First update selections in store
+		adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
 
-    const res = await fetch(url);
-    const data = await res.json();
+		// Then force an immediate data fetch
+		if (newMarca) {
+			fetchMarcas().then(() => {
+				fetchRecords();
+			});
+		}
+	}
 
-    if (res.ok && data.status === 'success') {
-      // Ensure we're still on the same bodega before updating
-      if (selectedBodega) {
-        adminInventoryStore.setUbicaciones(data.data);
-      }
-    } else {
-      throw new Error(data.message || 'Unknown error');
-    }
-  } catch (error) {
-    console.error('Ubicaciones fetch error:', error);
-    adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
-    adminInventoryStore.setUbicaciones([]); // Clear ubicaciones on error
-  } finally {
-    adminInventoryStore.setLoading(false);
-  }
-}
-async function fetchRecords() {
-    // Check parameters in the correct order of selection
-    if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
-        console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
-        return;
-    }
+	// Fetch functions
+	async function fetchBodegas() {
+		adminInventoryStore.setLoading(true);
+		try {
+			const res = await fetch('/api/inventario/fetch-bodegas');
+			const data = await res.json();
 
-    adminInventoryStore.setLoading(true);
-    try {
-        const url = `/api/inventario/registros?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
-        console.log('Fetching records with URL:', url);
-        
-        // Fetch both inventory records and movements in parallel
-        const [inventoryRes, movementsData] = await Promise.all([
-          fetch(url),
-          fetchMovements()
-        ]);
-        
-        const data = await inventoryRes.json();
-        console.log('Response data:', data);
+			if (res.ok && data.status === 'success') {
+				adminInventoryStore.setBodegas(data.data);
+				// If we have stored selections, fetch related data
+				if (selectedBodega) {
+					await fetchUbicaciones();
+					if (selectedUbicacion) {
+						await fetchMarcas();
+						if (selectedMarca) {
+							await fetchRecords();
+						}
+					}
+				}
+			} else {
+				adminInventoryStore.setError(
+					'Error fetching bodegas: ' + (data.message || 'Unknown error')
+				);
+			}
+		} catch (error) {
+			adminInventoryStore.setError('Error fetching bodegas: ' + error.message);
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	}
 
-        if (inventoryRes.ok && data.status === 'success') {
-            // Add movement data to each record
-            const recordsWithMovements = data.data.map(record => ({
-              ...record,
-              movements: movementsData[record.codigo_barras] || { 
-                entradas: [], 
-                salidas: [], 
-                totalEntradas: 0, 
-                totalSalidas: 0, 
-                neto: 0 
-              }
-            }));
-            
-            adminInventoryStore.setRecords(recordsWithMovements);
-        } else if (inventoryRes.status === 404) {
-            // Handle the "Product not found" case
-            adminInventoryStore.setRecords([]);  // Set empty records array
-            adminInventoryStore.setError('No se encontraron registros para esta selección');
-        } else {
-            // Handle other errors
-            const errorMessage = data.error?.message || 'Error desconocido';
-            adminInventoryStore.setError('Error al cargar registros: ' + errorMessage);
-        }
-    } catch (error) {
-        console.error('Fetch error:', error);
-        adminInventoryStore.setError('Error al cargar registros: ' + error.message);
-    } finally {
-        adminInventoryStore.setLoading(false);
-    }
-}
+	async function fetchMarcas() {
+		if (!selectedBodega || !selectedUbicacion) {
+			adminInventoryStore.setMarcas([]);
+			return;
+		}
 
-// Enhanced function to fetch movements with document details
-async function fetchMovements() {
-  if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
-    return {};
-  }
+		adminInventoryStore.setLoading(true);
+		adminInventoryStore.setError(null); // Clear any previous errors
 
-  try {
-    const url = `/api/db/movimientos?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    if (res.ok && data.status === 'success') {
-      // Group movements by product code with detailed information
-      const movementsByProduct = {};
-      
-      data.data.forEach(movement => {
-        const key = movement.codigo_barras;
-        if (!movementsByProduct[key]) {
-          movementsByProduct[key] = { 
-            entradas: [], 
-            salidas: [], 
-            totalEntradas: 0, 
-            totalSalidas: 0, 
-            neto: 0 
-          };
-        }
-        
-        const movementDetail = {
-          cantidad: movement.cantidad,
-          documento: movement.numero_documento || 'Sin doc.',
-          fecha: movement.fecha_movimiento,
-          usuario: movement.usuario_nombre || 'Usuario'
-        };
-        
-        if (movement.tipo_movimiento === 'IN') {
-          movementsByProduct[key].entradas.push(movementDetail);
-          movementsByProduct[key].totalEntradas += movement.cantidad;
-        } else {
-          movementsByProduct[key].salidas.push(movementDetail);
-          movementsByProduct[key].totalSalidas += movement.cantidad;
-        }
-        
-        movementsByProduct[key].neto = movementsByProduct[key].totalEntradas - movementsByProduct[key].totalSalidas;
-      });
-      
-      return movementsByProduct;
-    } else {
-      console.error('Error fetching movements:', data.message);
-      return {};
-    }
-  } catch (error) {
-    console.error('Error fetching movements:', error);
-    return {};
-  }
-}
-  async function validateRecord(record) {
-    try {
-      adminInventoryStore.setLoading(true);
-      const res = await fetch('/api/inventario/validate-record', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: record.id,
-          validado_por: record.validado_por
-        }),
-      });
+		try {
+			const url = `/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
+			console.log('Fetching marcas:', url);
 
-      const data = await res.json();
-      
-      if (res.ok && data.status === 'success') {
-        await fetchRecords();
-      } else {
-        adminInventoryStore.setError('Error validating record: ' + (data.message || 'Unknown error'));
-      }
-    } catch (error) {
-      adminInventoryStore.setError('Error validating record: ' + error.message);
-    } finally {
-      adminInventoryStore.setLoading(false);
-    }
-  }
+			const res = await fetch(url);
+			const data = await res.json();
 
-  function calculateDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
+			if (res.ok && data.status === 'success') {
+				// Ensure we're still on the same selection before updating
+				if (selectedBodega && selectedUbicacion) {
+					adminInventoryStore.setMarcas(data.data);
+				}
+			} else {
+				throw new Error(data.message || 'Unknown error');
+			}
+		} catch (error) {
+			console.error('Marcas fetch error:', error);
+			adminInventoryStore.setError('Error fetching marcas: ' + error.message);
+			adminInventoryStore.setMarcas([]); // Clear marcas on error
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	}
 
-    //if fecha inventario is null then there is no inventory being made so no sobrante or faltante
-    if (fecha_inventario === null) {
-      return '';
-    } else {
+	async function fetchUbicaciones() {
+		if (!selectedBodega) {
+			adminInventoryStore.setUbicaciones([]);
+			return;
+		}
 
-    return inventario_fisico - inventario_sistema;
-    }
-  }
+		adminInventoryStore.setLoading(true);
+		adminInventoryStore.setError(null); // Clear any previous errors
 
-/*   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
+		try {
+			const url = `/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
+			console.log('Fetching ubicaciones:', url);
+
+			const res = await fetch(url);
+			const data = await res.json();
+
+			if (res.ok && data.status === 'success') {
+				// Ensure we're still on the same bodega before updating
+				if (selectedBodega) {
+					adminInventoryStore.setUbicaciones(data.data);
+				}
+			} else {
+				throw new Error(data.message || 'Unknown error');
+			}
+		} catch (error) {
+			console.error('Ubicaciones fetch error:', error);
+			adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
+			adminInventoryStore.setUbicaciones([]); // Clear ubicaciones on error
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	}
+	async function fetchRecords() {
+		// Check parameters in the correct order of selection
+		if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
+			console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
+			return;
+		}
+
+		adminInventoryStore.setLoading(true);
+		try {
+			const url = `/api/inventario/registros?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+			console.log('Fetching records with URL:', url);
+
+			// Fetch both inventory records and movements in parallel
+			const [inventoryRes, movementsData] = await Promise.all([fetch(url), fetchMovements()]);
+
+			const data = await inventoryRes.json();
+			console.log('Response data:', data);
+
+			if (inventoryRes.ok && data.status === 'success') {
+				// Add movement data to each record
+				const recordsWithMovements = data.data.map((record) => ({
+					...record,
+					movements: movementsData[record.codigo_barras] || {
+						entradas: [],
+						salidas: [],
+						totalEntradas: 0,
+						totalSalidas: 0,
+						neto: 0
+					}
+				}));
+
+				adminInventoryStore.setRecords(recordsWithMovements);
+			} else if (inventoryRes.status === 404) {
+				// Handle the "Product not found" case
+				adminInventoryStore.setRecords([]); // Set empty records array
+				adminInventoryStore.setError('No se encontraron registros para esta selección');
+			} else {
+				// Handle other errors
+				const errorMessage = data.error?.message || 'Error desconocido';
+				adminInventoryStore.setError('Error al cargar registros: ' + errorMessage);
+			}
+		} catch (error) {
+			console.error('Fetch error:', error);
+			adminInventoryStore.setError('Error al cargar registros: ' + error.message);
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	}
+
+	// Enhanced function to fetch movements with document details
+	async function fetchMovements() {
+		if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
+			return {};
+		}
+
+		try {
+			const url = `/api/db/movimientos?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+			const res = await fetch(url);
+			const data = await res.json();
+
+			if (res.ok && data.status === 'success') {
+				// Group movements by product code with detailed information
+				const movementsByProduct = {};
+
+				data.data.forEach((movement) => {
+					const key = movement.codigo_barras;
+					if (!movementsByProduct[key]) {
+						movementsByProduct[key] = {
+							entradas: [],
+							salidas: [],
+							totalEntradas: 0,
+							totalSalidas: 0,
+							neto: 0
+						};
+					}
+
+					const movementDetail = {
+						cantidad: movement.cantidad,
+						documento: movement.numero_documento || 'Sin doc.',
+						fecha: movement.fecha_movimiento,
+						usuario: movement.usuario_nombre || 'Usuario'
+					};
+
+					if (movement.tipo_movimiento === 'IN') {
+						movementsByProduct[key].entradas.push(movementDetail);
+						movementsByProduct[key].totalEntradas += movement.cantidad;
+					} else {
+						movementsByProduct[key].salidas.push(movementDetail);
+						movementsByProduct[key].totalSalidas += movement.cantidad;
+					}
+
+					movementsByProduct[key].neto =
+						movementsByProduct[key].totalEntradas - movementsByProduct[key].totalSalidas;
+				});
+
+				return movementsByProduct;
+			} else {
+				console.error('Error fetching movements:', data.message);
+				return {};
+			}
+		} catch (error) {
+			console.error('Error fetching movements:', error);
+			return {};
+		}
+	}
+	async function validateRecord(record) {
+		try {
+			adminInventoryStore.setLoading(true);
+			const res = await fetch('/api/inventario/validate-record', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					id: record.id,
+					validado_por: record.validado_por
+				})
+			});
+
+			const data = await res.json();
+
+			if (res.ok && data.status === 'success') {
+				await fetchRecords();
+			} else {
+				adminInventoryStore.setError(
+					'Error validating record: ' + (data.message || 'Unknown error')
+				);
+			}
+		} catch (error) {
+			adminInventoryStore.setError('Error validating record: ' + error.message);
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	}
+
+	function calculateDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
+		//if fecha inventario is null then there is no inventory being made so no sobrante or faltante
+		if (fecha_inventario === null) {
+			return '';
+		} else {
+			return inventario_fisico - inventario_sistema;
+		}
+	}
+
+	/*   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
     if (inventario_sistema > inventario_fisico) {
       return 'Faltante';
     } else if (inventario_sistema < inventario_fisico) {
@@ -330,275 +330,334 @@ async function fetchMovements() {
       return 'Sin Diferencia';
     }
   } */
- 
-  function calculateTipoDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
-  // Convert inputs to numbers and calculate the difference
-  const sistema = Number(inventario_sistema);
-  const fisico = Number(inventario_fisico);
-  const fechai = fecha_inventario
 
-  //if fecha inventario is null then there is no inventory being made so no sobrante or faltante
-  if (fecha_inventario === null) {
-    return '';
-  }
-  
+	function calculateTipoDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
+		// Convert inputs to numbers and calculate the difference
+		const sistema = Number(inventario_sistema);
+		const fisico = Number(inventario_fisico);
+		const fechai = fecha_inventario;
 
-  // Check for NaN values after conversion
-  if (isNaN(sistema) || isNaN(fisico)) {
-    return 'Error: Valores no numéricos';
-  }
-  
-  const diferencia = sistema - fisico;
-  
-  if (diferencia > 0) {
-    return 'Faltante';
-  } else if (diferencia < 0) {
-    return 'Sobrante';
-  } else {
-    return 'Sin Diferencia';
-  }
-}
+		//if fecha inventario is null then there is no inventory being made so no sobrante or faltante
+		if (fecha_inventario === null) {
+			return '';
+		}
 
-  // Manual refresh function with debounce
-  let refreshTimeout;
-  async function refreshData() {
-    if (refreshTimeout) clearTimeout(refreshTimeout);
-    
-    if (selectedBodega && selectedMarca && selectedUbicacion) {
-      refreshTimeout = setTimeout(async () => {
-        await fetchRecords();
-      }, 300);
-    }
-  }
+		// Check for NaN values after conversion
+		if (isNaN(sistema) || isNaN(fisico)) {
+			return 'Error: Valores no numéricos';
+		}
 
-  onMount(async () => {
-    console.log('Admin Inventory Component: onMount');
-    adminInventoryStore.setLoading(true);
-    try {
-      await fetchBodegas();
-      // Fetch dependent data if we have stored selections
-      if (selectedBodega) {
-        await fetchUbicaciones();
-        if (selectedUbicacion) {
-          await fetchMarcas();
-          if (selectedMarca) {
-            await fetchRecords();
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Initialization error:', error);
-      adminInventoryStore.setError('Error initializing data: ' + error.message);
-    } finally {
-      adminInventoryStore.setLoading(false);
-    }
-  });
+		const diferencia = sistema - fisico;
 
-  // Cleanup when component is destroyed
-  onDestroy(() => {
-    if (refreshTimeout) {
-      clearTimeout(refreshTimeout);
-    }
-  });
+		if (diferencia > 0) {
+			return 'Faltante';
+		} else if (diferencia < 0) {
+			return 'Sobrante';
+		} else {
+			return 'Sin Diferencia';
+		}
+	}
 
-  function getMovementSummary(movements) {
-    if (!movements || (movements.in === 0 && movements.out === 0)) {
-      return '-';
-    }
-    
-    const parts = [];
-    if (movements.in > 0) parts.push(`IN: +${movements.in}`);
-    if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
-    if (movements.total !== 0) {
-      const sign = movements.total > 0 ? '+' : '';
-      parts.push(`Net: ${sign}${movements.total}`);
-    }
-    
-    return parts.join(', ');
-  }
+	// Manual refresh function with debounce
+	let refreshTimeout;
+	async function refreshData() {
+		if (refreshTimeout) clearTimeout(refreshTimeout);
 
+		if (selectedBodega && selectedMarca && selectedUbicacion) {
+			refreshTimeout = setTimeout(async () => {
+				await fetchRecords();
+			}, 300);
+		}
+	}
+
+	onMount(async () => {
+		console.log('Admin Inventory Component: onMount');
+		adminInventoryStore.setLoading(true);
+		try {
+			await fetchBodegas();
+			// Fetch dependent data if we have stored selections
+			if (selectedBodega) {
+				await fetchUbicaciones();
+				if (selectedUbicacion) {
+					await fetchMarcas();
+					if (selectedMarca) {
+						await fetchRecords();
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Initialization error:', error);
+			adminInventoryStore.setError('Error initializing data: ' + error.message);
+		} finally {
+			adminInventoryStore.setLoading(false);
+		}
+	});
+
+	// Cleanup when component is destroyed
+	onDestroy(() => {
+		if (refreshTimeout) {
+			clearTimeout(refreshTimeout);
+		}
+	});
+
+	function getMovementSummary(movements) {
+		if (!movements || (movements.in === 0 && movements.out === 0)) {
+			return '-';
+		}
+
+		const parts = [];
+		if (movements.in > 0) parts.push(`IN: +${movements.in}`);
+		if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
+		if (movements.total !== 0) {
+			const sign = movements.total > 0 ? '+' : '';
+			parts.push(`Net: ${sign}${movements.total}`);
+		}
+
+		return parts.join(', ');
+	}
 </script>
 
-<div class="p-4 bg-gray-100 min-h-screen {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation">
-  <!-- Header with controls -->
-  <div class="flex justify-between items-center mb-4 sticky top-0 bg-gray-100 p-2 z-10">
-    <div class="flex items-center gap-2">
-      <h1 class="text-xl font-bold md:text-2xl">Administracion del Inventario</h1>
-    </div>
-    <div><BackToMenu /></div>
-    
-    <div class="flex items-center gap-2">
-      <button 
-        class="p-3 rounded-full hover:bg-gray-200 active:bg-gray-300 transition-colors touch-manipulation"
-        on:click={() => adminInventoryStore.toggleFullscreen()}
-        on:touchstart={handleTouchStart}
-        on:touchend={handleTouchEnd}
-        aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-      >
-        {#if isFullscreen}
-          <Minimize2 size={24} />
-        {:else}
-          <Maximize2 size={24} />
-        {/if}
-      </button>
-      
-      <button 
-        class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg disabled:bg-gray-400
-               hover:bg-blue-600 active:bg-blue-700 transition-colors touch-manipulation"
-        on:click={refreshData}
-        on:touchstart={handleTouchStart}
-        on:touchend={handleTouchEnd}
-        disabled={loading || !selectedUbicacion}
-      >
-        <RefreshCw size={20} class={loading ? 'animate-spin' : ''} />
-        <span class="hidden md:inline">{loading ? 'Refreshing...' : 'Refresh'}</span>
-      </button>
-    </div>
-  </div>
+<div
+	class="min-h-screen bg-gray-100 p-4 {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation"
+>
+	<!-- Header with controls -->
+	<div class="sticky top-0 z-10 mb-4 flex items-center justify-between bg-gray-100 p-2">
+		<div class="flex items-center gap-2">
+			<h1 class="text-xl font-bold md:text-2xl">Administracion del Inventario</h1>
+		</div>
+		<div><BackToMenu /></div>
 
-  <!-- Filters -->
-  <div class="flex flex-col md:flex-row gap-4 mb-6 sticky top-16 bg-gray-100 z-10 p-2">
-    <div class="relative flex-1">
-      <select 
-        value={selectedBodega}
-        on:change={handleBodegaChange}
-        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
-               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation"
-      >
-        <option value="">Seleccionar Bodega</option>
-        {#each bodegas as bodega}
-          <option value={bodega}>{bodega}</option>
-        {/each}
-      </select>
-      <ChevronDown 
-        size={20} 
-        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
-      />
-    </div>
+		<div class="flex items-center gap-2">
+			<button
+				class="touch-manipulation rounded-full p-3 transition-colors hover:bg-gray-200 active:bg-gray-300"
+				on:click={() => adminInventoryStore.toggleFullscreen()}
+				on:touchstart={handleTouchStart}
+				on:touchend={handleTouchEnd}
+				aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+			>
+				{#if isFullscreen}
+					<Minimize2 size={24} />
+				{:else}
+					<Maximize2 size={24} />
+				{/if}
+			</button>
 
-    <div class="relative flex-1">
-      <select 
-        value={selectedUbicacion}
-        on:change={handleUbicacionChange}
-        disabled={!selectedBodega}
-        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
-               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
-               disabled:bg-gray-100 disabled:cursor-not-allowed"
-      >
-        <option value="">Seleccionar Ubicación</option>
-        {#each ubicaciones as ubicacion}
-          <option value={ubicacion}>{ubicacion}</option>
-        {/each}
-      </select>
-      <ChevronDown 
-        size={20} 
-        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
-      />
-    </div>
+			<button
+				class="flex touch-manipulation items-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-white
+               transition-colors hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400"
+				on:click={refreshData}
+				on:touchstart={handleTouchStart}
+				on:touchend={handleTouchEnd}
+				disabled={loading || !selectedUbicacion}
+			>
+				<RefreshCw size={20} class={loading ? 'animate-spin' : ''} />
+				<span class="hidden md:inline">{loading ? 'Refreshing...' : 'Refresh'}</span>
+			</button>
+		</div>
+	</div>
 
-    <div class="relative flex-1">
-      <select 
-        value={selectedMarca}
-        on:change={handleMarcaChange}
-        disabled={!selectedUbicacion}
-        class="w-full h-12 px-4 pr-10 rounded-lg border border-gray-300 focus:border-blue-500 
-               focus:ring-2 focus:ring-blue-200 appearance-none bg-white touch-manipulation
-               disabled:bg-gray-100 disabled:cursor-not-allowed"
-      >
-        <option value="">Seleccionar Marca</option>
-        {#each marcas as marca}
-          <option value={marca}>{marca}</option>
-        {/each}
-      </select>
-      <ChevronDown 
-        size={20} 
-        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none"
-      />
-    </div>
-  </div>
+	<!-- Filters -->
+	<div class="sticky top-16 z-10 mb-6 flex flex-col gap-4 bg-gray-100 p-2 md:flex-row">
+		<div class="relative flex-1">
+			<select
+				value={selectedBodega}
+				on:change={handleBodegaChange}
+				class="h-12 w-full touch-manipulation appearance-none rounded-lg border border-gray-300 bg-white
+               px-4 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+			>
+				<option value="">Seleccionar Bodega</option>
+				{#each bodegas as bodega}
+					<option value={bodega}>{bodega}</option>
+				{/each}
+			</select>
+			<ChevronDown
+				size={20}
+				class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-500"
+			/>
+		</div>
 
-  <!-- Status messages -->
-  {#if loading}
-    <div class="fixed bottom-4 right-4 bg-blue-100 text-blue-700 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
-      <RefreshCw size={20} class="animate-spin" />
-      Actualizando...
-    </div>
-  {/if}
+		<div class="relative flex-1">
+			<select
+				value={selectedUbicacion}
+				on:change={handleUbicacionChange}
+				disabled={!selectedBodega}
+				class="h-12 w-full touch-manipulation appearance-none rounded-lg border border-gray-300 bg-white
+               px-4 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+               disabled:cursor-not-allowed disabled:bg-gray-100"
+			>
+				<option value="">Seleccionar Ubicación</option>
+				{#each ubicaciones as ubicacion}
+					<option value={ubicacion}>{ubicacion}</option>
+				{/each}
+			</select>
+			<ChevronDown
+				size={20}
+				class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-500"
+			/>
+		</div>
 
-  {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
-      <AlertTriangle size={20} />
-      {error}
-    </div>
-  {/if}
+		<div class="relative flex-1">
+			<select
+				value={selectedMarca}
+				on:change={handleMarcaChange}
+				disabled={!selectedUbicacion}
+				class="h-12 w-full touch-manipulation appearance-none rounded-lg border border-gray-300 bg-white
+               px-4 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+               disabled:cursor-not-allowed disabled:bg-gray-100"
+			>
+				<option value="">Seleccionar Marca</option>
+				{#each marcas as marca}
+					<option value={marca}>{marca}</option>
+				{/each}
+			</select>
+			<ChevronDown
+				size={20}
+				class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-500"
+			/>
+		</div>
+	</div>
 
-  <!-- Last updated info -->
-  {#if lastUpdated}
-    <div class="text-sm text-gray-600 mb-4">
-      Última actualización: {lastUpdated}
-    </div>
-  {/if}
+	<!-- Status messages -->
+	{#if loading}
+		<div
+			class="fixed bottom-4 right-4 flex items-center gap-2 rounded-lg bg-blue-100 px-4 py-3 text-blue-700 shadow-lg"
+		>
+			<RefreshCw size={20} class="animate-spin" />
+			Actualizando...
+		</div>
+	{/if}
 
-  <!-- Records Table -->
-  {#if records.length > 0}
-    <div class="overflow-x-auto bg-white rounded-lg shadow">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Código
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parte</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sistema</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Físico</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dif</th>
-            
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+	{#if error}
+		<div
+			class="mb-4 flex items-center gap-2 rounded-lg border border-red-400 bg-red-100 px-4 py-3 text-red-700"
+		>
+			<AlertTriangle size={20} />
+			{error}
+		</div>
+	{/if}
 
-            <!-- In the table header section, add this new header after your existing ones -->
-<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-  Movimientos
-</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ItemEAN13</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CajaEAN13</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Incidencia</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventariante</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-            <th class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Acciones
-            </th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          {#each records as record}
-            <tr class="hover:bg-gray-50 touch-manipulation">
-              <td class="sticky left-0 bg-white px-6 py-4 whitespace-nowrap">{record.codigo_barras}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{record.numero_parte}</td>
-              <td class="px-6 py-4">{record.descripcion}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{record.inventario_sistema}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{record.inventario_fisico}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                {calculateDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
-              </td>
+	<!-- Last updated info -->
+	{#if lastUpdated}
+		<div class="mb-4 text-sm text-gray-600">
+			Última actualización: {lastUpdated}
+		</div>
+	{/if}
 
-              <td class="px-6 py-4 whitespace-nowrap">
-                {#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Faltante'}
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
-                  </span>
-                {:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Sobrante'}
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
-                  </span>
-                {:else}
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
-                  </span>
-                {/if}
-              </td>
+	<!-- Records Table -->
+	{#if records.length > 0}
+		<div class="overflow-x-auto rounded-lg bg-white shadow">
+			<table class="min-w-full divide-y divide-gray-200">
+				<thead class="bg-gray-50">
+					<tr>
+						<th
+							class="sticky left-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+						>
+							Código
+						</th>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Parte</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Descripción</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Sistema</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Físico</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Dif</th
+						>
 
-<!--               <td class="px-6 py-4 whitespace-nowrap">
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Tipo</th
+						>
+
+						<!-- In the table header section, add this new header after your existing ones -->
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+						>
+							Movimientos
+						</th>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>ItemEAN13</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>CajaEAN13</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Incidencia</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Inventariante</th
+						>
+						<th
+							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+							>Fecha</th
+						>
+						<th
+							class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+						>
+							Acciones
+						</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-gray-200 bg-white">
+					{#each records as record}
+						<tr class="touch-manipulation hover:bg-gray-50">
+							<td class="sticky left-0 whitespace-nowrap bg-white px-6 py-4"
+								>{record.codigo_barras}</td
+							>
+							<td class="whitespace-nowrap px-6 py-4">{record.numero_parte}</td>
+							<td class="px-6 py-4">{record.descripcion}</td>
+							<td class="whitespace-nowrap px-6 py-4">{record.inventario_sistema}</td>
+							<td class="whitespace-nowrap px-6 py-4">{record.inventario_fisico}</td>
+							<td class="whitespace-nowrap px-6 py-4">
+								{calculateDiferencia(
+									record.inventario_sistema,
+									record.inventario_fisico,
+									record.fecha_inventario
+								)}
+							</td>
+
+							<td class="whitespace-nowrap px-6 py-4">
+								{#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Faltante'}
+									<span
+										class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800"
+									>
+										{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+									</span>
+								{:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Sobrante'}
+									<span
+										class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold leading-5 text-yellow-800"
+									>
+										{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
+									</span>
+								{:else}
+									<span
+										class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800"
+									>
+										{calculateTipoDiferencia(
+											record.inventario_sistema,
+											record.inventario_fisico,
+											record.fecha_inventario
+										)}
+									</span>
+								{/if}
+							</td>
+
+							<!--               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                   {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
                    record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
@@ -607,104 +666,106 @@ async function fetchMovements() {
                 </span>
               </td> -->
 
-              <!-- Add this new cell in your table row, after your existing cells -->
-<!-- Enhanced movements cell with Spanish labels, colors, and document numbers -->
-<td class="px-6 py-4 text-sm text-gray-900">
-  {#if record.movements && (record.movements.totalEntradas > 0 || record.movements.totalSalidas > 0)}
-    <div class="space-y-2 max-w-xs">
-      
-      <!-- Entradas (IN movements) -->
-      {#if record.movements.entradas.length > 0}
-        <div class="bg-green-50 p-2 rounded border border-green-200">
-          <div class="font-semibold text-green-800 text-xs mb-1">
-            Entradas: {record.movements.totalEntradas}
-          </div>
-          {#each record.movements.entradas as entrada}
-            <div class="text-xs text-green-700">
-              <span class="font-medium">+{entrada.cantidad}</span>
-              {#if entrada.documento !== 'Sin doc.'}
-                <span class="text-green-600">({entrada.documento})</span>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {/if}
+							<!-- Add this new cell in your table row, after your existing cells -->
+							<!-- Enhanced movements cell with Spanish labels, colors, and document numbers -->
+							<td class="px-6 py-4 text-sm text-gray-900">
+								{#if record.movements && (record.movements.totalEntradas > 0 || record.movements.totalSalidas > 0)}
+									<div class="max-w-xs space-y-2">
+										<!-- Entradas (IN movements) -->
+										{#if record.movements.entradas.length > 0}
+											<div class="rounded border border-green-200 bg-green-50 p-2">
+												<div class="mb-1 text-xs font-semibold text-green-800">
+													Entradas: {record.movements.totalEntradas}
+												</div>
+												{#each record.movements.entradas as entrada}
+													<div class="text-xs text-green-700">
+														<span class="font-medium">+{entrada.cantidad}</span>
+														{#if entrada.documento !== 'Sin doc.'}
+															<span class="text-green-600">({entrada.documento})</span>
+														{/if}
+													</div>
+												{/each}
+											</div>
+										{/if}
 
-      <!-- Salidas (OUT movements) -->
-      {#if record.movements.salidas.length > 0}
-        <div class="bg-red-50 p-2 rounded border border-red-200">
-          <div class="font-semibold text-red-800 text-xs mb-1">
-            Salidas: {record.movements.totalSalidas}
-          </div>
-          {#each record.movements.salidas as salida}
-            <div class="text-xs text-red-700">
-              <span class="font-medium">-{salida.cantidad}</span>
-              {#if salida.documento !== 'Sin doc.'}
-                <span class="text-red-600">({salida.documento})</span>
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {/if}
+										<!-- Salidas (OUT movements) -->
+										{#if record.movements.salidas.length > 0}
+											<div class="rounded border border-red-200 bg-red-50 p-2">
+												<div class="mb-1 text-xs font-semibold text-red-800">
+													Salidas: {record.movements.totalSalidas}
+												</div>
+												{#each record.movements.salidas as salida}
+													<div class="text-xs text-red-700">
+														<span class="font-medium">-{salida.cantidad}</span>
+														{#if salida.documento !== 'Sin doc.'}
+															<span class="text-red-600">({salida.documento})</span>
+														{/if}
+													</div>
+												{/each}
+											</div>
+										{/if}
 
-      <!-- Net Total -->
-      {#if record.movements.neto !== 0}
-        <div class="text-center">
-          <span class="inline-block px-2 py-1 rounded text-xs font-bold {record.movements.neto > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-            Neto: {record.movements.neto > 0 ? '+' : ''}{record.movements.neto}
-          </span>
-        </div>
-      {/if}
-    </div>
-  {:else}
-    <span class="text-gray-400 text-center block">Sin movimientos</span>
-  {/if}
-</td>
+										<!-- Net Total -->
+										{#if record.movements.neto !== 0}
+											<div class="text-center">
+												<span
+													class="inline-block rounded px-2 py-1 text-xs font-bold {record.movements
+														.neto > 0
+														? 'bg-green-100 text-green-800'
+														: 'bg-red-100 text-red-800'}"
+												>
+													Neto: {record.movements.neto > 0 ? '+' : ''}{record.movements.neto}
+												</span>
+											</div>
+										{/if}
+									</div>
+								{:else}
+									<span class="block text-center text-gray-400">Sin movimientos</span>
+								{/if}
+							</td>
 
-              <td class="px-6 py-4">{record.single_item_ean13}</td>
-              <td class="px-6 py-4">{record.master_carton_ean13}</td>
-              <td class="px-6 py-4">{record.incidencia}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{record.nombre}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{formatDateTime(record.fecha_inventario)}</td>
-              <td class="sticky right-0 bg-white px-6 py-4 whitespace-nowrap">
-                <button
-                  class="flex items-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-lg 
-                         hover:bg-blue-600 active:bg-blue-700 disabled:bg-gray-400 transition-colors
-                         touch-manipulation"
-                  on:click={() => validateRecord(record)}
-                  on:touchstart={handleTouchStart}
-                  on:touchend={handleTouchEnd}
-                  disabled={record.validado}
-                >
-                  {#if record.validado}
-                    <CheckCircle size={20} />
-                    <span class="hidden md:inline">Validado</span>
-                  {:else}
-                    <XCircle size={20} />
-                    <span class="hidden md:inline">Validar</span>
-                  {/if}
-                </button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  {:else}
-    <div class="text-center py-8 text-gray-500">
-      No se encontraron registros.
-    </div>
-  {/if}
+							<td class="px-6 py-4">{record.single_item_ean13}</td>
+							<td class="px-6 py-4">{record.master_carton_ean13}</td>
+							<td class="px-6 py-4">{record.incidencia}</td>
+							<td class="whitespace-nowrap px-6 py-4">{record.nombre}</td>
+							<td class="whitespace-nowrap px-6 py-4">{formatDateTime(record.fecha_inventario)}</td>
+							<td class="sticky right-0 whitespace-nowrap bg-white px-6 py-4">
+								<button
+									class="flex touch-manipulation items-center gap-2 rounded-lg bg-blue-500 px-4 py-3
+                         text-white transition-colors hover:bg-blue-600 active:bg-blue-700
+                         disabled:bg-gray-400"
+									on:click={() => validateRecord(record)}
+									on:touchstart={handleTouchStart}
+									on:touchend={handleTouchEnd}
+									disabled={record.validado}
+								>
+									{#if record.validado}
+										<CheckCircle size={20} />
+										<span class="hidden md:inline">Validado</span>
+									{:else}
+										<XCircle size={20} />
+										<span class="hidden md:inline">Validar</span>
+									{/if}
+								</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	{:else}
+		<div class="py-8 text-center text-gray-500">No se encontraron registros.</div>
+	{/if}
 </div>
 
 <style>
-  /* Add touch-specific styles */
-  :global(.touch-manipulation) {
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-  }
+	/* Add touch-specific styles */
+	:global(.touch-manipulation) {
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
 
-  :global(.active) {
-    transform: scale(0.98);
-  }
-</style>        
+	:global(.active) {
+		transform: scale(0.98);
+	}
+</style>
