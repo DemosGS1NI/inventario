@@ -7,6 +7,11 @@ import { validateEnvironment } from '$lib/environment'; // Clear what this valid
 validateEnvironment();
 
 export async function handle({ event, resolve }) {
+  // Handle Chrome DevTools requests
+  if (event.url.pathname === '/.well-known/appspecific/com.chrome.devtools.json') {
+    return new Response(null, { status: 204 });
+  }
+
   const token = event.cookies.get(jwtConfig.cookie.name);
 
   if (token) {
