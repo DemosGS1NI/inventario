@@ -5,6 +5,7 @@
   import { writable } from 'svelte/store';
   export let data;
 
+
   // Destructure user data
   const { userId, userName, userRole } = data;
 
@@ -89,31 +90,64 @@
     }
   }
 
-  // Load menu data
-  onMount(async () => {
-    try {
-      const response = await fetch('/api/menu');
-      const result = await response.json();
+// Load menu data
+// debido a que ahora se carga desde tablas es mejor hacer caching en vez de estar leyendo cada vez.
+const MENU_CACHE_KEY = 'menu_cache';
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+onMount(async () => {
+  try {
+    // Check for cached menu first
+    const cached = localStorage.getItem(MENU_CACHE_KEY);
+    if (cached) {
+      const { data, timestamp, userRole: cachedRole } = JSON.parse(cached);
       
-      if (result.status === 'error') {
-        throw new Error(result.error.message);
+      // Check if cache is still valid and for same user role
+      if (Date.now() - timestamp < CACHE_DURATION && cachedRole === userRole) {
+        menu = data;
+        loading = false;
+        
+        // Initialize category states
+        const initialState = {};
+        Object.keys(menu).forEach(category => {
+          initialState[category] = false;
+        });
+        categoryStates.set(initialState);
+        return; // Skip API call
       }
-      
-      menu = result.data;
-      
-      // Initialize all categories as closed
-      const initialState = {};
-      Object.keys(menu).forEach(category => {
-        initialState[category] = false;
-      });
-      categoryStates.set(initialState);
-    } catch (err) {
-      error = err.message;
-      console.error('Error loading menu:', err);
-    } finally {
-      loading = false;
     }
-  });
+
+    // If no valid cache, fetch from API
+    const response = await fetch('/api/menu');
+    const result = await response.json();
+    
+    if (result.status === 'error') {
+      throw new Error(result.error.message);
+    }
+    
+    menu = result.data;
+    
+    // Cache the result
+    localStorage.setItem(MENU_CACHE_KEY, JSON.stringify({
+      data: menu,
+      timestamp: Date.now(),
+      userRole: userRole
+    }));
+    
+    // Initialize category states
+    const initialState = {};
+    Object.keys(menu).forEach(category => {
+      initialState[category] = false;
+    });
+    categoryStates.set(initialState);
+  } catch (err) {
+    error = err.message;
+    console.error('Error loading menu:', err);
+  } finally {
+    loading = false;
+  }
+});
+
 </script>
 
 <div class="min-h-screen bg-gray-100 p-4 md:p-8">
