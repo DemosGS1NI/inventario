@@ -1,5 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 // Load environment variables
@@ -12,7 +13,9 @@ dotenv.config();
  * @param {URL} params.url - Request URL with search parameters
  * @returns {Promise<Response>} JSON response with inventory records
  */
-export async function GET({ url }) {
+export async function GET({ url, locals }) {
+	requireAuth(locals);
+
 	const bodega = url.searchParams.get('bodega');
 	const marca = url.searchParams.get('marca');
 	const ubicacion = url.searchParams.get('ubicacion');
@@ -54,11 +57,7 @@ export async function GET({ url }) {
  * @returns {Promise<Response>} JSON response confirming update
  */
 export async function PUT({ request, locals }) {
-	//get the session user id
-	const userId = locals.user?.userId; // Get the user ID from session
-	if (!userId) {
-		return new Response('Unauthorized', { status: 401 });
-	}
+	const user = requireAuth(locals);
 
 	try {
 		const {
@@ -76,7 +75,7 @@ export async function PUT({ request, locals }) {
 			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
 		}
 
-		console.log('Updating product:', { bodega, ubicacion, marca, userId });
+		console.log('Updating product:', { bodega, ubicacion, marca, userId: user.userId });
 
 		const currentDateTime = new Date().toISOString();
 
@@ -89,7 +88,7 @@ export async function PUT({ request, locals }) {
         fecha_inventario = ${currentDateTime},
         categoria_incidencia = ${categoria_incidencia},
         incidencia = ${incidencia},
-        actualizado_por = ${userId}
+        actualizado_por = ${user.userId}
       WHERE 
         bodega = ${bodega} AND 
         marca = ${marca} AND 

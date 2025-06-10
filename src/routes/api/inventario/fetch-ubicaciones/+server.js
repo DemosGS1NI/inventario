@@ -1,18 +1,14 @@
 // src/routes/api/inventario/fetch-ubicaciones/+server.js
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
 export async function GET({ url, locals }) {
-	// Get user ID from session for security
-	const userId = locals.user?.userId;
-	if (!userId) {
-		console.error('Unauthorized: User session not found');
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	requireAuth(locals);
 
 	// Get query parameters
 	const bodega = url.searchParams.get('bodega');
@@ -22,7 +18,7 @@ export async function GET({ url, locals }) {
 
 	// Validate required parameters
 	if (!bodega) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega and Marca are required');
+		return errorResponse(400, 'BAD_REQUEST', 'Bodega is required');
 	}
 
 	try {
@@ -34,9 +30,6 @@ export async function GET({ url, locals }) {
                AND ubicacion IS NOT NULL
           ORDER BY ubicacion
         `;
-
-		// Debug logging
-		//console.log('Query results:', result.rows);
 
 		// Extract ubicaciones from the result
 		const ubicaciones = result.rows.map((row) => row.ubicacion);

@@ -1,15 +1,13 @@
 import { cleanupExpiredTokens } from '$lib/services/tokenService';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAdmin } from '$lib/authMiddleware';
 
 /**
  * API endpoint to clean up expired revoked tokens
  * This can be called manually or set up as a cron job
  */
 export async function POST({ locals }) {
-	// Optional: Require admin access for this endpoint
-	if (!locals.user || locals.user.userRole !== 'Admin') {
-		return errorResponse(403, 'FORBIDDEN', 'Admin access required');
-	}
+	requireAdmin(locals);
 
 	try {
 		const cleanedCount = await cleanupExpiredTokens();
@@ -31,10 +29,7 @@ export async function POST({ locals }) {
  * GET endpoint to check how many expired tokens need cleanup
  */
 export async function GET({ locals }) {
-	// Optional: Require admin access for this endpoint
-	if (!locals.user || locals.user.userRole !== 'Admin') {
-		return errorResponse(403, 'FORBIDDEN', 'Admin access required');
-	}
+	requireAdmin(locals);
 
 	try {
 		// Import sql here since we need it for the count query

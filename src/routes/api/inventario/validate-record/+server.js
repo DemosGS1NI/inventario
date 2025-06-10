@@ -1,23 +1,20 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 export async function PUT({ request, locals }) {
-	//get the session user id
-	const userId = locals.user?.userId; // Get the user ID from session
-	if (!userId) {
-		return new Response('Unauthorized', { status: 401 });
-	}
+	const user = requireAuth(locals);
 
 	try {
 		const { id, validado_por } = await request.json();
 
-		console.log(id, userId);
+		console.log(id, user.userId);
 
 		// Validate input
-		if (!id || !userId) {
+		if (!id || !user.userId) {
 			return errorResponse(400, 'INVALID_INPUT', 'Invalid or missing input data');
 		}
 
@@ -26,7 +23,7 @@ export async function PUT({ request, locals }) {
       UPDATE inventario
       SET 
         validado = true, 
-        validado_por = ${userId}
+        validado_por = ${user.userId}
       WHERE id = ${id}
       RETURNING *;
     `;

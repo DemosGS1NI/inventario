@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import xlsx from 'xlsx';
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAdmin } from '$lib/authMiddleware';
 
 dotenv.config();
 
@@ -87,22 +88,9 @@ function findBestSheet(workbook) {
 }
 
 export const POST = async ({ request, locals }) => {
+	const user = requireAdmin(locals);
+
 	try {
-		// Authentication check
-		const userId = locals.user?.userId;
-		if (!userId) {
-			return errorResponse(401, 'UNAUTHORIZED', 'Se requiere autenticación');
-		}
-
-		// Role check - only Admin and Supervisor can import
-		if (!['Admin', 'Supervisor'].includes(locals.user?.userRole)) {
-			return errorResponse(
-				403,
-				'FORBIDDEN',
-				'Solo administradores y supervisores pueden importar datos'
-			);
-		}
-
 		const formData = await request.formData();
 		const file = formData.get('file');
 
@@ -282,7 +270,7 @@ export const POST = async ({ request, locals }) => {
                     timestamp
                 ) VALUES (
                     'EXCEL_IMPORT_START',
-                    ${userId},
+                    ${user.userId},
                     ${JSON.stringify({
 											fileName: file.name,
 											sheetName,
@@ -400,7 +388,7 @@ export const POST = async ({ request, locals }) => {
                         timestamp
                     ) VALUES (
                         'EXCEL_IMPORT_FAILED',
-                        ${userId},
+                        ${user.userId},
                         ${JSON.stringify({
 													fileName: file.name,
 													sheetName,

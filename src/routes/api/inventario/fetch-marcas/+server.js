@@ -3,18 +3,14 @@
 
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
 export async function GET({ url, locals }) {
-	// Get user ID from session for security
-	const userId = locals.user?.userId;
-	if (!userId) {
-		console.error('Unauthorized: User session not found');
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	requireAuth(locals);
 
 	// Get query parameters
 	const bodega = url.searchParams.get('bodega');
@@ -49,9 +45,6 @@ export async function GET({ url, locals }) {
             ORDER BY marca
         `;
 		}
-
-		// Debug logging
-		// console.log('Query results:', result.rows);
 
 		// Extract marcas from the result
 		const marcas = result.rows.map((row) => row.marca);

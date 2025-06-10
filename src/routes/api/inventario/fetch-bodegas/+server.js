@@ -1,15 +1,15 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-export const GET = async () => {
-	try {
-		// Log the connection string for debugging
-		console.log('fetching bodegas from database');
+export const GET = async ({ locals }) => {
+	requireAuth(locals);
 
+	try {
 		// Query to fetch distinct bodega names
 		const { rows } = await sql`
       SELECT DISTINCT bodega
@@ -24,7 +24,7 @@ export const GET = async () => {
 		console.log('fetching bodegas', bodegas);
 		return successResponse(bodegas, 'Bodegas fetched successfully');
 	} catch (error) {
-		console.error('Full Error Details:', {
+		console.error('fetch-bodegas Error Details:', {
 			message: error.message,
 			stack: error.stack,
 			name: error.name,

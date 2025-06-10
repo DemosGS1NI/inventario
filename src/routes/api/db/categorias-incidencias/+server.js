@@ -1,11 +1,15 @@
 import { sql } from '@vercel/postgres';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth, requireAdmin } from '$lib/authMiddleware';
 
 dotenv.config();
 
 // Create a new category
-export async function POST({ request }) {
+export async function POST({ request, locals }) {
+	// Require admin for creating categories
+	requireAdmin(locals);
+
 	try {
 		const { categoria, descripcion } = await request.json();
 
@@ -33,7 +37,10 @@ export async function POST({ request }) {
 }
 
 // Read all categories
-export async function GET() {
+export async function GET({ locals }) {
+	// All authenticated users can read categories
+	requireAuth(locals);
+
 	try {
 		const result = await sql`SELECT * FROM categorias_incidencias ORDER BY id`;
 
@@ -50,7 +57,10 @@ export async function GET() {
 }
 
 // Update a category by ID
-export async function PUT({ request }) {
+export async function PUT({ request, locals }) {
+	// Require admin for updating categories
+	requireAdmin(locals);
+
 	try {
 		const { id, categoria, descripcion } = await request.json();
 
@@ -83,7 +93,10 @@ export async function PUT({ request }) {
 }
 
 // Delete a category by ID
-export async function DELETE({ request }) {
+export async function DELETE({ request, locals }) {
+	// Require admin for deleting categories
+	requireAdmin(locals);
+
 	try {
 		const { id } = await request.json();
 

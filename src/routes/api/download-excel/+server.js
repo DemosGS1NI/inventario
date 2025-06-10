@@ -1,11 +1,14 @@
 import { sql } from '@vercel/postgres';
 import XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { requireAdmin } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-export async function GET() {
+export async function GET({ locals }) {
+	requireAdmin(locals);
+
 	try {
 		// Fetch inventory records with user names
 		const inventarioResult = await sql`

@@ -1,14 +1,12 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 export async function GET({ locals }) {
-	// Check if user is logged in
-	if (!locals.user) {
-		return errorResponse(401, 'UNAUTHORIZED', 'You are not authorized to access this resource');
-	}
+	requireAuth(locals);
 
 	try {
 		// Get menu items for user's role

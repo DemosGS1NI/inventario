@@ -1,16 +1,13 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
-import dotenv from 'dotenv';
+import { requireAuth } from '$lib/authMiddleware';
 import XLSX from 'xlsx';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
 export async function GET({ url, locals }) {
-	// Authentication check
-	const userId = locals.user?.userId;
-	if (!userId) {
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	requireAuth(locals);
 
 	try {
 		// Get query parameters for filtering

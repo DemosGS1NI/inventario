@@ -1,16 +1,13 @@
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Create a new movement
 export async function POST({ request, locals }) {
-	// Authentication check (same pattern as existing endpoints)
-	const userId = locals.user?.userId;
-	if (!userId) {
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	const user = requireAuth(locals);
 
 	try {
 		const {
@@ -53,7 +50,7 @@ export async function POST({ request, locals }) {
       )
       VALUES (
         ${bodega}, ${ubicacion}, ${marca}, ${codigo_barras}, ${numero_parte}, ${descripcion},
-        ${tipo_movimiento}, ${cantidad}, ${numero_documento}, ${comentarios}, ${userId}
+        ${tipo_movimiento}, ${cantidad}, ${numero_documento}, ${comentarios}, ${user.userId}
       )
       RETURNING id, fecha_movimiento
     `;
@@ -72,11 +69,7 @@ export async function POST({ request, locals }) {
 
 // Get movements with optional filtering
 export async function GET({ url, locals }) {
-	// Authentication check
-	const userId = locals.user?.userId;
-	if (!userId) {
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	requireAuth(locals);
 
 	try {
 		// Get query parameters for filtering

@@ -1,19 +1,11 @@
 import { sql } from '@vercel/postgres'; // Importing the sql function from @vercel/postgres
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAdmin } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 dotenv.config(); // Load environment variables from .env file
 
 export async function GET({ url, locals }) {
-	// Check authentication first
-	const user = locals?.user;
-	if (!user) {
-		return errorResponse(401, 'UNAUTHORIZED', 'Authentication required');
-	}
-
-	// Check user role
-	if (user.userRole !== 'Admin') {
-		return errorResponse(403, 'FORBIDDEN', 'Admin access required');
-	}
+	requireAdmin(locals);
 
 	const page = Math.max(1, parseInt(url.searchParams.get('page')) || 1);
 	const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit')) || 10));

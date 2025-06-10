@@ -1,11 +1,14 @@
 import { sql } from '@vercel/postgres';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAdmin } from '$lib/authMiddleware';
 
 dotenv.config();
 
 // Get all roles
-export async function GET() {
+export async function GET({ locals }) {
+	requireAdmin(locals);
+
 	try {
 		const result = await sql`SELECT * FROM roles ORDER BY fecha_creacion DESC`;
 		return successResponse(result.rows, 'Roles obtenidos satisfactoriamente');
@@ -16,7 +19,9 @@ export async function GET() {
 }
 
 // Create a new role
-export async function POST({ request }) {
+export async function POST({ request, locals }) {
+	requireAdmin(locals);
+
 	try {
 		const body = await request.json();
 		const { nombre_rol, descripcion, opciones_menu, accesos_api } = body;
@@ -38,7 +43,9 @@ export async function POST({ request }) {
 }
 
 // Update an existing role
-export async function PUT({ request }) {
+export async function PUT({ request, locals }) {
+	requireAdmin(locals);
+
 	try {
 		const body = await request.json();
 		const { id, nombre_rol, descripcion, opciones_menu, accesos_api } = body;
@@ -70,7 +77,9 @@ export async function PUT({ request }) {
 }
 
 // Delete a role
-export async function DELETE({ request }) {
+export async function DELETE({ request, locals }) {
+	requireAdmin(locals);
+
 	try {
 		const body = await request.json();
 		const { id } = body;
