@@ -10,7 +10,10 @@
 		ChevronDown,
 		AlertTriangle,
 		CheckCircle,
-		XCircle
+		XCircle,
+		TrendingUp,
+		Users,
+		MapPin
 	} from 'lucide-svelte';
 
 	console.log('Admin Inventory Component: Initializing');
@@ -27,7 +30,8 @@
 		loading,
 		error,
 		lastUpdated,
-		isFullscreen
+		isFullscreen,
+		progressData
 	} = $adminInventoryStore);
 
 	// Touch feedback handlers
@@ -44,43 +48,39 @@
 		console.log('Bodega changed:', event.target.value);
 		const newBodega = event.target.value;
 
-		// First update selections in store
 		adminInventoryStore.setSelections(newBodega, '', '');
 
-		// Then force an immediate data fetch
 		if (newBodega) {
 			fetchBodegas().then(() => {
 				fetchUbicaciones();
 			});
 		}
+		// Fetch progress data when bodega changes
+		fetchProgressData();
 	}
 
 	function handleUbicacionChange(event) {
 		const newUbicacion = event.target.value;
-
-		// First update selections in store
 		adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
 
-		// Then force an immediate data fetch
 		if (newUbicacion) {
 			fetchUbicaciones().then(() => {
 				fetchMarcas();
 			});
 		}
+		fetchProgressData();
 	}
 
 	function handleMarcaChange(event) {
 		const newMarca = event.target.value;
-
-		// First update selections in store
 		adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
 
-		// Then force an immediate data fetch
 		if (newMarca) {
 			fetchMarcas().then(() => {
 				fetchRecords();
 			});
 		}
+		fetchProgressData();
 	}
 
 	// Fetch functions
@@ -92,7 +92,6 @@
 
 			if (res.ok && data.status === 'success') {
 				adminInventoryStore.setBodegas(data.data);
-				// If we have stored selections, fetch related data
 				if (selectedBodega) {
 					await fetchUbicaciones();
 					if (selectedUbicacion) {
@@ -121,7 +120,7 @@
 		}
 
 		adminInventoryStore.setLoading(true);
-		adminInventoryStore.setError(null); // Clear any previous errors
+		adminInventoryStore.setError(null);
 
 		try {
 			const url = `/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
@@ -131,7 +130,6 @@
 			const data = await res.json();
 
 			if (res.ok && data.status === 'success') {
-				// Ensure we're still on the same selection before updating
 				if (selectedBodega && selectedUbicacion) {
 					adminInventoryStore.setMarcas(data.data);
 				}
@@ -141,7 +139,7 @@
 		} catch (error) {
 			console.error('Marcas fetch error:', error);
 			adminInventoryStore.setError('Error fetching marcas: ' + error.message);
-			adminInventoryStore.setMarcas([]); // Clear marcas on error
+			adminInventoryStore.setMarcas([]);
 		} finally {
 			adminInventoryStore.setLoading(false);
 		}
@@ -154,7 +152,7 @@
 		}
 
 		adminInventoryStore.setLoading(true);
-		adminInventoryStore.setError(null); // Clear any previous errors
+		adminInventoryStore.setError(null);
 
 		try {
 			const url = `/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
@@ -164,7 +162,6 @@
 			const data = await res.json();
 
 			if (res.ok && data.status === 'success') {
-				// Ensure we're still on the same bodega before updating
 				if (selectedBodega) {
 					adminInventoryStore.setUbicaciones(data.data);
 				}
@@ -174,13 +171,13 @@
 		} catch (error) {
 			console.error('Ubicaciones fetch error:', error);
 			adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
-			adminInventoryStore.setUbicaciones([]); // Clear ubicaciones on error
+			adminInventoryStore.setUbicaciones([]);
 		} finally {
 			adminInventoryStore.setLoading(false);
 		}
 	}
+
 	async function fetchRecords() {
-		// Check parameters in the correct order of selection
 		if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
 			console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
 			return;
@@ -188,35 +185,20 @@
 
 		adminInventoryStore.setLoading(true);
 		try {
-			const url = `/api/inventario/registros?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+			// NEW API PATH: admin-inventario/records
+			const url = `/api/admin-inventario/records?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
 			console.log('Fetching records with URL:', url);
 
-			// Fetch both inventory records and movements in parallel
-			const [inventoryRes, movementsData] = await Promise.all([fetch(url), fetchMovements()]);
-
+			const inventoryRes = await fetch(url);
 			const data = await inventoryRes.json();
 			console.log('Response data:', data);
 
 			if (inventoryRes.ok && data.status === 'success') {
-				// Add movement data to each record
-				const recordsWithMovements = data.data.map((record) => ({
-					...record,
-					movements: movementsData[record.codigo_barras] || {
-						entradas: [],
-						salidas: [],
-						totalEntradas: 0,
-						totalSalidas: 0,
-						neto: 0
-					}
-				}));
-
-				adminInventoryStore.setRecords(recordsWithMovements);
+				adminInventoryStore.setRecords(data.data);
 			} else if (inventoryRes.status === 404) {
-				// Handle the "Product not found" case
-				adminInventoryStore.setRecords([]); // Set empty records array
+				adminInventoryStore.setRecords([]);
 				adminInventoryStore.setError('No se encontraron registros para esta selección');
 			} else {
-				// Handle other errors
 				const errorMessage = data.error?.message || 'Error desconocido';
 				adminInventoryStore.setError('Error al cargar registros: ' + errorMessage);
 			}
@@ -228,66 +210,37 @@
 		}
 	}
 
-	// Enhanced function to fetch movements with document details
-	async function fetchMovements() {
-		if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
-			return {};
-		}
-
+	// NEW: Fetch progress data
+	async function fetchProgressData() {
 		try {
-			const url = `/api/db/movimientos?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+			// NEW API PATH: admin-inventario/progress
+			let url = '/api/admin-inventario/progress';
+			const params = new URLSearchParams();
+			
+			if (selectedBodega) params.append('bodega', selectedBodega);
+			if (selectedMarca) params.append('marca', selectedMarca);
+			if (selectedUbicacion) params.append('ubicacion', selectedUbicacion);
+			
+			if (params.toString()) {
+				url += '?' + params.toString();
+			}
+
 			const res = await fetch(url);
 			const data = await res.json();
 
 			if (res.ok && data.status === 'success') {
-				// Group movements by product code with detailed information
-				const movementsByProduct = {};
-
-				data.data.forEach((movement) => {
-					const key = movement.codigo_barras;
-					if (!movementsByProduct[key]) {
-						movementsByProduct[key] = {
-							entradas: [],
-							salidas: [],
-							totalEntradas: 0,
-							totalSalidas: 0,
-							neto: 0
-						};
-					}
-
-					const movementDetail = {
-						cantidad: movement.cantidad,
-						documento: movement.numero_documento || 'Sin doc.',
-						fecha: movement.fecha_movimiento,
-						usuario: movement.usuario_nombre || 'Usuario'
-					};
-
-					if (movement.tipo_movimiento === 'IN') {
-						movementsByProduct[key].entradas.push(movementDetail);
-						movementsByProduct[key].totalEntradas += movement.cantidad;
-					} else {
-						movementsByProduct[key].salidas.push(movementDetail);
-						movementsByProduct[key].totalSalidas += movement.cantidad;
-					}
-
-					movementsByProduct[key].neto =
-						movementsByProduct[key].totalEntradas - movementsByProduct[key].totalSalidas;
-				});
-
-				return movementsByProduct;
-			} else {
-				console.error('Error fetching movements:', data.message);
-				return {};
+				adminInventoryStore.setProgressData(data.data);
 			}
 		} catch (error) {
-			console.error('Error fetching movements:', error);
-			return {};
+			console.error('Error fetching progress data:', error);
 		}
 	}
+
 	async function validateRecord(record) {
 		try {
 			adminInventoryStore.setLoading(true);
-			const res = await fetch('/api/inventario/validate-record', {
+			// NEW API PATH: admin-inventario/validation
+			const res = await fetch('/api/admin-inventario/validation', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -300,6 +253,7 @@
 
 			if (res.ok && data.status === 'success') {
 				await fetchRecords();
+				await fetchProgressData(); // Refresh progress after validation
 			} else {
 				adminInventoryStore.setError(
 					'Error validating record: ' + (data.message || 'Unknown error')
@@ -313,7 +267,6 @@
 	}
 
 	function calculateDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
-		//if fecha inventario is null then there is no inventory being made so no sobrante or faltante
 		if (fecha_inventario === null) {
 			return '';
 		} else {
@@ -321,28 +274,14 @@
 		}
 	}
 
-	/*   function calculateTipoDiferencia(inventario_sistema, inventario_fisico) {
-    if (inventario_sistema > inventario_fisico) {
-      return 'Faltante';
-    } else if (inventario_sistema < inventario_fisico) {
-      return 'Sobrante';
-    } else {
-      return 'Sin Diferencia';
-    }
-  } */
-
 	function calculateTipoDiferencia(inventario_sistema, inventario_fisico, fecha_inventario) {
-		// Convert inputs to numbers and calculate the difference
 		const sistema = Number(inventario_sistema);
 		const fisico = Number(inventario_fisico);
-		const fechai = fecha_inventario;
 
-		//if fecha inventario is null then there is no inventory being made so no sobrante or faltante
 		if (fecha_inventario === null) {
 			return '';
 		}
 
-		// Check for NaN values after conversion
 		if (isNaN(sistema) || isNaN(fisico)) {
 			return 'Error: Valores no numéricos';
 		}
@@ -366,6 +305,7 @@
 		if (selectedBodega && selectedMarca && selectedUbicacion) {
 			refreshTimeout = setTimeout(async () => {
 				await fetchRecords();
+				await fetchProgressData();
 			}, 300);
 		}
 	}
@@ -375,7 +315,7 @@
 		adminInventoryStore.setLoading(true);
 		try {
 			await fetchBodegas();
-			// Fetch dependent data if we have stored selections
+			await fetchProgressData(); // Fetch initial progress data
 			if (selectedBodega) {
 				await fetchUbicaciones();
 				if (selectedUbicacion) {
@@ -393,27 +333,26 @@
 		}
 	});
 
-	// Cleanup when component is destroyed
 	onDestroy(() => {
 		if (refreshTimeout) {
 			clearTimeout(refreshTimeout);
 		}
 	});
 
+	// SIMPLIFIED: Get simple movement summary
 	function getMovementSummary(movements) {
-		if (!movements || (movements.in === 0 && movements.out === 0)) {
-			return '-';
+		if (!movements || movements.netMovimientos === 0) {
+			return { display: '-', class: 'text-gray-600' };
 		}
 
-		const parts = [];
-		if (movements.in > 0) parts.push(`IN: +${movements.in}`);
-		if (movements.out > 0) parts.push(`OUT: -${movements.out}`);
-		if (movements.total !== 0) {
-			const sign = movements.total > 0 ? '+' : '';
-			parts.push(`Net: ${sign}${movements.total}`);
-		}
-
-		return parts.join(', ');
+		const net = movements.netMovimientos;
+		const sign = net > 0 ? '+' : '';
+		const colorClass = net > 0 ? 'text-green-600' : 'text-red-600';
+		
+		return {
+			display: `Net: ${sign}${net}`,
+			class: colorClass
+		};
 	}
 </script>
 
@@ -423,7 +362,7 @@
 	<!-- Header with controls -->
 	<div class="sticky top-0 z-10 mb-4 flex items-center justify-between bg-gray-100 p-2">
 		<div class="flex items-center gap-2">
-			<h1 class="text-xl font-bold md:text-2xl">Administracion del Inventario</h1>
+			<h1 class="text-xl font-bold md:text-2xl">Administración del Inventario</h1>
 		</div>
 		<div><BackToMenu /></div>
 
@@ -455,6 +394,93 @@
 			</button>
 		</div>
 	</div>
+
+	<!-- NEW: Progress Tracking Section -->
+	{#if progressData && progressData.overallExercise}
+		<div class="sticky top-16 z-10 mb-6 grid grid-cols-1 gap-4 bg-gray-100 p-2 md:grid-cols-3">
+			<!-- Overall Exercise Progress -->
+			<div class="rounded-lg bg-white p-4 shadow">
+				<div class="flex items-center gap-2 mb-2">
+					<TrendingUp size={20} class="text-blue-500" />
+					<h3 class="font-semibold text-gray-800">Progreso General</h3>
+				</div>
+				<div class="space-y-2">
+					<div class="flex justify-between text-sm">
+						<span>Contados:</span>
+						<span class="font-medium">
+							{progressData.overallExercise.countedProducts}/{progressData.overallExercise.totalProducts}
+							({progressData.overallExercise.percentageCounted}%)
+						</span>
+					</div>
+					<div class="w-full bg-gray-200 rounded-full h-2">
+						<div 
+							class="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+							style="width: {progressData.overallExercise.percentageCounted}%"
+						></div>
+					</div>
+					<div class="flex justify-between text-sm">
+						<span>Validados:</span>
+						<span class="font-medium text-green-600">
+							{progressData.overallExercise.validatedProducts} ({progressData.overallExercise.percentageValidated}%)
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Current View Progress -->
+			{#if progressData.currentView}
+				<div class="rounded-lg bg-white p-4 shadow">
+					<div class="flex items-center gap-2 mb-2">
+						<MapPin size={20} class="text-green-500" />
+						<h3 class="font-semibold text-gray-800">Vista Actual</h3>
+					</div>
+					<div class="space-y-2">
+						<div class="flex justify-between text-sm">
+							<span>Contados:</span>
+							<span class="font-medium">
+								{progressData.currentView.countedProducts}/{progressData.currentView.totalProducts}
+								({progressData.currentView.percentageCounted}%)
+							</span>
+						</div>
+						<div class="w-full bg-gray-200 rounded-full h-2">
+							<div 
+								class="bg-green-500 h-2 rounded-full transition-all duration-300" 
+								style="width: {progressData.currentView.percentageCounted}%"
+							></div>
+						</div>
+						<div class="flex justify-between text-sm">
+							<span>Validados:</span>
+							<span class="font-medium text-green-600">
+								{progressData.currentView.validatedProducts} ({progressData.currentView.percentageValidated}%)
+							</span>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Summary Stats -->
+			<div class="rounded-lg bg-white p-4 shadow">
+				<div class="flex items-center gap-2 mb-2">
+					<Users size={20} class="text-purple-500" />
+					<h3 class="font-semibold text-gray-800">Resumen</h3>
+				</div>
+				<div class="space-y-1 text-sm">
+					<div class="flex justify-between">
+						<span>Bodegas:</span>
+						<span class="font-medium">{progressData.summary.totalBodegas}</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Ubicaciones:</span>
+						<span class="font-medium">{progressData.summary.totalUbicaciones}</span>
+					</div>
+					<div class="flex justify-between">
+						<span>Pendientes Validación:</span>
+						<span class="font-medium text-orange-600">{progressData.summary.pendingValidation}</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Filters -->
 	<div class="sticky top-16 z-10 mb-6 flex flex-col gap-4 bg-gray-100 p-2 md:flex-row">
@@ -574,13 +600,11 @@
 							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 							>Dif</th
 						>
-
 						<th
 							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 							>Tipo</th
 						>
-
-						<!-- In the table header section, add this new header after your existing ones -->
+						<!-- SIMPLIFIED: Movement column header -->
 						<th
 							class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 						>
@@ -630,7 +654,6 @@
 									record.fecha_inventario
 								)}
 							</td>
-
 							<td class="whitespace-nowrap px-6 py-4">
 								{#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Faltante'}
 									<span
@@ -657,70 +680,17 @@
 								{/if}
 							</td>
 
-							<!--               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                  {record.inventario_sistema > record.inventario_fisico ? 'bg-red-100 text-red-800' : 
-                   record.inventario_sistema < record.inventario_fisico ? 'bg-yellow-100 text-yellow-800' : 
-                   'bg-green-100 text-green-800'}">
-                  {calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico)}
-                </span>
-              </td> -->
-
-							<!-- Add this new cell in your table row, after your existing cells -->
-							<!-- Enhanced movements cell with Spanish labels, colors, and document numbers -->
-							<td class="px-6 py-4 text-sm text-gray-900">
-								{#if record.movements && (record.movements.totalEntradas > 0 || record.movements.totalSalidas > 0)}
-									<div class="max-w-xs space-y-2">
-										<!-- Entradas (IN movements) -->
-										{#if record.movements.entradas.length > 0}
-											<div class="rounded border border-green-200 bg-green-50 p-2">
-												<div class="mb-1 text-xs font-semibold text-green-800">
-													Entradas: {record.movements.totalEntradas}
-												</div>
-												{#each record.movements.entradas as entrada}
-													<div class="text-xs text-green-700">
-														<span class="font-medium">+{entrada.cantidad}</span>
-														{#if entrada.documento !== 'Sin doc.'}
-															<span class="text-green-600">({entrada.documento})</span>
-														{/if}
-													</div>
-												{/each}
-											</div>
-										{/if}
-
-										<!-- Salidas (OUT movements) -->
-										{#if record.movements.salidas.length > 0}
-											<div class="rounded border border-red-200 bg-red-50 p-2">
-												<div class="mb-1 text-xs font-semibold text-red-800">
-													Salidas: {record.movements.totalSalidas}
-												</div>
-												{#each record.movements.salidas as salida}
-													<div class="text-xs text-red-700">
-														<span class="font-medium">-{salida.cantidad}</span>
-														{#if salida.documento !== 'Sin doc.'}
-															<span class="text-red-600">({salida.documento})</span>
-														{/if}
-													</div>
-												{/each}
-											</div>
-										{/if}
-
-										<!-- Net Total -->
-										{#if record.movements.neto !== 0}
-											<div class="text-center">
-												<span
-													class="inline-block rounded px-2 py-1 text-xs font-bold {record.movements
-														.neto > 0
-														? 'bg-green-100 text-green-800'
-														: 'bg-red-100 text-red-800'}"
-												>
-													Neto: {record.movements.neto > 0 ? '+' : ''}{record.movements.neto}
-												</span>
-											</div>
-										{/if}
-									</div>
+							<!-- SIMPLIFIED: Movement display - just net total -->
+							<td class="px-6 py-4 text-sm">
+								{#if record.movements && record.movements.netMovimientos !== 0}
+									{@const net = record.movements.netMovimientos}
+									{@const sign = net > 0 ? '+' : ''}
+									{@const colorClass = net > 0 ? 'text-green-600' : 'text-red-600'}
+									<span class="{colorClass} font-medium">
+										Net: {sign}{net}
+									</span>
 								{:else}
-									<span class="block text-center text-gray-400">Sin movimientos</span>
+									<span class="text-gray-600 font-medium">-</span>
 								{/if}
 							</td>
 

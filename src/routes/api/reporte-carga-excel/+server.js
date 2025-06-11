@@ -19,7 +19,7 @@ export async function GET({ url, locals }) {
 	try {
 		const result = await sql`
             SELECT * FROM inventario
-            ORDER BY bodega, marca, ubicacion, id, codigo_barras
+            ORDER BY bodega, marca, id
             LIMIT ${limit} 
             OFFSET ${offset};
         `;

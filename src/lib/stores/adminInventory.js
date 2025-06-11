@@ -14,7 +14,25 @@ const initialState = {
 	loading: false,
 	error: null,
 	lastUpdated: null,
-	isFullscreen: false
+	isFullscreen: false,
+	// New progress tracking data
+	progressData: {
+		overallExercise: {
+			totalProducts: 0,
+			countedProducts: 0,
+			validatedProducts: 0,
+			percentageCounted: 0,
+			percentageValidated: 0
+		},
+		currentView: null,
+		summary: {
+			totalBodegas: 0,
+			totalUbicaciones: 0,
+			totalLocations: 0,
+			pendingValidation: 0
+		},
+		lastUpdated: null
+	}
 };
 
 function getInitialState() {
@@ -97,6 +115,17 @@ function createAdminInventoryStore() {
 				...state,
 				records,
 				lastUpdated: new Date().toLocaleString()
+			}));
+		},
+		// New method for setting progress data
+		setProgressData: (progressData) => {
+			console.log('AdminInventory Store: Setting progress data:', progressData);
+			update((state) => ({
+				...state,
+				progressData: {
+					...state.progressData,
+					...progressData
+				}
 			}));
 		},
 		toggleFullscreen: () => {
