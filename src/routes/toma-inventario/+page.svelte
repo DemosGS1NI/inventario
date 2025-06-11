@@ -20,8 +20,8 @@
 	} = $inventoryStore);
 
 	// Remove the complex store subscription block and replace with simple reactive declarations
-	$: selectedMarca = $inventoryStore.selectedMarca;
-	$: ubicacion = $inventoryStore.ubicacion;
+	//$: selectedMarca = $inventoryStore.selectedMarca;
+	//$: ubicacion = $inventoryStore.ubicacion;
 
 	// Store-synced variables
 	// let bodegas = [];
