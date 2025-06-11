@@ -20,7 +20,6 @@
 			const data = await res.json();
 			if (data.status === 'success') {
 				roles = data.data;
-
 			} else {
 				addToast(data.error?.message || 'Error al cargar los roles.', 'error');
 			}
@@ -106,7 +105,6 @@
 			accesos_api: '{}'
 		};
 	};
-
 
 	onMount(fetchRoles);
 </script>
