@@ -14,7 +14,7 @@ export async function GET({ url, locals }) {
 	const bodega = url.searchParams.get('bodega');
 
 	// Debug logging
-	console.log('API received parameters:', { bodega });
+	console.log('API Ubicaciones received parameters:', { bodega });
 
 	// Validate required parameters
 	if (!bodega) {
@@ -22,7 +22,7 @@ export async function GET({ url, locals }) {
 	}
 
 	try {
-		// Query to get unique ubicaciones for the given bodega and marca
+		// Query to get unique ubicaciones for the given bodega
 		const result = await sql`
             SELECT DISTINCT ubicacion 
               FROM inventario 
@@ -34,7 +34,12 @@ export async function GET({ url, locals }) {
 		// Extract ubicaciones from the result
 		const ubicaciones = result.rows.map((row) => row.ubicacion);
 
-		return successResponse(ubicaciones, 'Ubicaciones fetched successfully');
+		// Provide contextual message based on result
+		const contextualMessage = ubicaciones.length > 0 
+			? `Found ${ubicaciones.length} ubicaciones for bodega "${bodega}"`
+			: `No ubicaciones configured for bodega "${bodega}"`;
+
+		return successResponse(ubicaciones, contextualMessage);
 	} catch (error) {
 		console.error('Error fetching ubicaciones:', error);
 		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching ubicaciones', error.message);

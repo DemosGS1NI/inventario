@@ -1,17 +1,14 @@
-// src/routes/api/inventario/+server.js
+// src/routes/api/inventario/registro/+server.js
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // GET a single inventory record with flexible matching
 export async function GET({ url, locals }) {
-	// Authentication check
-	const userId = locals.user?.userId;
-	if (!userId) {
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	const user = requireAuth(locals);
 
 	// Get query parameters
 	const bodega = url.searchParams.get('bodega');
@@ -38,45 +35,44 @@ export async function GET({ url, locals }) {
 		if (marca) {
 			// If marca is provided and valid
 			query = await sql`
-        SELECT 
-          id, codigo_barras, numero_parte, descripcion, 
-          inventario_sistema, inventario_fisico, 
-          fecha_inventario::TEXT AS fecha_inventario, 
-          bodega, ubicacion, marca,
-          categoria_incidencia, incidencia, 
-          single_item_ean13, master_carton_ean13,
-          actualizado_por, validado_por, validado
-        FROM inventario
-        WHERE bodega = ${bodega}
-          AND marca = ${marca}
-          AND (
-            codigo_barras = ${codigo_barras} OR 
-            numero_parte = ${codigo_barras} OR 
-            single_item_ean13 = ${codigo_barras}
-          )
-        LIMIT 1
-      `;
+				SELECT 
+					id, codigo_barras, numero_parte, descripcion, 
+					inventario_sistema, inventario_fisico, 
+					fecha_inventario::TEXT AS fecha_inventario, 
+					bodega, ubicacion, marca,
+					categoria_incidencia, incidencia, 
+					single_item_ean13, master_carton_ean13,
+					actualizado_por, validado_por, validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND marca = ${marca}
+					AND (
+						codigo_barras = ${codigo_barras} OR 
+						numero_parte = ${codigo_barras} OR 
+						single_item_ean13 = ${codigo_barras}
+					)
+				LIMIT 1
+			`;
 		} else {
 			// If marca is not provided or is null
-
 			query = await sql`
-        SELECT 
-          id, codigo_barras, numero_parte, descripcion, 
-          inventario_sistema, inventario_fisico, 
-          fecha_inventario::TEXT AS fecha_inventario, 
-          bodega, ubicacion, marca,
-          categoria_incidencia, incidencia, 
-          single_item_ean13, master_carton_ean13,
-          actualizado_por, validado_por, validado
-        FROM inventario
-        WHERE bodega = ${bodega}
-          AND (
-            codigo_barras = ${codigo_barras} OR 
-            numero_parte = ${codigo_barras} OR 
-            single_item_ean13 = ${codigo_barras} 
-          )
-        LIMIT 1
-      `;
+				SELECT 
+					id, codigo_barras, numero_parte, descripcion, 
+					inventario_sistema, inventario_fisico, 
+					fecha_inventario::TEXT AS fecha_inventario, 
+					bodega, ubicacion, marca,
+					categoria_incidencia, incidencia, 
+					single_item_ean13, master_carton_ean13,
+					actualizado_por, validado_por, validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND (
+						codigo_barras = ${codigo_barras} OR 
+						numero_parte = ${codigo_barras} OR 
+						single_item_ean13 = ${codigo_barras} 
+					)
+				LIMIT 1
+			`;
 		}
 
 		// Check if a record was found
@@ -86,7 +82,7 @@ export async function GET({ url, locals }) {
 		}
 
 		// Return the single record
-		console.log('record found!');
+		console.log('Record found!');
 		return successResponse(query.rows[0], 'Inventory record retrieved successfully');
 	} catch (error) {
 		console.error('Error fetching inventory record:', error);
@@ -101,23 +97,22 @@ export async function GET({ url, locals }) {
 
 // PUT to update an inventory record using ID
 export async function PUT({ request, locals }) {
-	// Authentication check
-	const userId = locals.user?.userId;
-	if (!userId) {
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
-	}
+	const user = requireAuth(locals);
 
 	try {
 		// Parse the request body
 		const {
-			id, // Now using ID as the primary key for updates
-			ubicacion,
+			id,
+			// bodega,                 // ← RECEIVED: But not used (this field does not need to be updated)
+			// marca,                  // ← RECEIVED: But not used (this field does not need to be updated)  
+			ubicacion,                 // ← RECEIVED: For updating (this is what changes)
 			inventario_fisico,
 			categoria_incidencia,
 			incidencia,
 			single_item_ean13,
 			master_carton_ean13
 		} = await request.json();
+
 
 		// Validate ID is provided
 		if (!id) {
@@ -127,27 +122,30 @@ export async function PUT({ request, locals }) {
 		// Current timestamp for the update
 		const currentDateTime = new Date();
 
-		// Execute the update using the ID
+		// Execute the update - only update fields that actually change during inventory
 		const result = await sql`
-      UPDATE inventario
-      SET 
-        ubicacion = COALESCE(${ubicacion}, ubicacion),
-        inventario_fisico = COALESCE(${inventario_fisico}, inventario_fisico),
-        categoria_incidencia = COALESCE(${categoria_incidencia}, categoria_incidencia),
-        incidencia = COALESCE(${incidencia}, incidencia),
-        single_item_ean13 = COALESCE(${single_item_ean13}, single_item_ean13),
-        master_carton_ean13 = COALESCE(${master_carton_ean13}, master_carton_ean13),
-        fecha_inventario = ${currentDateTime},
-        actualizado_por = ${userId}
-      WHERE 
-        id = ${id}
-      RETURNING id, codigo_barras, numero_parte, fecha_inventario, inventario_fisico
-    `;
+			UPDATE inventario
+			SET 
+				ubicacion = ${ubicacion},                                   
+				inventario_fisico = COALESCE(${inventario_fisico}, inventario_fisico),
+				categoria_incidencia = COALESCE(${categoria_incidencia}, categoria_incidencia),
+				incidencia = COALESCE(${incidencia}, incidencia),
+				single_item_ean13 = COALESCE(${single_item_ean13}, single_item_ean13),
+				master_carton_ean13 = COALESCE(${master_carton_ean13}, master_carton_ean13),
+				fecha_inventario = ${currentDateTime},                      
+				actualizado_por = ${user.userId}                            
+			WHERE 
+				id = ${id}
+			RETURNING id, codigo_barras, numero_parte, fecha_inventario, inventario_fisico, ubicacion
+		`;
 
 		// Check if a record was updated
 		if (result.rowCount === 0) {
 			return errorResponse(404, 'NOT_FOUND', `No inventory record found with ID: ${id}`);
 		}
+
+		// Log the update for audit purposes
+		console.log(`Product updated: ID ${id}, New Ubicacion: ${ubicacion}, User: ${user.userId}`);
 
 		return successResponse(result.rows[0], 'Inventory record updated successfully');
 	} catch (error) {

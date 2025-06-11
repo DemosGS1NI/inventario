@@ -1,6 +1,3 @@
-// src/routes/api/inventario/fetch-marcas/+server.js
-// Obtiene listado de marcas por bodega o bodega + ubicacion
-
 import { sql } from '@vercel/postgres';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
@@ -24,32 +21,41 @@ export async function GET({ url, locals }) {
 		return errorResponse(400, 'BAD_REQUEST', 'El parametro Bodega es requerido');
 	}
 
-	let result;
-
 	try {
-		// Query to get unique marcas for the given parameter
+		let result;
+		let contextInfo = '';
 
+		// Query to get unique marcas for the given parameters
 		if (ubicacion) {
 			result = await sql`
-            SELECT DISTINCT marca 
-            FROM inventario 
-            WHERE bodega = ${bodega} 
-            AND ubicacion = ${ubicacion}
-            ORDER BY marca
-        `;
+				SELECT DISTINCT marca 
+				FROM inventario 
+				WHERE bodega = ${bodega} 
+				AND ubicacion = ${ubicacion}
+				AND marca IS NOT NULL
+				ORDER BY marca
+			`;
+			contextInfo = `bodega "${bodega}" and ubicacion "${ubicacion}"`;
 		} else {
 			result = await sql`
-            SELECT DISTINCT marca 
-            FROM inventario 
-            WHERE bodega = ${bodega} 
-            ORDER BY marca
-        `;
+				SELECT DISTINCT marca 
+				FROM inventario 
+				WHERE bodega = ${bodega} 
+				AND marca IS NOT NULL
+				ORDER BY marca
+			`;
+			contextInfo = `bodega "${bodega}"`;
 		}
 
 		// Extract marcas from the result
 		const marcas = result.rows.map((row) => row.marca);
 
-		return successResponse(marcas, 'Marcas fetched successfully');
+		// Provide contextual message based on result
+		const contextualMessage = marcas.length > 0 
+			? `Found ${marcas.length} marcas for ${contextInfo}`
+			: `No marcas configured for ${contextInfo}`;
+
+		return successResponse(marcas, contextualMessage);
 	} catch (error) {
 		console.error('Error fetching marcas:', error);
 		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);

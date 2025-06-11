@@ -227,9 +227,13 @@
 		}
 	}
 
-	async function saveChanges() {
+async function saveChanges() {
 		const formData = {
 			id: $inventoryStore.currentProduct.id,
+			// bodega: $inventoryStore.selectedBodega,         // ← Not sent (this field does not need to be updated)
+			// marca: $inventoryStore.selectedMarca,           // ← Not sent (this field does not need to be updated)
+			ubicacion: $inventoryStore.ubicacion,             // ← SENT: New consolidated location			
+			// ❌ REMOVED: codigo_barras (could be a numero_parte, don't overwrite actual barcode)
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,
 			incidencia,
@@ -238,9 +242,17 @@
 		};
 
 		try {
-			const result = await inventoryAPI.saveProduct(formData);
+			const response = await fetch('/api/inventario/registro', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(formData)
+			});
 
-			if (result.status === 'success') {
+			const result = await response.json();
+
+			if (response.ok && result.status === 'success') {
 				addToast('Producto actualizado exitosamente!', 'success');
 				resetFields();
 			} else if (result.error?.code === 'NOT_FOUND') {

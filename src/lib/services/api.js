@@ -140,10 +140,11 @@ export const inventoryAPI = {
 		}
 	},
 
-	async saveProduct(formData) {
-		return await apiCall('/api/inventario/registro', {
-			method: 'PUT',
-			body: JSON.stringify(formData)
-		});
-	}
+	// A VER QUE TRUENA PORQUE ESTO NO DEBE ESTAR AQUI -JB
+	// async saveProduct(formData) {
+	// 	return await apiCall('/api/inventario/registro', {
+	// 		method: 'PUT',
+	// 		body: JSON.stringify(formData)
+	// 	});
+	// }
 };
