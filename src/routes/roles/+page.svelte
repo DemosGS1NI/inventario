@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import BackToMenuButton from '$lib/BackToMenu.svelte';
-	import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
+	import { addToast } from '$lib/stores/toast';
 
 	let roles = [];
 	let currentRole = {
@@ -12,8 +12,6 @@
 		accesos_api: '{}'
 	};
 	let showForm = false;
-	// REMOVE: let message = '';
-	// REMOVE: let messageType = ''; // 'success' or 'error'
 
 	// Fetch roles
 	const fetchRoles = async () => {
@@ -22,7 +20,7 @@
 			const data = await res.json();
 			if (data.status === 'success') {
 				roles = data.data;
-				// REMOVE: message = '';
+
 			} else {
 				addToast(data.error?.message || 'Error al cargar los roles.', 'error');
 			}
@@ -109,15 +107,6 @@
 		};
 	};
 
-	// REMOVE: Reset message after a delay
-	// REMOVE: const resetMessage = () => {
-	// REMOVE:   setTimeout(() => {
-	// REMOVE:     message = '';
-	// REMOVE:     messageType = '';
-	// REMOVE:   }, 5000);
-	// REMOVE: };
-
-	// REMOVE: $: if (message) resetMessage();
 
 	onMount(fetchRoles);
 </script>
@@ -129,18 +118,6 @@
 	<div class="mb-6">
 		<BackToMenuButton />
 	</div>
-
-	<!-- REMOVE THIS ENTIRE MESSAGE SECTION:
-  {#if message}
-    <p
-      class="text-center mb-4"
-      class:text-green-600={messageType === 'success'}
-      class:text-red-600={messageType === 'error'}
-    >
-      {message}
-    </p>
-  {/if}
-  -->
 
 	<div class="mb-6 flex justify-center">
 		<button

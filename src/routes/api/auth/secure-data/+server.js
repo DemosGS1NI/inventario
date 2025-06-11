@@ -1,11 +1,9 @@
-import { successResponse, errorResponse } from '$lib/responseUtils';
+import { successResponse } from '$lib/responseUtils';
+import { requireAuth } from '$lib/authMiddleware';
 
 export async function GET({ locals }) {
-	// Check if user is authenticated
-	if (!locals.user) {
-		return errorResponse(401, 'UNAUTHORIZED', 'You are not authorized to access this resource.');
-	}
+	const user = requireAuth(locals);
 
 	// Return authorized response with user details
-	return successResponse({ userId: locals.user.id }, 'Authorized access');
+	return successResponse({ userId: user.userId }, 'Authorized access');
 }

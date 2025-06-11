@@ -1,4 +1,4 @@
-// src/routes/api/upload-excel/+server.js
+// src/routes/api/carga-datos-excel/+server.js
 import dotenv from 'dotenv';
 import xlsx from 'xlsx';
 import { sql } from '@vercel/postgres';
@@ -10,9 +10,8 @@ dotenv.config();
 // Validation functions
 function validateInventoryRecord(row, rowIndex) {
 	const errors = [];
-	const warnings = [];
 
-	// Required fields validation (based on database NOT NULL constraints)
+	// Required fields validation
 	if (!row.id || row.id === '') {
 		errors.push(`Fila ${rowIndex}: ID es requerido`);
 	} else if (!Number.isInteger(Number(row.id)) || Number(row.id) <= 0) {
@@ -27,7 +26,7 @@ function validateInventoryRecord(row, rowIndex) {
 		errors.push(`Fila ${rowIndex}: Bodega es requerida`);
 	}
 
-	// Optional field validations (data type and format checks)
+	// Optional field validations
 	if (
 		row.inventario_sistema !== null &&
 		row.inventario_sistema !== undefined &&
@@ -39,7 +38,7 @@ function validateInventoryRecord(row, rowIndex) {
 		}
 	}
 
-	// EAN13 validation (if provided) - now checking character varying(20) constraint
+	// EAN13 validation
 	if (row.single_item_ean13 && row.single_item_ean13.toString().length > 20) {
 		errors.push(`Fila ${rowIndex}: Single Item EAN13 no puede exceder 20 caracteres`);
 	}
@@ -48,20 +47,7 @@ function validateInventoryRecord(row, rowIndex) {
 		errors.push(`Fila ${rowIndex}: Master Carton EAN13 no puede exceder 20 caracteres`);
 	}
 
-	// EAN13 length warning (should ideally be 13 digits for proper EAN13)
-	if (row.single_item_ean13 && row.single_item_ean13.toString().length !== 13) {
-		warnings.push(
-			`Fila ${rowIndex}: Single Item EAN13 debería tener 13 dígitos para ser un EAN13 válido`
-		);
-	}
-
-	if (row.master_carton_ean13 && row.master_carton_ean13.toString().length !== 13) {
-		warnings.push(
-			`Fila ${rowIndex}: Master Carton EAN13 debería tener 13 dígitos para ser un EAN13 válido`
-		);
-	}
-
-	return { errors, warnings };
+	return { errors };
 }
 
 function sanitizeValue(value) {
@@ -73,17 +59,13 @@ function sanitizeValue(value) {
 
 function findBestSheet(workbook) {
 	const sheetNames = workbook.SheetNames;
-
-	// Priority order for sheet selection
 	const preferredNames = ['sheet1', 'inventario', 'inventory', 'data', 'datos'];
 
-	// First, try to find preferred sheet names (case insensitive)
 	for (const preferred of preferredNames) {
 		const found = sheetNames.find((name) => name.toLowerCase() === preferred.toLowerCase());
 		if (found) return found;
 	}
 
-	// If no preferred name found, use the first sheet
 	return sheetNames[0];
 }
 
@@ -98,7 +80,6 @@ export const POST = async ({ request, locals }) => {
 			return errorResponse(400, 'NO_FILE', 'No se ha seleccionado ningún archivo');
 		}
 
-		// Validate file type
 		if (!file.name.toLowerCase().endsWith('.xlsx')) {
 			return errorResponse(400, 'INVALID_FILE_TYPE', 'Solo se permiten archivos .xlsx');
 		}
@@ -111,7 +92,6 @@ export const POST = async ({ request, locals }) => {
 			return errorResponse(400, 'NO_SHEETS', 'El archivo Excel no contiene hojas de trabajo');
 		}
 
-		// Find the best sheet to process
 		const sheetName = findBestSheet(workbook);
 		const sheet = workbook.Sheets[sheetName];
 
@@ -119,7 +99,6 @@ export const POST = async ({ request, locals }) => {
 			return errorResponse(400, 'INVALID_SHEET', `No se pudo acceder a la hoja "${sheetName}"`);
 		}
 
-		// Convert sheet to JSON
 		const data = xlsx.utils.sheet_to_json(sheet);
 
 		if (!data || data.length === 0) {
@@ -130,16 +109,13 @@ export const POST = async ({ request, locals }) => {
 			);
 		}
 
-		console.log(`Processing ${data.length} rows from sheet "${sheetName}"`);
-
-		// PHASE 0: CHECK IF INVENTORY TABLE HAS EXISTING DATA
+		// Check if inventory table has existing data
 		const existingDataCheck = await sql`
             SELECT COUNT(*) as record_count FROM inventario
         `;
 		const existingRecordCount = parseInt(existingDataCheck.rows[0].record_count);
 
 		if (existingRecordCount > 0) {
-			console.log(`Found ${existingRecordCount} existing records in inventario table`);
 			return errorResponse(
 				409,
 				'TABLE_NOT_EMPTY',
@@ -152,116 +128,70 @@ export const POST = async ({ request, locals }) => {
 			);
 		}
 
-		console.log('Inventory table is empty, proceeding with import');
-
-		// PHASE 1: COMPLETE VALIDATION - NO DATABASE OPERATIONS YET
-		const validationResults = {
-			validRecords: [],
-			invalidRecords: [],
-			warnings: [],
-			totalRows: data.length,
-			duplicateIds: new Set(),
-			duplicateCodigosBarras: new Set()
-		};
-
-		// Check for duplicates within the Excel file itself
+		// Simple validation - just count errors, don't return details
+		let validRecords = 0;
+		let invalidRecords = 0;
+		const duplicateIds = new Set();
+		const duplicateCodigosBarras = new Set();
 		const idsInFile = new Map();
 		const codigosBarrasInFile = new Map();
 
-		data.forEach((row, index) => {
-			const rowNumber = index + 2; // +2 because index starts at 0 and Excel rows start at 1, plus header row
+		for (let index = 0; index < data.length; index++) {
+			const row = data[index];
+			const rowNumber = index + 2;
+			let hasErrors = false;
 
-			// Check for duplicate IDs within file
+			// Check for duplicates
 			if (row.id) {
 				if (idsInFile.has(row.id)) {
-					validationResults.duplicateIds.add(row.id);
-					validationResults.invalidRecords.push({
-						rowNumber,
-						data: row,
-						errors: [
-							`ID ${row.id} está duplicado en el archivo (también aparece en fila ${idsInFile.get(row.id)})`
-						]
-					});
-					return;
+					duplicateIds.add(row.id);
+					hasErrors = true;
 				} else {
 					idsInFile.set(row.id, rowNumber);
 				}
 			}
 
-			// Check for duplicate codigo_barras within file
 			if (row.codigo_barras) {
 				if (codigosBarrasInFile.has(row.codigo_barras)) {
-					validationResults.duplicateCodigosBarras.add(row.codigo_barras);
-					validationResults.invalidRecords.push({
-						rowNumber,
-						data: row,
-						errors: [
-							`Código de barras ${row.codigo_barras} está duplicado en el archivo (también aparece en fila ${codigosBarrasInFile.get(row.codigo_barras)})`
-						]
-					});
-					return;
+					duplicateCodigosBarras.add(row.codigo_barras);
+					hasErrors = true;
 				} else {
 					codigosBarrasInFile.set(row.codigo_barras, rowNumber);
 				}
 			}
 
-			// Standard validation
+			// Validate record
 			const validation = validateInventoryRecord(row, rowNumber);
-
 			if (validation.errors.length > 0) {
-				validationResults.invalidRecords.push({
-					rowNumber,
-					data: row,
-					errors: validation.errors
-				});
-			} else {
-				validationResults.validRecords.push({
-					rowNumber,
-					data: row
-				});
-				if (validation.warnings.length > 0) {
-					validationResults.warnings.push(...validation.warnings);
-				}
+				hasErrors = true;
 			}
-		});
 
-		// STOP HERE IF ANY VALIDATION ERRORS
-		if (validationResults.invalidRecords.length > 0) {
-			console.log(
-				`Validation failed: ${validationResults.invalidRecords.length} invalid records found`
-			);
+			if (hasErrors) {
+				invalidRecords++;
+			} else {
+				validRecords++;
+			}
+		}
 
-			// Log details of validation errors for debugging
-			console.log(
-				'Validation errors:',
-				validationResults.invalidRecords.map((r) => ({
-					row: r.rowNumber,
-					errors: r.errors,
-					data: { id: r.data.id, codigo_barras: r.data.codigo_barras }
-				}))
-			);
-
+		// Stop if validation errors found
+		if (invalidRecords > 0) {
 			return errorResponse(
 				400,
 				'VALIDATION_FAILED',
-				`Se encontraron ${validationResults.invalidRecords.length} errores de validación. El archivo no se importó.`,
+				`Se encontraron ${invalidRecords} errores de validación. El archivo no se importó.`,
 				{
-					invalidRecords: validationResults.invalidRecords,
 					summary: {
-						totalRows: validationResults.totalRows,
-						validRows: validationResults.validRecords.length,
-						invalidRows: validationResults.invalidRecords.length,
-						warnings: validationResults.warnings
+						totalRows: data.length,
+						validRows: validRecords,
+						invalidRows: invalidRecords
 					}
 				}
 			);
 		}
 
-		console.log(`All ${validationResults.validRecords.length} records passed validation`);
-
-		// PHASE 2: DATABASE OPERATIONS - ALL OR NOTHING
+		// Database operations - insert all records
 		try {
-			// Step 1: Log the import start for audit trail
+			// Log import start
 			const importLogResult = await sql`
                 INSERT INTO audit_log (
                     action_type,
@@ -274,33 +204,15 @@ export const POST = async ({ request, locals }) => {
                     ${JSON.stringify({
 											fileName: file.name,
 											sheetName,
-											recordCount: validationResults.validRecords.length,
-											warnings: validationResults.warnings
+											recordCount: validRecords
 										})},
                     CURRENT_TIMESTAMP
                 )
                 RETURNING id
             `;
 
-			const importLogId = importLogResult.rows[0].id;
-
-			// Step 2: Backup current data count for verification (should be 0 at this point)
-			const currentCountResult = await sql`
-                SELECT COUNT(*) as current_count FROM inventario
-            `;
-			const currentCount = parseInt(currentCountResult.rows[0].current_count);
-
-			// Step 3: Clear existing inventory data (should be none, but just in case)
-			if (currentCount > 0) {
-				await sql`DELETE FROM inventario`;
-				console.log(`Cleared ${currentCount} existing inventory records`);
-			}
-
-			// Step 4: Insert all new records using individual parameterized queries
-			for (const record of validationResults.validRecords) {
-				const row = record.data;
-
-				// Sanitize values
+			// Insert all records
+			for (const row of data) {
 				const cleanData = {
 					id: parseInt(row.id),
 					codigo_barras: sanitizeValue(row.codigo_barras),
@@ -330,50 +242,39 @@ export const POST = async ({ request, locals }) => {
                 `;
 			}
 
-			// Step 5: Verify the import
+			// Verify the import
 			const newCountResult = await sql`
                 SELECT COUNT(*) as new_count FROM inventario
             `;
 			const newCount = parseInt(newCountResult.rows[0].new_count);
 
-			if (newCount !== validationResults.validRecords.length) {
-				throw new Error(
-					`Insert verification failed: expected ${validationResults.validRecords.length}, got ${newCount}`
-				);
+			if (newCount !== validRecords) {
+				throw new Error(`Insert verification failed: expected ${validRecords}, got ${newCount}`);
 			}
 
-			// Step 6: Log successful completion
+			// Log successful completion
 			await sql`
                 UPDATE audit_log 
                 SET action_details = ${JSON.stringify({
 									fileName: file.name,
 									sheetName,
-									recordCount: validationResults.validRecords.length,
-									warnings: validationResults.warnings,
-									previousCount: currentCount,
+									recordCount: validRecords,
 									newCount: newCount,
 									status: 'SUCCESS'
 								})}
-                WHERE id = ${importLogId}
+                WHERE id = ${importLogResult.rows[0].id}
             `;
 
-			console.log(
-				`Successfully imported ${newCount} records, replacing ${currentCount} previous records`
-			);
-
-			// Success response
 			return successResponse(
 				{
 					summary: {
-						totalRows: validationResults.totalRows,
-						validRows: validationResults.validRecords.length,
-						invalidRows: 0,
-						warnings: validationResults.warnings,
-						replacedRecords: true
+						totalRows: data.length,
+						validRows: validRecords,
+						invalidRows: 0
 					},
 					sheetProcessed: sheetName
 				},
-				`Importación completada exitosamente: ${validationResults.validRecords.length} registros importados. Datos anteriores reemplazados.`
+				`Importación completada exitosamente: ${validRecords} registros importados.`
 			);
 		} catch (dbError) {
 			console.error('Database operation failed:', dbError);
@@ -392,7 +293,7 @@ export const POST = async ({ request, locals }) => {
                         ${JSON.stringify({
 													fileName: file.name,
 													sheetName,
-													recordCount: validationResults.validRecords.length,
+													recordCount: validRecords,
 													error: dbError.message,
 													status: 'FAILED'
 												})},

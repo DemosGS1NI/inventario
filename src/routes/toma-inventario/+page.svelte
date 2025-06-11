@@ -23,25 +23,16 @@
 	$: selectedMarca = $inventoryStore.selectedMarca;
 	$: ubicacion = $inventoryStore.ubicacion;
 
-	// Add debug logging to track store changes
-	// $: {
-	//     console.log('Store state changed:', {
-	//         ubicacion: $inventoryStore.ubicacion,
-	//         selectedMarca: $inventoryStore.selectedMarca,
-	//         selectedBodega: $inventoryStore.selectedBodega
-	//     });
-	// }
-
 	// Store-synced variables
-	let bodegas = [];
-	let marcas = [];
-	let categoriasIncidencias = [];
-	let loading = false;
-	let error = null;
-	let selectedBodega = '';
-	let selectedMarca = '';
-	let ubicacion = '';
-	let currentProduct = null;
+	// let bodegas = [];
+	// let marcas = [];
+	// let categoriasIncidencias = [];
+	// let loading = false;
+	// let error = null;
+	// let selectedBodega = '';
+	// let selectedMarca = '';
+	// let ubicacion = '';
+	// let currentProduct = null;
 
 	// Form state variables
 	let barcodeInput;

@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import BackToMenuButton from '$lib/BackToMenu.svelte';
-	import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
+	import { addToast } from '$lib/stores/toast';
 
 	let usuarios = [];
 	let roles = [];
@@ -16,8 +16,6 @@
 		debe_cambiar_pin: false
 	};
 	let showForm = false;
-	// REMOVE: let message = '';
-	// REMOVE: let messageType = 'success';
 
 	// Fetch users
 	const fetchUsuarios = async () => {
@@ -141,14 +139,6 @@
 	<div class="mb-6">
 		<BackToMenuButton />
 	</div>
-
-	<!-- REMOVE THIS ENTIRE MESSAGE SECTION:
-  {#if message}
-    <p class={`text-center mb-4 ${messageType === 'error' ? 'text-red-600' : 'text-green-600'}`}>
-      {message}
-    </p>
-  {/if}
-  -->
 
 	<div class="mb-6 flex justify-center">
 		<button

@@ -6,8 +6,6 @@
 	let categories = [];
 	let currentCategory = { id: null, categoria: '', descripcion: '' };
 	let showForm = false;
-	// REMOVE: let message = '';
-	// REMOVE: let messageType = ''; // 'success' or 'error'
 
 	// Fetch all categories
 	async function fetchCategories() {
@@ -17,8 +15,6 @@
 
 			if (res.ok && data.status === 'success') {
 				categories = data.data;
-				// REMOVE: message = '';
-				// REMOVE: messageType = '';
 			} else {
 				addToast(data.message || 'Error al cargar categorías.', 'error');
 			}
@@ -92,16 +88,6 @@
 		showForm = false;
 	}
 
-	// REMOVE: Reset message after a delay
-	// REMOVE: function resetMessage() {
-	// REMOVE:   setTimeout(() => {
-	// REMOVE:     message = '';
-	// REMOVE:     messageType = '';
-	// REMOVE:   }, 5000);
-	// REMOVE: }
-
-	// REMOVE: $: if (message) resetMessage();
-
 	onMount(fetchCategories);
 </script>
 
@@ -112,18 +98,6 @@
 	<div class="mb-6">
 		<BackToMenuButton />
 	</div>
-
-	<!-- REMOVE THIS ENTIRE MESSAGE SECTION:
-  {#if message}
-    <p
-      class="text-center mb-4"
-      class:text-green-600={messageType === 'success'}
-      class:text-red-600={messageType === 'error'}
-    >
-      {message}
-    </p>
-  {/if}
-  -->
 
 	<div class="mb-6 flex justify-center">
 		<button
