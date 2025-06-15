@@ -14,21 +14,17 @@ export async function GET({ url, locals }) {
 		return errorResponse(400, 'INVALID_PARAMS', 'Parámetros de paginación inválidos');
 	}
 
-	const offset = (page - 1) * limit;
+	// Calculate offset, ensuring it's 0 for page 1
+	const offset = page === 1 ? 0 : (page - 1) * limit;
 
 	try {
-		console.log('🔍 Fetching inventory data...', { page, limit, offset });
-
 		// Get total count first
 		const countResult = await sql`SELECT COUNT(*) as total FROM inventario;`;
 		const totalRecords = parseInt(countResult.rows[0].total, 10);
 		const totalPages = Math.ceil(totalRecords / limit);
 
-		console.log('📊 Count results:', { totalRecords, totalPages });
-
 		// If no records, return empty result
 		if (totalRecords === 0) {
-			console.log('ℹ️ No records found');
 			return successResponse(
 				{
 					items: [],
@@ -43,8 +39,8 @@ export async function GET({ url, locals }) {
 			);
 		}
 
-		// Fetch paginated data
-		const result = await sql`
+		// Fetch paginated data with explicit query
+		const query = `
 			SELECT 
 				id,
 				bodega,
@@ -55,22 +51,27 @@ export async function GET({ url, locals }) {
 				inventario_sistema
 			FROM inventario
 			ORDER BY bodega, marca, id
-			LIMIT ${limit} 
-			OFFSET ${offset};
+			LIMIT $1 
+			OFFSET $2;
 		`;
 
-		console.log(`📦 Fetched ${result.rows.length} records for page ${page}`);
+		const result = await sql.query(query, [limit, offset]);
 
 		// Return the rows directly as items
+		const response = {
+			items: result.rows || [],
+			pagination: {
+				currentPage: page,
+				totalPages,
+				totalRecords,
+				limit
+			}
+		};
+
 		return successResponse(
 			{
-				...result.rows,
-				pagination: {
-					currentPage: page,
-					totalPages,
-					totalRecords,
-					limit
-				}
+				items: response.items,
+				pagination: response.pagination
 			},
 			'Registros de inventario obtenidos exitosamente'
 		);
