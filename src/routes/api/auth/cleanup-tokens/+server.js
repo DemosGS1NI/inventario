@@ -1,6 +1,7 @@
 import { cleanupExpiredTokens } from '$lib/services/tokenService';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAdmin } from '$lib/authMiddleware';
+import { sql } from '$lib/database';
 
 /**
  * API endpoint to clean up expired revoked tokens
@@ -33,8 +34,6 @@ export async function GET({ locals }) {
 
 	try {
 		// Import sql here since we need it for the count query
-		const { sql } = await import('@vercel/postgres');
-
 		const result = await sql`
       SELECT COUNT(*) as expired_count 
       FROM revoked_tokens 

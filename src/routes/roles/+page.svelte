@@ -4,30 +4,25 @@
 	import { addToast } from '$lib/stores/toast';
 
 	let roles = [];
-	let currentRole = {
-		id: null,
-		nombre_rol: '',
-		descripcion: '',
-		opciones_menu: '{}',
-		accesos_api: '{}'
-	};
+	let currentRole = { id: null, nombre_rol: '', descripcion: '', permisos: {} };
 	let showForm = false;
 
-	// Fetch roles
-	const fetchRoles = async () => {
+	// Fetch all roles
+	async function fetchRoles() {
 		try {
 			const res = await fetch('/api/db/roles');
 			const data = await res.json();
-			if (data.status === 'success') {
+
+			if (res.ok && data.status === 'success') {
 				roles = data.data;
 			} else {
-				addToast(data.error?.message || 'Error al cargar los roles.', 'error');
+				addToast(data.message || 'Error al cargar roles.', 'error');
 			}
-		} catch (err) {
-			console.error('Error fetching roles:', err);
-			addToast('Ocurrió un error al cargar los roles.', 'error');
+		} catch (error) {
+			console.error('Error fetching roles:', error);
+			addToast('Ocurrió un error al cargar roles.', 'error');
 		}
-	};
+	}
 
 	// Validate JSON fields
 	const isValidJSON = (value) => {
@@ -40,12 +35,7 @@
 	};
 
 	// Save or update a role
-	const saveRole = async () => {
-		if (!isValidJSON(currentRole.opciones_menu) || !isValidJSON(currentRole.accesos_api)) {
-			addToast('Opciones de menú y Accesos a API deben ser JSON válidos.', 'error');
-			return;
-		}
-
+	async function saveRole() {
 		const method = currentRole.id ? 'PUT' : 'POST';
 		try {
 			const res = await fetch('/api/db/roles', {
@@ -55,7 +45,8 @@
 			});
 
 			const data = await res.json();
-			if (data.status === 'success') {
+
+			if (res.ok && data.status === 'success') {
 				const successMessage = currentRole.id
 					? 'Rol actualizado con éxito!'
 					: 'Rol creado con éxito!';
@@ -64,13 +55,23 @@
 				resetForm();
 				showForm = false;
 			} else {
-				addToast(data.error?.message || 'Error al guardar el rol.', 'error');
+				addToast(data.message || 'Error al guardar el rol.', 'error');
 			}
-		} catch (err) {
-			console.error('Error saving role:', err);
+		} catch (error) {
+			console.error('Error saving role:', error);
 			addToast('Ocurrió un error al guardar el rol.', 'error');
 		}
-	};
+	}
+
+	function editRole(role) {
+		currentRole = { ...role };
+		showForm = true;
+	}
+
+	function resetForm() {
+		currentRole = { id: null, nombre_rol: '', descripcion: '', permisos: {} };
+		showForm = false;
+	}
 
 	// Delete a role
 	const deleteRole = async (id) => {
@@ -94,16 +95,6 @@
 			console.error('Error deleting role:', err);
 			addToast('Ocurrió un error al eliminar el rol.', 'error');
 		}
-	};
-
-	const resetForm = () => {
-		currentRole = {
-			id: null,
-			nombre_rol: '',
-			descripcion: '',
-			opciones_menu: '{}',
-			accesos_api: '{}'
-		};
 	};
 
 	onMount(fetchRoles);
@@ -136,9 +127,7 @@
 				<div class="grid grid-cols-1 gap-4">
 					<!-- Role Name -->
 					<div>
-						<label for="nombre_rol" class="block text-sm font-medium text-gray-700"
-							>Nombre del Rol</label
-						>
+						<label for="nombre_rol" class="block text-sm font-medium text-gray-700">Nombre del Rol</label>
 						<input
 							type="text"
 							id="nombre_rol"
@@ -222,6 +211,7 @@
 				{#if roles.length > 0}
 					{#each roles as role}
 						<tr class="hover:bg-gray-50">
+							<td class="border px-4 py-3">{role.id}</td>
 							<td class="border px-4 py-3">{role.nombre_rol}</td>
 							<td class="border px-4 py-3">{role.descripcion}</td>
 							<td class="flex justify-center space-x-2 border px-4 py-3 text-center">

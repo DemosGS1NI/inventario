@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -55,13 +55,13 @@ export async function POST({ request, locals }) {
       RETURNING id, fecha_movimiento
     `;
 
-		return successResponse(result.rows[0], 'Movimiento creado exitosamente');
+		return successResponse(result.rows[0], 'Movimiento registrado satisfactoriamente');
 	} catch (error) {
 		console.error('Error creating movement:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Error al crear el movimiento',
+			'Fallo al registrar el movimiento',
 			error.message
 		);
 	}
@@ -77,46 +77,42 @@ export async function GET({ url, locals }) {
 		const marca = url.searchParams.get('marca');
 		const ubicacion = url.searchParams.get('ubicacion');
 
-		let query;
-		let params = [];
+		let result;
 
 		// Build dynamic query based on filters
 		if (bodega && marca && ubicacion) {
-			query = `
+			result = await sql`
         SELECT 
           m.*, 
           u.nombre || ' ' || u.apellido AS usuario_nombre
         FROM movimientos m 
         LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = $1 AND m.marca = $2 AND m.ubicacion = $3
+        WHERE m.bodega = ${bodega} AND m.marca = ${marca} AND m.ubicacion = ${ubicacion}
         ORDER BY m.fecha_movimiento DESC
       `;
-			params = [bodega, marca, ubicacion];
 		} else if (bodega && marca) {
-			query = `
+			result = await sql`
         SELECT 
           m.*, 
           u.nombre || ' ' || u.apellido AS usuario_nombre
         FROM movimientos m 
         LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = $1 AND m.marca = $2
+        WHERE m.bodega = ${bodega} AND m.marca = ${marca}
         ORDER BY m.fecha_movimiento DESC
       `;
-			params = [bodega, marca];
 		} else if (bodega) {
-			query = `
+			result = await sql`
         SELECT 
           m.*, 
           u.nombre || ' ' || u.apellido AS usuario_nombre
         FROM movimientos m 
         LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = $1
+        WHERE m.bodega = ${bodega}
         ORDER BY m.fecha_movimiento DESC
       `;
-			params = [bodega];
 		} else {
 			// Get all movements (limit for performance)
-			query = `
+			result = await sql`
         SELECT 
           m.*, 
           u.nombre || ' ' || u.apellido AS usuario_nombre
@@ -127,15 +123,13 @@ export async function GET({ url, locals }) {
       `;
 		}
 
-		const result = await sql.query(query, params);
-
-		return successResponse(result.rows, 'Movimientos obtenidos exitosamente');
+		return successResponse(result.rows, 'Movimientos obtenidos satisfactoriamente');
 	} catch (error) {
 		console.error('Error fetching movements:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Error al obtener movimientos',
+			'Fallo al obtener movimientos',
 			error.message
 		);
 	}

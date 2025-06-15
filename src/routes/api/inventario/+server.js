@@ -1,5 +1,5 @@
 // src/routes/api/inventario/+server.js
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import dotenv from 'dotenv';
 
@@ -11,14 +11,14 @@ export async function DELETE({ request, locals }) {
 	// Get user ID from session for security
 	const userId = locals.user?.userId;
 	if (!userId) {
-		console.error('Unauthorized: User session not found');
-		return errorResponse(401, 'UNAUTHORIZED', 'User session not found');
+		console.error('No autorizado: Sesión de usuario no encontrada');
+		return errorResponse(401, 'UNAUTHORIZED', 'Sesión de usuario no encontrada');
 	}
 
 	// Verify user has Admin role
 	if (locals.user?.userRole !== 'Admin') {
-		console.error('User role:', locals.user.userRole);
-		return errorResponse(403, 'FORBIDDEN', 'Only administrators can clean tables');
+		console.error('Rol de usuario:', locals.user.userRole);
+		return errorResponse(403, 'FORBIDDEN', 'Solo los administradores pueden limpiar las tablas');
 	}
 
 	try {
@@ -28,7 +28,7 @@ export async function DELETE({ request, locals }) {
 			return errorResponse(
 				400,
 				'CONFIRMATION_REQUIRED',
-				'This operation requires confirmation. Please include the X-Confirm-Delete header with the value "DELETE-ALL-INVENTORY"'
+				'Esta operación requiere confirmación. Por favor incluya el encabezado X-Confirm-Delete con el valor "DELETE-ALL-INVENTORY"'
 			);
 		}
 
@@ -64,7 +64,7 @@ export async function DELETE({ request, locals }) {
             ) VALUES (
                 'INVENTORY_CLEANUP',
                 ${userId},
-                ${`Inventory and movements tables cleaned up. Inventario records deleted: ${inventarioCount}, Movimientos records deleted: ${movimientosCount}`},
+                ${`Limpieza de tablas de inventario y movimientos. Registros de inventario eliminados: ${inventarioCount}, Registros de movimientos eliminados: ${movimientosCount}`},
                 CURRENT_TIMESTAMP
             )
         `;
@@ -80,10 +80,10 @@ export async function DELETE({ request, locals }) {
 					role: locals.user.userRole
 				}
 			},
-			`Tables cleaned successfully: ${inventarioCount} inventory records and ${movimientosCount} movement records deleted`
+			`Tablas limpiadas satisfactoriamente: ${inventarioCount} registros de inventario y ${movimientosCount} registros de movimientos eliminados`
 		);
 	} catch (error) {
-		console.error('Error cleaning tables:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error cleaning tables', error.message);
+		console.error('Error al limpiar tablas:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al limpiar las tablas', error.message);
 	}
 }

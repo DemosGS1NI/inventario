@@ -1,5 +1,5 @@
 // src/lib/services/tokenService.js
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import dotenv from 'dotenv';
 
 // Load environment variables from .env file (for local development)

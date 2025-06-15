@@ -1,5 +1,5 @@
 // src/routes/api/inventario/fetch-ubicaciones/+server.js
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -14,11 +14,11 @@ export async function GET({ url, locals }) {
 	const bodega = url.searchParams.get('bodega');
 
 	// Debug logging
-	console.log('API Ubicaciones received parameters:', { bodega });
+	console.log('Obteniendo ubicaciones:', { bodega });
 
 	// Validate required parameters
 	if (!bodega) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega is required');
+		return errorResponse(400, 'BAD_REQUEST', 'El parámetro Bodega es requerido');
 	}
 
 	try {
@@ -36,12 +36,17 @@ export async function GET({ url, locals }) {
 
 		// Provide contextual message based on result
 		const contextualMessage = ubicaciones.length > 0 
-			? `Found ${ubicaciones.length} ubicaciones for bodega "${bodega}"`
-			: `No ubicaciones configured for bodega "${bodega}"`;
+			? `Se encontraron ${ubicaciones.length} ubicaciones para la bodega "${bodega}"`
+			: `No hay ubicaciones configuradas para la bodega "${bodega}"`;
 
 		return successResponse(ubicaciones, contextualMessage);
 	} catch (error) {
-		console.error('Error fetching ubicaciones:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching ubicaciones', error.message);
+		console.error('Error al obtener ubicaciones:', error);
+		return errorResponse(
+			500, 
+			'INTERNAL_SERVER_ERROR', 
+			'Fallo al obtener ubicaciones', 
+			error.message
+		);
 	}
 }

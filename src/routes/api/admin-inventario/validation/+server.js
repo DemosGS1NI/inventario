@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -11,11 +11,11 @@ export async function PUT({ request, locals }) {
 	try {
 		const { id, validado_por } = await request.json();
 
-		console.log(id, user.userId);
+		console.log('Validando registro:', { id, userId: user.userId });
 
 		// Validate input
 		if (!id || !user.userId) {
-			return errorResponse(400, 'INVALID_INPUT', 'Invalid or missing input data');
+			return errorResponse(400, 'INVALID_INPUT', 'Datos de entrada inválidos o faltantes');
 		}
 
 		// Update the record in the database
@@ -29,16 +29,16 @@ export async function PUT({ request, locals }) {
     `;
 
 		if (result.rowCount === 0) {
-			return errorResponse(404, 'RECORD_NOT_FOUND', 'Record not found');
+			return errorResponse(404, 'RECORD_NOT_FOUND', 'Registro no encontrado');
 		}
 
-		return successResponse({ record: result.rows[0] }, 'Record validated successfully');
+		return successResponse({ record: result.rows[0] }, 'Registro validado satisfactoriamente');
 	} catch (error) {
-		console.error('Error validating record:', error);
+		console.error('Error al validar registro:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'An error occurred while validating the record',
+			'Error al validar el registro',
 			error.message
 		);
 	}

@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { requireAdmin } from '$lib/authMiddleware';

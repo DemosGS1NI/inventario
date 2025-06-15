@@ -1,4 +1,5 @@
-import { sql } from '@vercel/postgres';
+//import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -40,11 +41,28 @@ export async function GET({ locals }) {
 		return successResponse(menu, 'Menu items retrieved successfully');
 	} catch (error) {
 		console.error('Error fetching menu:', error);
+		
+		// Enhanced error handling
+		let errorMessage = 'Error retrieving menu items';
+		let errorDetails = error.message;
+		
+		// Check for specific database errors
+		if (error.code === '42P01') {
+			errorMessage = 'Database table not found';
+			errorDetails = 'Required database tables are missing';
+		} else if (error.code === '23505') {
+			errorMessage = 'Database constraint violation';
+			errorDetails = 'Duplicate entry found';
+		} else if (error.code === '23503') {
+			errorMessage = 'Database foreign key violation';
+			errorDetails = 'Referenced record does not exist';
+		}
+
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Error retrieving menu items',
-			error.message
+			errorMessage,
+			errorDetails
 		);
 	}
 }

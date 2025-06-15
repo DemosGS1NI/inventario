@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -23,7 +23,7 @@ export async function GET({ url, locals }) {
 
 	// Validate query parameters
 	if (!bodega || !marca || !ubicacion) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Ubicacion are required');
+		return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca y Ubicación son requeridos');
 	}
 
 	try {
@@ -48,7 +48,7 @@ export async function GET({ url, locals }) {
 		`;
 
 		if (inventoryResult.rows.length === 0) {
-			return successResponse([], 'No products found for the specified criteria');
+			return successResponse([], 'No se encontraron productos para los criterios especificados');
 		}
 
 		// Get simplified movement totals for all products in this location
@@ -89,14 +89,14 @@ export async function GET({ url, locals }) {
 			}
 		}));
 
-		return successResponse(enrichedRecords, 'Products fetched successfully');
+		return successResponse(enrichedRecords, 'Productos obtenidos satisfactoriamente');
 	} catch (error) {
-		console.error('Error fetching products:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching products', error.message);
+		console.error('Error al obtener productos:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al obtener productos', error.message);
 	}
 }
 
-// PUT Endpoint - Update Product Details (unchanged)
+// PUT Endpoint - Update Product Details
 /**
  * Updates inventory records with physical count and incident information
  * @param {Object} params - Request parameters
@@ -120,10 +120,10 @@ export async function PUT({ request, locals }) {
 
 		// Validate required fields
 		if (!bodega || !marca || !ubicacion) {
-			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, and Codigo de Barras are required');
+			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca y Ubicación son requeridos');
 		}
 
-		console.log('Updating product:', { bodega, ubicacion, marca, userId: user.userId });
+		console.log('Actualizando producto:', { bodega, ubicacion, marca, userId: user.userId });
 
 		const currentDateTime = new Date().toISOString();
 
@@ -144,12 +144,12 @@ export async function PUT({ request, locals }) {
 		`;
 
 		if (result.rowCount > 0) {
-			return successResponse(null, 'Product updated successfully');
+			return successResponse(null, 'Producto actualizado satisfactoriamente');
 		} else {
-			return errorResponse(404, 'NOT_FOUND', 'Product not found or no changes made');
+			return errorResponse(404, 'NOT_FOUND', 'Producto no encontrado o no se realizaron cambios');
 		}
 	} catch (error) {
-		console.error('Error updating product:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error updating product', error.message);
+		console.error('Error al actualizar producto:', error);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al actualizar producto', error.message);
 	}
 }

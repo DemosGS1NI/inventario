@@ -64,7 +64,7 @@
 
 <div class="flex min-h-screen items-center justify-center bg-gray-100">
 	<div class="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
-		<h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Login</h2>
+		<h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Toma de Inventario</h2>
 
 		<form on:submit|preventDefault={login} class="space-y-4" aria-live="polite">
 			<div>

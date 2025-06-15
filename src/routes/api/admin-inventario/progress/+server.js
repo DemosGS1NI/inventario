@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -89,14 +89,14 @@ export async function GET({ url, locals }) {
 			currentView: currentViewData,
 			summary: additionalStats,
 			lastUpdated: new Date().toISOString()
-		}, 'Progress statistics retrieved successfully');
+		}, 'Estadísticas de progreso obtenidas satisfactoriamente');
 
 	} catch (error) {
-		console.error('Error fetching progress statistics:', error);
+		console.error('Error al obtener estadísticas de progreso:', error);
 		return errorResponse(
 			500, 
 			'INTERNAL_SERVER_ERROR', 
-			'Error fetching progress statistics', 
+			'Fallo al obtener estadísticas de progreso', 
 			error.message
 		);
 	}

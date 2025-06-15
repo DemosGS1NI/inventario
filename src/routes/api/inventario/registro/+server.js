@@ -1,5 +1,5 @@
 // src/routes/api/inventario/registro/+server.js
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -21,11 +21,11 @@ export async function GET({ url, locals }) {
 	}
 
 	// Debug logging
-	console.log('API received parameters:', { bodega, marca, codigo_barras });
+	console.log('API recibió parámetros:', { bodega, marca, codigo_barras });
 
 	// Validate required parameters
 	if (!bodega || !codigo_barras) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega and codigo_barras parameters are required');
+		return errorResponse(400, 'BAD_REQUEST', 'Bodega y código de barras son requeridos');
 	}
 
 	try {
@@ -77,19 +77,19 @@ export async function GET({ url, locals }) {
 
 		// Check if a record was found
 		if (query.rows.length === 0) {
-			console.log('No inventory record found matching the criteria');
-			return errorResponse(404, 'NOT_FOUND', 'No inventory record found matching the criteria');
+			console.log('No se encontró registro de inventario con los criterios especificados');
+			return errorResponse(404, 'NOT_FOUND', 'No se encontró registro de inventario con los criterios especificados');
 		}
 
 		// Return the single record
-		console.log('Record found!');
-		return successResponse(query.rows[0], 'Inventory record retrieved successfully');
+		console.log('¡Registro encontrado!');
+		return successResponse(query.rows[0], 'Registro de inventario obtenido satisfactoriamente');
 	} catch (error) {
-		console.error('Error fetching inventory record:', error);
+		console.error('Error al obtener registro de inventario:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Error fetching inventory record',
+			'Fallo al obtener registro de inventario',
 			error.message
 		);
 	}
@@ -113,10 +113,9 @@ export async function PUT({ request, locals }) {
 			master_carton_ean13
 		} = await request.json();
 
-
 		// Validate ID is provided
 		if (!id) {
-			return errorResponse(400, 'BAD_REQUEST', 'Record ID is required for updates');
+			return errorResponse(400, 'BAD_REQUEST', 'ID del registro es requerido para actualizaciones');
 		}
 
 		// Current timestamp for the update
@@ -141,19 +140,19 @@ export async function PUT({ request, locals }) {
 
 		// Check if a record was updated
 		if (result.rowCount === 0) {
-			return errorResponse(404, 'NOT_FOUND', `No inventory record found with ID: ${id}`);
+			return errorResponse(404, 'NOT_FOUND', `No se encontró registro de inventario con ID: ${id}`);
 		}
 
 		// Log the update for audit purposes
-		console.log(`Product updated: ID ${id}, New Ubicacion: ${ubicacion}, User: ${user.userId}`);
+		console.log(`Producto actualizado: ID ${id}, Nueva Ubicación: ${ubicacion}, Usuario: ${user.userId}`);
 
-		return successResponse(result.rows[0], 'Inventory record updated successfully');
+		return successResponse(result.rows[0], 'Registro de inventario actualizado satisfactoriamente');
 	} catch (error) {
-		console.error('Error updating inventory record:', error);
+		console.error('Error al actualizar registro de inventario:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Error updating inventory record',
+			'Fallo al actualizar registro de inventario',
 			error.message
 		);
 	}

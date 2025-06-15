@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -10,6 +10,7 @@ export const GET = async ({ locals }) => {
 	requireAuth(locals);
 
 	try {
+		console.log('🔍 Fetching bodegas from database...');
 		// Query to fetch distinct bodega names
 		const { rows } = await sql`
 			SELECT DISTINCT bodega
@@ -23,22 +24,20 @@ export const GET = async ({ locals }) => {
 
 		// Provide contextual message based on result
 		const contextualMessage = bodegas.length > 0 
-			? `Found ${bodegas.length} bodegas in inventory system`
-			: 'No bodegas found in inventory system';
+			? `Se encontraron ${bodegas.length} bodegas en el sistema de inventario`
+			: 'No se encontraron bodegas en el sistema de inventario';
 
 		// Debug logging
-		console.log('Fetching bodegas:', bodegas);
+		console.log('📊 Bodegas result:', { count: bodegas.length });
 		
 		return successResponse(bodegas, contextualMessage);
 	} catch (error) {
-		console.error('fetch-bodegas Error Details:', {
-			message: error.message,
-			stack: error.stack,
-			name: error.name,
-			code: error.code
-		});
-
-		// Return a standardized error response
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Failed to fetch bodegas', error.message);
+		console.error('Error al obtener bodegas:', error);
+		return errorResponse(
+			500, 
+			'INTERNAL_SERVER_ERROR', 
+			'Fallo al obtener bodegas', 
+			error.message
+		);
 	}
 };

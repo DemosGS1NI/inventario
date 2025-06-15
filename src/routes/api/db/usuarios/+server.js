@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
@@ -32,10 +32,10 @@ export async function GET(event) {
         u.debe_cambiar_pin
       FROM usuarios u
       LEFT JOIN roles r ON u.rol_id = r.id
-      ORDER BY u.fecha_creacion DESC
+      ORDER BY u.id
     `;
 
-		return successResponse({ users: result.rows }, 'Usuarios obtenidos satisfactoriamente');
+		return successResponse(result.rows, 'Usuarios obtenidos satisfactoriamente');
 	} catch (error) {
 		console.error('Error obteniendo usuarios:', error);
 		if (error.status) return error; // Return error response if it's already formatted
@@ -61,7 +61,7 @@ export async function POST(event) {
 
 		// Hash the default PIN "0000"
 		const defaultPinHash = await bcrypt.hash(AUTH.DEFAULT_PIN, AUTH.BCRYPT_ROUNDS);
-		await sql`
+		const result = await sql`
       INSERT INTO usuarios (
         nombre, 
         apellido, 
@@ -69,9 +69,7 @@ export async function POST(event) {
         rol_id, 
         pin_hash, 
         debe_cambiar_pin, 
-        activo, 
-        fecha_creacion,
-        created_by
+        activo
       )
       VALUES (
         ${nombre}, 
@@ -80,13 +78,16 @@ export async function POST(event) {
         ${rol_id}, 
         ${defaultPinHash}, 
         true, 
-        true, 
-        NOW(),
-        ${user.userId}
+        true
       )
+      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin
     `;
 
-		return successResponse(null, 'Usuario creado satisfactoriamente', { status: 201 });
+		return successResponse(
+			result.rows[0],
+			'Usuario creado satisfactoriamente',
+			{ status: 201 }
+		);
 	} catch (error) {
 		console.error('Error creando usuario:', error);
 		if (error.status) return error;
@@ -111,7 +112,7 @@ export async function PUT(event) {
 			);
 		}
 
-		await sql`
+		const result = await sql`
       UPDATE usuarios
       SET 
         nombre = ${nombre}, 
@@ -119,13 +120,19 @@ export async function PUT(event) {
         numero_telefono = ${numero_telefono}, 
         rol_id = ${rol_id},  
         activo = ${activo},  
-        debe_cambiar_pin = ${debe_cambiar_pin}, 
-        fecha_actualizacion = NOW(),
-        updated_by = ${user.userId}
+        debe_cambiar_pin = ${debe_cambiar_pin}
       WHERE id = ${id}
+      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin
     `;
 
-		return successResponse(null, 'Usuario actualizado satisfactoriamente');
+		if (result.rowCount === 0) {
+			return errorResponse(404, 'NOT_FOUND', 'Usuario no encontrado');
+		}
+
+		return successResponse(
+			result.rows[0],
+			'Usuario actualizado satisfactoriamente'
+		);
 	} catch (error) {
 		console.error('Error actualizando usuario:', error);
 		if (error.status) return error;
@@ -142,7 +149,7 @@ export async function DELETE(event) {
 
 		// Verify user exists before deletion
 		const existingUser = await sql`
-      SELECT * FROM usuarios WHERE id = ${id}
+      SELECT id, numero_telefono FROM usuarios WHERE id = ${id}
     `;
 
 		if (existingUser.rows.length === 0) {
@@ -156,9 +163,13 @@ export async function DELETE(event) {
     `;
 
 		// Then delete the user
-		await sql`
-      DELETE FROM usuarios WHERE id = ${id}
+		const result = await sql`
+      DELETE FROM usuarios 
+      WHERE id = ${id}
+      RETURNING id, numero_telefono
     `;
+
+		console.log(`Usuario ${result.rows[0].numero_telefono} eliminado por ${user.userId}`);
 
 		return successResponse(null, 'Usuario eliminado con éxito');
 	} catch (error) {

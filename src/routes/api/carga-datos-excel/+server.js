@@ -1,7 +1,7 @@
 // src/routes/api/carga-datos-excel/+server.js
 import dotenv from 'dotenv';
 import xlsx from 'xlsx';
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAdmin } from '$lib/authMiddleware';
 

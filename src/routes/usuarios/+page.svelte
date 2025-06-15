@@ -24,8 +24,7 @@
 			const data = await response.json();
 
 			if (data.status === 'success') {
-				usuarios = data.data.users;
-				// REMOVE: message = '';
+				usuarios = data.data;
 			} else {
 				addToast(data.error?.message || 'Error al cargar los usuarios.', 'error');
 			}

@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth, requireAdmin } from '$lib/authMiddleware';
@@ -15,22 +15,35 @@ export async function POST({ request, locals }) {
 
 		// Validate input
 		if (!categoria) {
-			return errorResponse(400, 'VALIDATION_ERROR', 'Categoria es requerida');
+			return errorResponse(400, 'VALIDATION_ERROR', 'Categoría es requerida');
+		}
+
+		// Check if category already exists
+		const existingCategory = await sql`
+      SELECT id FROM categorias_incidencias WHERE categoria = ${categoria}
+    `;
+
+		if (existingCategory.rows.length > 0) {
+			return errorResponse(409, 'CONFLICT', 'Ya existe una categoría con ese nombre');
 		}
 
 		const result = await sql`
       INSERT INTO categorias_incidencias (categoria, descripcion)
       VALUES (${categoria}, ${descripcion})
-      RETURNING *;
+      RETURNING id, categoria, descripcion;
     `;
 
-		return successResponse(result.rows[0], 'Categoria creada satisfactoriamente', { status: 201 });
+		return successResponse(
+			result.rows[0],
+			'Categoria creada satisfactoriamente',
+			{ status: 201 }
+		);
 	} catch (error) {
 		console.error('Error creating category:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Fallo al crear una categoria',
+			'Fallo al crear una categoría',
 			error.message
 		);
 	}
@@ -42,9 +55,13 @@ export async function GET({ locals }) {
 	requireAuth(locals);
 
 	try {
-		const result = await sql`SELECT * FROM categorias_incidencias ORDER BY id`;
+		const result = await sql`
+      SELECT id, categoria, descripcion
+      FROM categorias_incidencias 
+      ORDER BY id
+    `;
 
-		return successResponse(result.rows, 'Categories fetched successfully');
+		return successResponse(result.rows, 'Categorías obtenidas satisfactoriamente');
 	} catch (error) {
 		console.error('Error fetching categories:', error);
 		return errorResponse(
@@ -66,27 +83,45 @@ export async function PUT({ request, locals }) {
 
 		// Validate input
 		if (!id || !categoria) {
-			return errorResponse(400, 'VALIDATION_ERROR', 'ID y categoria son requeridos');
+			return errorResponse(400, 'VALIDATION_ERROR', 'ID y categoría son requeridos');
+		}
+
+		// Check if category exists
+		const existingCategory = await sql`
+      SELECT id FROM categorias_incidencias WHERE id = ${id}
+    `;
+
+		if (existingCategory.rows.length === 0) {
+			return errorResponse(404, 'NOT_FOUND', 'Categoría no encontrada');
+		}
+
+		// Check if new name conflicts with another category
+		const nameConflict = await sql`
+      SELECT id FROM categorias_incidencias 
+      WHERE categoria = ${categoria} AND id != ${id}
+    `;
+
+		if (nameConflict.rows.length > 0) {
+			return errorResponse(409, 'CONFLICT', 'Ya existe una categoría con ese nombre');
 		}
 
 		const result = await sql`
       UPDATE categorias_incidencias
       SET categoria = ${categoria}, descripcion = ${descripcion}
       WHERE id = ${id}
-      RETURNING *;
+      RETURNING id, categoria, descripcion;
     `;
 
-		if (result.rows.length === 0) {
-			return errorResponse(404, 'NOT_FOUND', 'Categoria no encontrada');
-		}
-
-		return successResponse(result.rows[0], 'Categoria actualizada satisfactoriamente');
+		return successResponse(
+			result.rows[0],
+			'Categoría actualizada satisfactoriamente'
+		);
 	} catch (error) {
 		console.error('Error updating category:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Fallo al actualizar categoria',
+			'Fallo al actualizar categoría',
 			error.message
 		);
 	}
@@ -102,26 +137,33 @@ export async function DELETE({ request, locals }) {
 
 		// Validate input
 		if (!id) {
-			return errorResponse(400, 'VALIDATION_ERROR', 'ID is requerido');
+			return errorResponse(400, 'VALIDATION_ERROR', 'ID es requerido');
+		}
+
+		// Check if category exists
+		const existingCategory = await sql`
+      SELECT id, categoria FROM categorias_incidencias WHERE id = ${id}
+    `;
+
+		if (existingCategory.rows.length === 0) {
+			return errorResponse(404, 'NOT_FOUND', 'Categoría no encontrada');
 		}
 
 		const result = await sql`
       DELETE FROM categorias_incidencias
       WHERE id = ${id}
-      RETURNING *;
+      RETURNING id, categoria;
     `;
 
-		if (result.rows.length === 0) {
-			return errorResponse(404, 'NOT_FOUND', 'Categoria no encontrada');
-		}
+		console.log(`Categoría ${result.rows[0].categoria} eliminada por ${locals.user.userId}`);
 
-		return successResponse(null, 'Categoria eliminada satisfactoriamente');
+		return successResponse(null, 'Categoría eliminada satisfactoriamente');
 	} catch (error) {
 		console.error('Error deleting category:', error);
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',
-			'Fallo al eliminar categoria',
+			'Fallo al eliminar categoría',
 			error.message
 		);
 	}

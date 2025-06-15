@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 // Database
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 
 // Internal utilities
 import { jwtConfig } from '$lib/jwt';
@@ -92,6 +92,12 @@ export async function POST({ request, getClientAddress }) {
 			return errorResponse(400, 'VALIDATION_ERROR', 'Numero de Telefono y Pin son requeridos');
 		}
 
+
+		// Validate PIN format (basic validation)
+		if (!/^\d{4,6}$/.test(pin)) {
+			return errorResponse(400, 'VALIDATION_ERROR', 'El PIN debe tener entre 4 y 6 digitos');
+		}
+
 		// Fetch user by phone number
 		const result = await sql`
       SELECT u.id, pin_hash, activo, debe_cambiar_pin, nombre, r.nombre_rol
@@ -142,7 +148,27 @@ export async function POST({ request, getClientAddress }) {
 	} catch (error) {
 		console.error('Error during login:', error);
 
-		// Return a generic error message to avoid information leakage
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'An unexpected error occurred during login');
+		// Enhanced error handling
+		let errorMessage = 'An unexpected error occurred during login';
+		let errorDetails = error.message;
+		let statusCode = 500;
+
+		// Check for specific database errors
+		if (error.code === '42P01') {
+			errorMessage = 'Database configuration error';
+			errorDetails = 'Required database tables are missing';
+		} else if (error.code === '23505') {
+			errorMessage = 'Database constraint violation';
+			errorDetails = 'Duplicate user entry found';
+		} else if (error.code === '23503') {
+			errorMessage = 'Database foreign key violation';
+			errorDetails = 'User role reference is invalid';
+		} else if (error.code === '08006') {
+			errorMessage = 'Database connection error';
+			errorDetails = 'Unable to connect to the database';
+			statusCode = 503; // Service Unavailable
+		}
+
+		return errorResponse(statusCode, 'INTERNAL_SERVER_ERROR', errorMessage, errorDetails);
 	}
 }

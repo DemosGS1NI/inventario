@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt';
-import { sql } from '@vercel/postgres';
+import { sql } from '$lib/database';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { json } from '@sveltejs/kit';
@@ -48,6 +48,7 @@ export async function POST({ request, locals }) {
       UPDATE usuarios 
       SET pin_hash = ${hashedPin}, debe_cambiar_pin = false 
       WHERE id = ${userId}
+      RETURNING id, numero_telefono
     `;
 
 		console.log('Updated rows:', result.rowCount);
@@ -57,15 +58,18 @@ export async function POST({ request, locals }) {
 			return errorResponse(json, 404, 'NOT_FOUND', 'User not found or PIN update failed');
 		}
 
+		// Log successful PIN change (without sensitive data)
+		console.log(`PIN updated successfully for user ${result.rows[0].numero_telefono}`);
+
 		return successResponse(json, null, 'PIN cambiado satisfactoriamente');
 	} catch (error) {
 		console.error('Error during PIN change:', error);
 		return errorResponse(
 			json,
-			500,
+			statusCode,
 			'INTERNAL_SERVER_ERROR',
-			'An unexpected error occurred',
-			error.message
+			errorMessage,
+			errorDetails
 		);
 	}
 }

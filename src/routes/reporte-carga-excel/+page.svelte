@@ -12,28 +12,49 @@
 	async function fetchPage(page = 1) {
 		loading = true;
 		try {
+			console.log('🔄 Fetching page:', page);
 			const res = await fetch(`/api/reporte-carga-excel?page=${page}&limit=${pageSize}`);
+			if (!res.ok) {
+				throw new Error(`HTTP error! status: ${res.status}`);
+			}
 			const result = await res.json();
+			console.log('📥 Raw API response:', result);
 
-			// Access the nested data structure
-			items = result.data.items;
-			totalPages = result.data.pagination.totalPages;
-			totalRecords = result.data.pagination.totalRecords;
-			currentPage = page;
-
+			if (result.status === 'success') {
+				items = result.data || [];
+				totalPages = result.data?.pagination?.totalPages || 1;
+				totalRecords = result.data?.pagination?.totalRecords || 0;
+				currentPage = page;
+				console.log('✅ Updated state:', { 
+					itemsCount: items.length, 
+					totalPages, 
+					totalRecords, 
+					currentPage 
+				});
+			} else {
+				console.error('❌ Error en la respuesta:', result.message || 'Error desconocido');
+				items = [];
+				totalPages = 1;
+				totalRecords = 0;
+			}
 		} catch (error) {
-			console.error('Error fetching data:', error);
+			console.error('❌ Error al obtener datos:', error);
+			items = [];
+			totalPages = 1;
+			totalRecords = 0;
 		} finally {
 			loading = false;
 		}
 	}
 
-	onMount(() => {
-		fetchPage();
+	onMount(async () => {
+		console.log('🚀 Component mounted, fetching first page');
+		await fetchPage(1);
 	});
 
 	function changePage(page) {
 		if (page >= 1 && page <= totalPages) {
+			console.log('🔄 Changing to page:', page);
 			fetchPage(page);
 		}
 	}
@@ -65,6 +86,13 @@
 		</div>
 	{/if}
 
+	<!-- Debug Info -->
+	{#if import.meta.env.DEV}
+		<div class="mb-4 rounded bg-gray-100 p-4 text-sm">
+			<pre>Debug: {JSON.stringify({ items: items?.length, totalPages, totalRecords, currentPage }, null, 2)}</pre>
+		</div>
+	{/if}
+
 	<!-- Report Table -->
 	<div class="mb-6 overflow-x-auto rounded-lg shadow-lg">
 		<table class="min-w-full border border-gray-300 bg-white">
@@ -93,36 +121,38 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each items as item}
-					<tr class="transition-colors hover:bg-gray-50">
-						<!-- CORE COLUMNS - Always visible -->
-						<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.id}</td>
-						<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.bodega}</td>
+				{#if items && items.length > 0}
+					{#each items as item}
+						<tr class="transition-colors hover:bg-gray-50">
+							<!-- CORE COLUMNS - Always visible -->
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.id}</td>
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.bodega}</td>
 
-						
-						<!-- TABLET+ COLUMNS - Show on medium screens and up -->
-						<td class="hidden md:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.marca}</td>
+							
+							<!-- TABLET+ COLUMNS - Show on medium screens and up -->
+							<td class="hidden md:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.marca}</td>
 
-						
-						<!-- DESKTOP+ COLUMNS - Show on large screens and up -->
-						<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.codigo_barras}</td>
-						<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.numero_parte}</td>
-					    <td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.descripcion}</td>
-                        <td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.inventario_sistema}</td>
-						
-						<!-- OPTIONAL COLUMNS - Uncomment to show if needed -->
-						<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.ubicacion}</td> -->
-						<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.gtin}</td> -->
-						<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.single_item_ean13}</td> -->
-						<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.master_carton_ean13}</td> -->
-					</tr>
-				{:else}
+							
+							<!-- DESKTOP+ COLUMNS - Show on large screens and up -->
+							<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.codigo_barras}</td>
+							<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.numero_parte}</td>
+						    <td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.descripcion}</td>
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.inventario_sistema}</td>
+							
+							<!-- OPTIONAL COLUMNS - Uncomment to show if needed -->
+							<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.ubicacion}</td> -->
+							<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.gtin}</td> -->
+							<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.single_item_ean13}</td> -->
+							<!-- <td class="hidden xl:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.master_carton_ean13}</td> -->
+						</tr>
+					{/each}
+				{:else if !loading}
 					<tr>
 						<td colspan="7" class="px-4 py-8 text-center text-gray-500">
 							No hay datos disponibles
 						</td>
 					</tr>
-				{/each}
+				{/if}
 			</tbody>
 		</table>
 	</div>
@@ -150,7 +180,7 @@
 
 		<button
 			on:click={() => changePage(currentPage + 1)}
-			disabled={currentPage === totalPages || loading}
+			disabled={currentPage === totalPages || loading || totalPages === 0}
 			class="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
 		>
 			Siguiente →
