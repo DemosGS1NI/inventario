@@ -22,10 +22,15 @@
 	function handleMarcaChange(event) {
 		dispatch('marcaChange', event.target.value);
 	}
+
+	// Add clear event
+	function handleClearFilters() {
+		dispatch('clearFilters');
+	}
 </script>
 
 <!-- Filters -->
-<div class="sticky top-16 z-10 mb-6 flex flex-col gap-4 bg-gray-100 p-2 md:flex-row">
+<div class="sticky top-16 z-10 mb-6 flex flex-col gap-4 bg-gray-100 p-2 md:flex-row items-center">
 	<div class="relative flex-1">
 		<select
 			value={selectedBodega}
@@ -83,4 +88,12 @@
 			class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-500"
 		/>
 	</div>
+
+	<!-- Limpiar Filtros button at the same level -->
+	<button
+		on:click={handleClearFilters}
+		class="h-12 rounded bg-gray-500 px-4 py-2 text-white transition-colors hover:bg-gray-600 ml-2"
+	>
+		Limpiar Filtros
+	</button>
 </div>

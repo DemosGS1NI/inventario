@@ -10,7 +10,12 @@
 		"lint": "prettier --check .",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"docs:build": "dbdocs build toma-inventario-schema.dbml",
+		"docs:serve": "dbdocs serve toma-inventario-schema.dbml",
+		"docs:deploy": "dbdocs build toma-inventario-schema.dbml --project=toma-inventario",
+		"docs:remove": "dbdocs remove toma-inventario",
+		"generate-schema": "node scripts/generate-schema.js"
 	},
 	"devDependencies": {
 		"@sveltejs/kit": "^2.10.0",

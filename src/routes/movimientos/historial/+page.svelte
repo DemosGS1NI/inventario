@@ -160,41 +160,6 @@
 		return tipo === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
 	}
 
-	async function exportMovements() {
-		try {
-			addToast('Exportando movimientos...', 'info');
-
-			// Use the same filters for export
-			let queryParams = new URLSearchParams();
-			if (selectedBodega) queryParams.append('bodega', selectedBodega);
-			if (selectedUbicacion) queryParams.append('ubicacion', selectedUbicacion);
-			if (selectedMarca) queryParams.append('marca', selectedMarca);
-			queryParams.append('export', 'true');
-
-			const queryString = queryParams.toString();
-			const url = `/api/db/movimientos${queryString ? '?' + queryString : '?export=true'}`;
-
-			const response = await fetch(url);
-
-			if (response.ok) {
-				const blob = await response.blob();
-				const downloadUrl = window.URL.createObjectURL(blob);
-				const link = document.createElement('a');
-				link.href = downloadUrl;
-				link.download = `movimientos_${new Date().toISOString().split('T')[0]}.csv`;
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				window.URL.revokeObjectURL(downloadUrl);
-
-				addToast('Movimientos exportados exitosamente', 'success');
-			} else {
-				addToast('Error al exportar movimientos', 'error');
-			}
-		} catch (error) {
-			addToast('Error al exportar: ' + error.message, 'error');
-		}
-	}
 
 	// Add delete function
 	async function deleteMovement(movementId, movementDescription) {
@@ -300,13 +265,7 @@
 				>
 					Limpiar Filtros
 				</button>
-				<button
-					on:click={exportMovements}
-					disabled={movements.length === 0}
-					class="rounded bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600 disabled:bg-gray-400"
-				>
-					Exportar
-				</button>
+
 			</div>
 		</div>
 	</div>

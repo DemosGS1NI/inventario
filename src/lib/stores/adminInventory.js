@@ -24,11 +24,9 @@ const initialState = {
 			percentageCounted: 0,
 			percentageValidated: 0
 		},
-		currentView: null,
 		summary: {
 			totalBodegas: 0,
 			totalUbicaciones: 0,
-			totalLocations: 0,
 			pendingValidation: 0
 		},
 		lastUpdated: null

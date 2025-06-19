@@ -2,6 +2,8 @@
 	import { TrendingUp, MapPin, Users } from 'lucide-svelte';
 	
 	export let progressData;
+	export let vistaActualStats = { counted: 0, validated: 0 };
+	$: percentValidated = vistaActualStats.counted > 0 ? Math.round((vistaActualStats.validated / vistaActualStats.counted) * 100): 0;
 </script>
 
 {#if progressData && progressData.overallExercise}
@@ -35,36 +37,33 @@
 			</div>
 		</div>
 
-		<!-- Current View Progress -->
-		{#if progressData.currentView}
-			<div class="rounded-lg bg-white p-4 shadow">
-				<div class="flex items-center gap-2 mb-2">
-					<MapPin size={20} class="text-green-500" />
-					<h3 class="font-semibold text-gray-800">Vista Actual</h3>
+		<!-- Current View Progress: always show -->
+		<div class="rounded-lg bg-white p-4 shadow">
+			<div class="flex items-center gap-2 mb-2">
+				<MapPin size={20} class="text-green-500" />
+				<h3 class="font-semibold text-gray-800">Vista Actual</h3>
+			</div>
+			<div class="space-y-2">
+				<div class="flex justify-between text-sm">
+					<span>Contados:</span>
+					<span class="font-medium">
+						{vistaActualStats.counted}
+					</span>
 				</div>
-				<div class="space-y-2">
-					<div class="flex justify-between text-sm">
-						<span>Contados:</span>
-						<span class="font-medium">
-							{progressData.currentView.countedProducts}/{progressData.currentView.totalProducts}
-							({progressData.currentView.percentageCounted}%)
-						</span>
-					</div>
-					<div class="w-full bg-gray-200 rounded-full h-2">
-						<div 
-							class="bg-green-500 h-2 rounded-full transition-all duration-300" 
-							style="width: {progressData.currentView.percentageCounted}%"
-						></div>
-					</div>
-					<div class="flex justify-between text-sm">
-						<span>Validados:</span>
-						<span class="font-medium text-green-600">
-							{progressData.currentView.validatedProducts} ({progressData.currentView.percentageValidated}%)
-						</span>
-					</div>
+				<div class="w-full bg-gray-200 rounded-full h-2">
+					<div 
+						class="bg-green-500 h-2 rounded-full transition-all duration-300" 
+						style="width: {percentValidated}%"
+					></div>
+				</div>
+				<div class="flex justify-between text-sm">
+					<span>Validados:</span>
+					<span class="font-medium text-green-600">
+						{vistaActualStats.validated}
+					</span>
 				</div>
 			</div>
-		{/if}
+		</div>
 
 		<!-- Summary Stats -->
 		<div class="rounded-lg bg-white p-4 shadow">

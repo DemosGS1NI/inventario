@@ -38,47 +38,64 @@ export async function GET({ locals }) {
 		// Create a workbook
 		const workbook = XLSX.utils.book_new();
 
+		// Build a map for quick lookup of net movements by product
+		const netMovementsMap = new Map();
+		if (movimientosResult.rows && movimientosResult.rows.length > 0) {
+			for (const mov of movimientosResult.rows) {
+				const key = `${mov.bodega}||${mov.ubicacion || ''}||${mov.marca}||${mov.codigo_barras}`;
+				const sign = mov.tipo_movimiento === 'IN' ? 1 : -1;
+				netMovementsMap.set(key, (netMovementsMap.get(key) || 0) + sign * mov.cantidad);
+			}
+		}
+
 		// Process Inventory Data
 		if (inventarioResult.rows && inventarioResult.rows.length > 0) {
-			const inventarioData = inventarioResult.rows.map((row) => ({
-				Bodega: row.bodega,
-				Ubicación: row.ubicacion,
-				Marca: row.marca,
-				ID: row.id,
-				'Código de Barras': row.codigo_barras,
-				'Número de Parte': row.numero_parte,
-				Descripción: row.descripcion,
-				'Inventario Sistema': row.inventario_sistema,
-				'Inventario Físico': row.inventario_fisico,
-				'Fecha Inventario': row.fecha_inventario ? new Date(row.fecha_inventario) : null,
-				'Categoría Incidencia': row.categoria_incidencia || '',
-				Incidencia: row.incidencia || '',
-				'EAN13 Unidad': row.single_item_ean13 || '',
-				'EAN13 Caja Master': row.master_carton_ean13 || '',
-				'Actualizado Por': row.actualizado || '',
-				'Validado Por': row.validado || ''
-			}));
+			const inventarioData = inventarioResult.rows.map((row) => {
+				const key = `${row.bodega}||${row.ubicacion || ''}||${row.marca}||${row.codigo_barras}`;
+				return {
+					Bodega: row.bodega,
+					Ubicación: row.ubicacion,
+					Marca: row.marca,
+					ID: row.id,
+					'Código de Barras': row.codigo_barras,
+					'Número de Parte': row.numero_parte,
+					Descripción: row.descripcion,
+					'Inventario Sistema': row.inventario_sistema,
+					'Inventario Físico': row.inventario_fisico,
+					'Movimientos Netos': netMovementsMap.get(key) ||  '', // Use net movements from the map
+					'Fecha Inventario': row.fecha_inventario ? new Date(row.fecha_inventario) : null,
+					'Categoría Incidencia': row.categoria_incidencia || '',
+					Incidencia: row.incidencia || '',
+					'EAN13 Unidad': row.single_item_ean13 || '',
+					'EAN13 Caja Master': row.master_carton_ean13 || '',
+					'Actualizado Por': row.actualizado || '',
+					'Validado Por': row.validado || '',
+		
+				};
+			});
 
 			const inventarioWorksheet = XLSX.utils.json_to_sheet(inventarioData);
 
-			// Set column widths for inventory sheet
+			// Set column widths for inventory sheet (add one for Movimientos Netos)
 			const inventarioColWidths = [
 				{ wch: 15 }, // Bodega
 				{ wch: 12 }, // Ubicación
 				{ wch: 15 }, // Marca
-				{ wch: 8 }, // ID
+				{ wch: 8  }, // ID
 				{ wch: 15 }, // Código de Barras
 				{ wch: 20 }, // Número de Parte
 				{ wch: 30 }, // Descripción
 				{ wch: 12 }, // Inventario Sistema
 				{ wch: 12 }, // Inventario Físico
+				{ wch: 18 }, // Movimientos Netos				
 				{ wch: 20 }, // Fecha Inventario
 				{ wch: 20 }, // Categoría Incidencia
 				{ wch: 30 }, // Incidencia
 				{ wch: 15 }, // EAN13 Unidad
 				{ wch: 15 }, // EAN13 Caja Master
 				{ wch: 20 }, // Actualizado Por
-				{ wch: 20 } // Validado Por
+				{ wch: 20 }  // Validado Por
+
 			];
 
 			inventarioWorksheet['!cols'] = inventarioColWidths;
@@ -125,19 +142,19 @@ export async function GET({ locals }) {
 		}
 
 		// Create summary sheet
-		const summaryData = [
-			{ Métrica: 'Total Registros Inventario', Valor: inventarioResult.rows?.length || 0 },
-			{ Métrica: 'Total Registros Movimientos', Valor: movimientosResult.rows?.length || 0 },
-			{ Métrica: 'Fecha Generación', Valor: new Date().toLocaleString('es-ES') }
-		];
+		// const summaryData = [
+		// 	{ Métrica: 'Total Registros Inventario', Valor: inventarioResult.rows?.length || 0 },
+		// 	{ Métrica: 'Total Registros Movimientos', Valor: movimientosResult.rows?.length || 0 },
+		// 	{ Métrica: 'Fecha Generación', Valor: new Date().toLocaleString('es-ES') }
+		// ];
 
-		const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-		summarySheet['!cols'] = [{ wch: 25 }, { wch: 20 }];
-		XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
+		// const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+		// summarySheet['!cols'] = [{ wch: 25 }, { wch: 20 }];
+		// XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
 
 		// Generate file name with timestamp
 		const timestamp = format(new Date(), 'yyyyMMdd_HHmmss');
-		const fileName = `inventario_completo_${timestamp}.xlsx`;
+		const fileName = `inventario_${timestamp}.xlsx`;
 
 		// Write workbook to a buffer with explicit options
 		const buffer = XLSX.write(workbook, {

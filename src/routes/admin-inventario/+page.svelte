@@ -30,6 +30,38 @@
 
 	// ===== LOCAL VARIABLES =====
 	let refreshTimeout;
+	let showProgress = true;
+
+	// Compute Vista Actual stats reactively
+	$: vistaActualStats = {
+		
+		counted: records.length,      // Adjust 'counted' if your field is different
+		validated: records.filter(r => r.validado === true).length  // Adjust 'validated' if your field is different
+
+	};
+	
+
+	// Restore showProgress from sessionStorage before mount (browser only)
+	if (typeof window !== 'undefined') {
+		const savedShowProgress = window.sessionStorage.getItem('adminShowProgress');
+		if (savedShowProgress !== null) {
+			showProgress = savedShowProgress === 'true';
+		}
+	}
+
+	// Watch showProgress and persist to sessionStorage (browser only)
+	$: if (typeof window !== 'undefined') {
+		window.sessionStorage.setItem('adminShowProgress', showProgress);
+	}
+
+	onMount(async () => {
+		console.log('🔄 [admin-inventario] Component mounted');
+		await fetchBodegas();
+		await fetchRecords(); // Fetch all records on mount
+	});
+
+	// Watch showProgress and persist to sessionStorage
+	$: sessionStorage.setItem('adminShowProgress', showProgress);
 
 	// ===== EVENT HANDLERS =====
 	// Touch feedback for mobile
@@ -45,43 +77,51 @@
 	function handleBodegaChange(event) {
 		console.log('Bodega changed:', event.detail);
 		const newBodega = event.detail;
-
 		adminInventoryStore.setSelections(newBodega, '', '');
-
 		if (newBodega) {
 			fetchBodegas().then(() => {
 				fetchUbicaciones();
 			});
 		}
-		fetchProgressData();
+		fetchRecords(newBodega, '', '');
+		fetchProgressData(newBodega, '', '');
 	}
 
 	function handleUbicacionChange(event) {
 		const newUbicacion = event.detail;
 		adminInventoryStore.setSelections(selectedBodega, '', newUbicacion);
-
 		if (newUbicacion) {
 			fetchUbicaciones().then(() => {
 				fetchMarcas();
 			});
 		}
-		fetchProgressData();
+		fetchRecords(selectedBodega, '', newUbicacion);
+		fetchProgressData(selectedBodega, '', newUbicacion);
 	}
 
 	function handleMarcaChange(event) {
 		const newMarca = event.detail;
 		adminInventoryStore.setSelections(selectedBodega, newMarca, selectedUbicacion);
-
 		if (newMarca) {
 			fetchMarcas().then(() => {
-				fetchRecords();
+				fetchRecords(selectedBodega, newMarca, selectedUbicacion);
 			});
+		} else {
+			fetchRecords(selectedBodega, '', selectedUbicacion);
 		}
-		fetchProgressData();
+		fetchProgressData(selectedBodega, newMarca, selectedUbicacion);
+	}
+
+	// Limpiar Filtros handler
+	function clearFilters() {
+		adminInventoryStore.setSelections('', '', '');
+		fetchRecords('', '', '');
+		fetchProgressData('', '', '');
 	}
 
 	// ===== DATA FETCHING FUNCTIONS =====
 	async function fetchBodegas() {
+		console.log('🔍 [admin-inventario] Fetching bodegas');
 		adminInventoryStore.setLoading(true);
 		try {
 			const res = await fetch('/api/inventario/fetch-bodegas');
@@ -89,6 +129,7 @@
 
 			if (res.ok && data.status === 'success') {
 				adminInventoryStore.setBodegas(data.data);
+				console.log('✅ [admin-inventario] Bodegas loaded:', { count: data.data.length });
 				if (selectedBodega) {
 					await fetchUbicaciones();
 					if (selectedUbicacion) {
@@ -99,11 +140,13 @@
 					}
 				}
 			} else {
+				console.error('❌ [admin-inventario] Error loading bodegas:', data.message);
 				adminInventoryStore.setError(
 					'Error fetching bodegas: ' + (data.message || 'Unknown error')
 				);
 			}
 		} catch (error) {
+			console.error('❌ [admin-inventario] Error loading bodegas:', error);
 			adminInventoryStore.setError('Error fetching bodegas: ' + error.message);
 		} finally {
 			adminInventoryStore.setLoading(false);
@@ -112,16 +155,18 @@
 
 	async function fetchUbicaciones() {
 		if (!selectedBodega) {
+			console.log('⚠️ [admin-inventario] No bodega selected for ubicaciones');
 			adminInventoryStore.setUbicaciones([]);
 			return;
 		}
 
+		console.log('🔍 [admin-inventario] Fetching ubicaciones for bodega:', selectedBodega);
 		adminInventoryStore.setLoading(true);
 		adminInventoryStore.setError(null);
 
 		try {
 			const url = `/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`;
-			console.log('Fetching ubicaciones:', url);
+			console.log('🔍 [admin-inventario] Fetching ubicaciones:', url);
 
 			const res = await fetch(url);
 			const data = await res.json();
@@ -129,12 +174,13 @@
 			if (res.ok && data.status === 'success') {
 				if (selectedBodega) {
 					adminInventoryStore.setUbicaciones(data.data);
+					console.log('✅ [admin-inventario] Ubicaciones loaded:', { count: data.data.length });
 				}
 			} else {
 				throw new Error(data.message || 'Unknown error');
 			}
 		} catch (error) {
-			console.error('Ubicaciones fetch error:', error);
+			console.error('❌ [admin-inventario] Ubicaciones fetch error:', error);
 			adminInventoryStore.setError('Error fetching ubicaciones: ' + error.message);
 			adminInventoryStore.setUbicaciones([]);
 		} finally {
@@ -144,16 +190,21 @@
 
 	async function fetchMarcas() {
 		if (!selectedBodega || !selectedUbicacion) {
+			console.log('⚠️ [admin-inventario] Missing required fields for marcas:', { 
+				selectedBodega, 
+				selectedUbicacion 
+			});
 			adminInventoryStore.setMarcas([]);
 			return;
 		}
 
+		console.log('🔍 [admin-inventario] Fetching marcas:', { selectedBodega, selectedUbicacion });
 		adminInventoryStore.setLoading(true);
 		adminInventoryStore.setError(null);
 
 		try {
 			const url = `/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`;
-			console.log('Fetching marcas:', url);
+			console.log('🔍 [admin-inventario] Fetching marcas:', url);
 
 			const res = await fetch(url);
 			const data = await res.json();
@@ -161,12 +212,13 @@
 			if (res.ok && data.status === 'success') {
 				if (selectedBodega && selectedUbicacion) {
 					adminInventoryStore.setMarcas(data.data);
+					console.log('✅ [admin-inventario] Marcas loaded:', { count: data.data.length });
 				}
 			} else {
 				throw new Error(data.message || 'Unknown error');
 			}
 		} catch (error) {
-			console.error('Marcas fetch error:', error);
+			console.error('❌ [admin-inventario] Marcas fetch error:', error);
 			adminInventoryStore.setError('Error fetching marcas: ' + error.message);
 			adminInventoryStore.setMarcas([]);
 		} finally {
@@ -174,21 +226,22 @@
 		}
 	}
 
-	async function fetchRecords() {
-		if (!selectedBodega || !selectedUbicacion || !selectedMarca) {
-			console.log('Missing parameters:', { selectedBodega, selectedUbicacion, selectedMarca });
-			return;
-		}
-
+	async function fetchRecords(bodega = selectedBodega, marca = selectedMarca, ubicacion = selectedUbicacion) {
+		// No longer require all filters; fetch all records if none selected
 		adminInventoryStore.setLoading(true);
 		try {
-			const url = `/api/admin-inventario/records?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}&marca=${encodeURIComponent(selectedMarca)}`;
+			let url = '/api/admin-inventario/records';
+			const params = new URLSearchParams();
+			if (bodega) params.append('bodega', bodega);
+			if (ubicacion) params.append('ubicacion', ubicacion);
+			if (marca) params.append('marca', marca);
+			if (params.toString()) {
+				url += '?' + params.toString();
+			}
 			console.log('Fetching records with URL:', url);
-
 			const inventoryRes = await fetch(url);
 			const data = await inventoryRes.json();
 			console.log('Response data:', data);
-
 			if (inventoryRes.ok && data.status === 'success') {
 				adminInventoryStore.setRecords(data.data);
 			} else if (inventoryRes.status === 404) {
@@ -206,14 +259,14 @@
 		}
 	}
 
-	async function fetchProgressData() {
+	async function fetchProgressData(bodega = selectedBodega, marca = selectedMarca, ubicacion = selectedUbicacion) {
 		try {
 			let url = '/api/admin-inventario/progress';
 			const params = new URLSearchParams();
 			
-			if (selectedBodega) params.append('bodega', selectedBodega);
-			if (selectedMarca) params.append('marca', selectedMarca);
-			if (selectedUbicacion) params.append('ubicacion', selectedUbicacion);
+			if (bodega) params.append('bodega', bodega);
+			if (marca) params.append('marca', marca);
+			if (ubicacion) params.append('ubicacion', ubicacion);
 			
 			if (params.toString()) {
 				url += '?' + params.toString();
@@ -261,39 +314,31 @@
 		}
 	}
 
+	// Updated refreshData to always refresh with current filters
 	async function refreshData() {
 		if (refreshTimeout) clearTimeout(refreshTimeout);
-
-		if (selectedBodega && selectedMarca && selectedUbicacion) {
-			refreshTimeout = setTimeout(async () => {
-				await fetchRecords();
-				await fetchProgressData();
-			}, 300);
-		}
+		refreshTimeout = setTimeout(async () => {
+			await fetchRecords(selectedBodega, selectedMarca, selectedUbicacion);
+			await fetchProgressData(selectedBodega, selectedMarca, selectedUbicacion);
+		}, 300);
 	}
+
+	// ===== REACTIVE RECORD FETCHING =====
+	$: fetchRecordsOnFilterChange = (async () => {
+		if (typeof window === 'undefined') return; // Only run in browser
+		await fetchRecords();
+	})();
+
+	// Calculate dynamic max-height for the table
+	$: tableMaxHeight = showProgress
+		? 'calc(100vh - 220px - 120px)' // header+filters+padding + progress
+		: 'calc(100vh - 220px)'; // header+filters+padding only
 
 	// ===== LIFECYCLE =====
 	onMount(async () => {
-		console.log('Admin Inventory Component: onMount');
-		adminInventoryStore.setLoading(true);
-		try {
-			await fetchBodegas();
-			await fetchProgressData();
-			if (selectedBodega) {
-				await fetchUbicaciones();
-				if (selectedUbicacion) {
-					await fetchMarcas();
-					if (selectedMarca) {
-						await fetchRecords();
-					}
-				}
-			}
-		} catch (error) {
-			console.error('Initialization error:', error);
-			adminInventoryStore.setError('Error initializing data: ' + error.message);
-		} finally {
-			adminInventoryStore.setLoading(false);
-		}
+		console.log('🔄 [admin-inventario] Component mounted');
+		await fetchBodegas();
+		await fetchRecords(); // Fetch all records on mount
 	});
 
 	onDestroy(() => {
@@ -305,7 +350,7 @@
 
 <!-- ===== MAIN TEMPLATE ===== -->
 <div
-	class="min-h-screen bg-gray-100 p-4 {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation"
+	class="min-h-screen bg-gray-100 p-4 {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation flex flex-col"
 >
 	<!-- Header with controls -->
 	<div class="sticky top-0 z-10 mb-4 flex items-center justify-between bg-gray-100 p-2">
@@ -343,8 +388,20 @@
 		</div>
 	</div>
 
+	<!-- Show/Hide Progress Toggle -->
+	<div class="flex items-center mb-2">
+		<button
+			class="rounded bg-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-400 transition-colors mr-2"
+			on:click={() => showProgress = !showProgress}
+		>
+			{showProgress ? 'Ocultar Progreso' : 'Mostrar Progreso'}
+		</button>
+	</div>
+
 	<!-- Progress Tracking -->
-	<AdminProgress {progressData} />
+	{#if showProgress}
+		<AdminProgress {progressData} {vistaActualStats}  />
+	{/if}
 
 	<!-- Filters -->
 	<AdminFilters 
@@ -358,6 +415,7 @@
 		on:bodegaChange={handleBodegaChange}
 		on:ubicacionChange={handleUbicacionChange}
 		on:marcaChange={handleMarcaChange}
+		on:clearFilters={clearFilters}
 	/>
 
 	<!-- Status messages -->
@@ -387,14 +445,16 @@
 	{/if}
 
 	<!-- Records Table -->
-	<AdminTable 
-		{records} 
-		{selectedBodega} 
-		{selectedMarca} 
-		{selectedUbicacion} 
-		{loading}
-		on:validate={validateRecord}
-	/>
+	<div class="overflow-x-auto overflow-y-auto rounded bg-white shadow flex-1 min-h-0" style="max-height: 50vh;">
+		<AdminTable 
+			{records} 
+			{selectedBodega} 
+			{selectedMarca} 
+			{selectedUbicacion} 
+			{loading}
+			on:validate={validateRecord}
+		/>
+	</div>
 </div>
 
 <!-- ===== STYLES ===== -->

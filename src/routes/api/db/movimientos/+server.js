@@ -58,6 +58,21 @@ export async function POST({ request, locals }) {
 		return successResponse(result.rows[0], 'Movimiento registrado satisfactoriamente');
 	} catch (error) {
 		console.error('Error creating movement:', error);
+
+		// Check for unique constraint violation (PostgreSQL: 23505, SQLite: 'UNIQUE constraint failed', MySQL: ER_DUP_ENTRY)
+		const isUniqueViolation =
+			(error.code === '23505') || // PostgreSQL
+			(error.message && error.message.includes('UNIQUE constraint')) || // SQLite
+			(error.code === 'ER_DUP_ENTRY'); // MySQL
+
+		if (isUniqueViolation) {
+			return errorResponse(
+				409,
+				'UNIQUE_CONSTRAINT',
+				'Ya existe un movimiento con este número de documento para esta pieza en la bodega y marca seleccionadas.'
+			);
+		}
+
 		return errorResponse(
 			500,
 			'INTERNAL_SERVER_ERROR',

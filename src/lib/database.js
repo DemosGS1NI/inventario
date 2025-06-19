@@ -24,8 +24,18 @@ class QueryCache {
     // Normalize query by removing extra whitespace and converting to lowercase
     const normalizedQuery = query.trim().toLowerCase().replace(/\s+/g, ' ');
     
-    // Create a stable key that ignores parameter order
-    const paramKey = params ? JSON.stringify(params.sort()) : '';
+    // Handle parameters more carefully
+    let paramKey = '';
+    if (params && params.length > 0) {
+      // Convert each parameter to a string representation
+      const paramStrings = params.map(param => {
+        if (param === null) return 'null';
+        if (param === undefined) return 'undefined';
+        if (typeof param === 'string') return `"${param}"`; // Preserve string values exactly
+        return String(param);
+      });
+      paramKey = paramStrings.join('|');
+    }
     
     return `${normalizedQuery}:${paramKey}`;
   }
@@ -86,6 +96,38 @@ class QueryCache {
     this.timestamps.clear();
     console.log(`🧹 Cache cleared (${size} entries removed)`);
   }
+}
+
+// Helper function to detect modified tables in a query
+function detectModifiedTables(query) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const modifiedTables = new Set();
+
+  // Check for UPDATE statements
+  if (normalizedQuery.startsWith('update')) {
+    const match = normalizedQuery.match(/update\s+([^\s,;]+)/i);
+    if (match) {
+      modifiedTables.add(match[1]);
+    }
+  }
+
+  // Check for INSERT statements
+  if (normalizedQuery.startsWith('insert')) {
+    const match = normalizedQuery.match(/insert\s+into\s+([^\s,;]+)/i);
+    if (match) {
+      modifiedTables.add(match[1]);
+    }
+  }
+
+  // Check for DELETE statements
+  if (normalizedQuery.startsWith('delete')) {
+    const match = normalizedQuery.match(/delete\s+from\s+([^\s,;]+)/i);
+    if (match) {
+      modifiedTables.add(match[1]);
+    }
+  }
+
+  return Array.from(modifiedTables);
 }
 
 let pool;
@@ -187,6 +229,12 @@ async function initializeDatabase() {
 
           if (isCacheable) {
             queryCache.set(query, params, formattedResult);
+          } else {
+            // For non-SELECT queries, invalidate cache for modified tables
+            const modifiedTables = detectModifiedTables(query);
+            modifiedTables.forEach(table => {
+              queryCache.invalidateTable(table);
+            });
           }
 
           return formattedResult;
@@ -210,10 +258,35 @@ async function initializeDatabase() {
     dbClient.query = async (text, params = []) => {
       try {
         const result = await pool.query(text, params);
-        return {
+        
+        // Check if this is a cacheable SELECT query
+        const isCacheable = text.trim().toLowerCase().startsWith('select') &&
+                           !text.toLowerCase().includes('now()') &&
+                           !text.toLowerCase().includes('current_timestamp');
+
+        if (isCacheable) {
+          const cachedResult = queryCache.get(text, params);
+          if (cachedResult) {
+            return cachedResult;
+          }
+        }
+
+        const formattedResult = {
           rows: result.rows,
           rowCount: result.rowCount
         };
+
+        if (isCacheable) {
+          queryCache.set(text, params, formattedResult);
+        } else {
+          // For non-SELECT queries, invalidate cache for modified tables
+          const modifiedTables = detectModifiedTables(text);
+          modifiedTables.forEach(table => {
+            queryCache.invalidateTable(table);
+          });
+        }
+
+        return formattedResult;
       } catch (error) {
         console.error('🔴 SQL Query Error (DEV):', error.message);
         console.error('Query:', text);
@@ -261,62 +334,112 @@ async function initializeDatabase() {
             }
           }
 
-          const result = await originalSql(strings, ...values);
-          
-          if (isCacheable) {
-            queryCache.set(query, params, result);
-          }
+          try {
+            const result = await originalSql(strings, ...values);
+            const formattedResult = {
+              rows: result.rows,
+              rowCount: result.rowCount
+            };
 
-          return result;
+            if (isCacheable) {
+              queryCache.set(query, params, formattedResult);
+            } else {
+              // For non-SELECT queries, invalidate cache for modified tables
+              const modifiedTables = detectModifiedTables(query);
+              modifiedTables.forEach(table => {
+                queryCache.invalidateTable(table);
+              });
+            }
+
+            return formattedResult;
+          } catch (error) {
+            console.error('🔴 SQL Query Error (PROD):', error.message);
+            console.error('Query:', query);
+            console.error('Params:', params);
+            throw error;
+          }
         }
         
-        return await originalSql(strings, ...values);
+        // Handle direct string queries (fallback)
+        const result = await originalSql(strings, values);
+        return {
+          rows: result.rows,
+          rowCount: result.rowCount
+        };
       };
       
-      // Test connection
-      const testResult = await dbClient`SELECT 1 as test, NOW() as timestamp`;
+      // Add query method for compatibility
+      dbClient.query = async (text, params = []) => {
+        try {
+          const result = await originalSql(text, params);
+          
+          // Check if this is a cacheable SELECT query
+          const isCacheable = text.trim().toLowerCase().startsWith('select') &&
+                             !text.toLowerCase().includes('now()') &&
+                             !text.toLowerCase().includes('current_timestamp');
+
+          if (isCacheable) {
+            const cachedResult = queryCache.get(text, params);
+            if (cachedResult) {
+              return cachedResult;
+            }
+          }
+
+          const formattedResult = {
+            rows: result.rows,
+            rowCount: result.rowCount
+          };
+
+          if (isCacheable) {
+            queryCache.set(text, params, formattedResult);
+          } else {
+            // For non-SELECT queries, invalidate cache for modified tables
+            const modifiedTables = detectModifiedTables(text);
+            modifiedTables.forEach(table => {
+              queryCache.invalidateTable(table);
+            });
+          }
+
+          return formattedResult;
+        } catch (error) {
+          console.error('🔴 SQL Query Error (PROD):', error.message);
+          console.error('Query:', text);
+          console.error('Params:', params);
+          throw error;
+        }
+      };
+      
       console.log('✅ Production database connected successfully');
       connectionInfo = {
         environment: 'production',
         type: 'neon',
         status: 'connected'
       };
-      
     } catch (error) {
       console.error('❌ Production database connection failed:', error.message);
       throw new Error(`Production database connection failed: ${error.message}`);
     }
   }
-  
-  // Add connection info method
-  dbClient.getConnectionInfo = () => connectionInfo;
-  
-  // Add cache control methods
-  dbClient.invalidateCache = (tableName) => queryCache.invalidateTable(tableName);
-  dbClient.clearCache = () => queryCache.clear();
-  
-  // Add graceful shutdown method
-  dbClient.end = async () => {
-    if (dev && pool) {
-      console.log('🔄 Closing local database pool...');
-      await pool.end();
-      console.log('✅ Local database pool closed');
-    }
-    // Note: @vercel/postgres doesn't need explicit cleanup
+
+  // Add cache invalidation method
+  dbClient.invalidateCache = async (tableName) => {
+    queryCache.invalidateTable(tableName);
   };
-  
+
   return dbClient;
 }
 
-// Create and export the database client
-const db = await initializeDatabase();
-export { db as sql };
+// Initialize the database connection
+const sql = await initializeDatabase();
 
-// Graceful shutdown
+// Export the sql function and database info
+export { sql, connectionInfo };
+
+// Graceful shutdown function
 export async function shutdownDatabase() {
   if (pool) {
-    console.log('🛑 Closing database connection pool...');
+    console.log('🛑 Shutting down database pool...');
     await pool.end();
-    console.log('✅ Database connection pool closed');
+    console.log('✅ Database pool shut down successfully');
   }
 }

@@ -51,7 +51,7 @@
 
 <div class="flex min-h-screen flex-col items-center bg-gray-100 py-8">
 	<div class="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-		<h1 class="mb-6 text-center text-2xl font-bold text-gray-800">Descargar Datos Completos</h1>
+		<h1 class="mb-6 text-center text-2xl font-bold text-gray-800">Descargar Datos a Excel</h1>
 
 		<div class="mb-6">
 			<BackToMenuButton />
@@ -61,10 +61,9 @@
 			<div class="rounded-lg border border-blue-100 bg-blue-50 p-4">
 				<h2 class="mb-2 font-semibold text-blue-800">Información del Archivo</h2>
 				<ul class="space-y-2 text-blue-700">
-					<li>• El archivo contendrá 3 hojas de Excel:</li>
+					<li>• El archivo contendrá 2 hojas de Excel:</li>
 					<li class="ml-4">- <strong>Inventario:</strong> Todos los registros de inventario</li>
 					<li class="ml-4">- <strong>Movimientos:</strong> Todos los movimientos registrados</li>
-					<li class="ml-4">- <strong>Resumen:</strong> Estadísticas generales</li>
 					<li>• Formato Excel (.xlsx) con datos actualizados</li>
 					<li>• El nombre incluirá fecha y hora de descarga</li>
 				</ul>
@@ -73,18 +72,11 @@
 			<div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
 				<p class="mb-2 text-sm text-gray-600">Formato del nombre del archivo:</p>
 				<code class="block rounded border border-gray-300 bg-white p-2 text-sm text-gray-700">
-					inventario_completo_YYYY-MM-DD_HH-MM-SS.xlsx
+					inventario_YYYY-MM-DD_HH-MM-SS.xlsx
 				</code>
 			</div>
 
-			<div class="rounded-lg border border-green-200 bg-green-50 p-4">
-				<h3 class="mb-2 font-semibold text-green-800">Contenido de las Hojas</h3>
-				<div class="space-y-1 text-sm text-green-700">
-					<p><strong>Hoja "Inventario":</strong> Productos, cantidades, ubicaciones, incidencias</p>
-					<p><strong>Hoja "Movimientos":</strong> Entradas, salidas, documentos, fechas</p>
-					<p><strong>Hoja "Resumen":</strong> Totales y fecha de generación</p>
-				</div>
-			</div>
+
 		</div>
 
 		<button
@@ -117,7 +109,7 @@
 						d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
 					/>
 				</svg>
-				<span>Descargar Archivo Completo</span>
+				<span>Descargar Archivoo</span>
 			{/if}
 		</button>
 	</div>

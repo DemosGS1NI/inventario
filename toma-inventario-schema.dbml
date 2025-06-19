@@ -1,0 +1,146 @@
+// Auto-generated schema from database
+// Generated on: 2025-06-19T19:49:39.720Z
+// Source: PostgreSQL database
+
+Project toma_inventario {
+  database_type: 'PostgreSQL'
+  Note: 'Inventory Management System - Auto-generated documentation'
+}
+
+Table audit_log {
+  id integer [pk, increment]
+  action_type varchar(50) [not null]
+  performed_by integer [not null, ref: > usuarios.id]
+  action_details text
+  timestamp timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table categorias_incidencias {
+  id integer [pk, increment]
+  categoria text [not null]
+  descripcion text
+}
+
+Table inventario {
+  id decimal [pk]
+  codigo_barras text [unique, not null]
+  gtin text
+  bodega text [pk]
+  ubicacion text
+  marca text [unique]
+  numero_parte text [unique]
+  descripcion text
+  inventario_sistema decimal
+  inventario_fisico decimal
+  fecha_inventario timestamp
+  categoria_incidencia text
+  incidencia text
+  actualizado_por decimal
+  validado boolean
+  validado_por decimal
+  single_item_ean13 varchar(20) [unique]
+  master_carton_ean13 varchar(20)
+}
+
+Table menu_categories {
+  id integer [pk, increment]
+  name varchar(100) [not null]
+  order_index integer [not null, default: 0]
+}
+
+Table menu_item_roles {
+  menu_item_id integer [pk, ref: > menu_items.id]
+  role_id integer [pk, ref: > roles.id]
+}
+
+Table menu_items {
+  id integer [pk, increment]
+  category_id integer [not null, ref: > menu_categories.id]
+  label varchar(100) [not null]
+  href varchar(255)
+  order_index integer [not null, default: 0]
+  is_active boolean [not null, default: true]
+}
+
+Table movimientos {
+  id integer [pk, increment]
+  bodega varchar [unique]
+  ubicacion varchar
+  marca varchar [unique]
+  codigo_barras varchar [unique]
+  numero_parte varchar
+  descripcion varchar
+  tipo_movimiento varchar
+  cantidad integer
+  fecha_movimiento timestamp [default: `CURRENT_TIMESTAMP`]
+  numero_documento varchar [unique, not null]
+  comentarios text
+  usuario_id integer [ref: > usuarios.id]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table productos {
+  id smallint [pk, increment]
+  gtin char(14) [not null]
+  serie varchar(10) [not null]
+  fecha_produccion date [not null]
+  numero_factura varchar(20)
+  fecha_registro_sistema timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_ultima_auditoria timestamp
+  fecha_registro_garantia timestamp
+  nombre_cliente varchar(50)
+  fecha_compra date
+  factura_cliente varchar(10)
+  distribuidor varchar(20)
+  correo_cliente varchar(100)
+  telefono_cliente char(10)
+  garantia_reclamada boolean [default: false]
+  fecha_reclamo timestamp
+  serie_reclamo varchar(10)
+  notas varchar(200)
+}
+
+Table revoked_tokens {
+  jti varchar(255) [pk]
+  expiry timestamp [not null]
+  revoked_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table roles {
+  id smallint [pk, increment]
+  nombre_rol varchar(50) [not null]
+  descripcion text
+  opciones_menu json
+  accesos_api json
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table usuarios {
+  id smallint [pk, increment]
+  numero_telefono char(10) [unique, not null]
+  pin_hash char(60) [not null]
+  nombre varchar(50)
+  apellido varchar(50)
+  rol_id smallint [ref: > roles.id]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  ultimo_login timestamp
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`]
+  debe_cambiar_pin boolean [default: false]
+  created_by smallint
+  updated_by smallint
+}
+
+// Generated Schema Summary
+Note schema_info {
+  '''
+  Database: PostgreSQL
+  Generated: 2025-06-19T19:49:39.722Z
+  Tables: 11
+  Foreign Keys: 6
+  
+  This schema was automatically generated from the database structure.
+  Manual modifications may be overwritten on regeneration.
+  '''
+}

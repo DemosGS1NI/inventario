@@ -15,59 +15,141 @@ dotenv.config();
  * @returns {Promise<Response>} JSON response with inventory records
  */
 export async function GET({ url, locals }) {
-	requireAuth(locals);
-
-	const bodega = url.searchParams.get('bodega');
-	const marca = url.searchParams.get('marca');
-	const ubicacion = url.searchParams.get('ubicacion');
-
-	// Validate query parameters
-	if (!bodega || !marca || !ubicacion) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca y Ubicación son requeridos');
-	}
-
 	try {
-		// Main inventory query with sorting by recent activity
-		const inventoryResult = await sql`
-			SELECT 
-				i.*, 
-				u.nombre, 
-				u.apellido
-			FROM inventario i 
-			LEFT JOIN usuarios u ON i.actualizado_por = u.id
-			WHERE 
-				i.bodega = ${bodega} AND 
-				i.marca = ${marca} AND 
-				i.ubicacion = ${ubicacion}
-			ORDER BY 
-				i.fecha_inventario DESC NULLS LAST,
-				i.bodega, 
-				i.ubicacion, 
-				i.marca,
-				i.codigo_barras
-		`;
+		requireAuth(locals);
+
+		const bodega = url.searchParams.get('bodega');
+		const marca = url.searchParams.get('marca');
+		const ubicacion = url.searchParams.get('ubicacion');
+
+		// Remove strict filter requirement: allow fetching all records if no filters are provided
+		// Build WHERE clause and params for inventory
+		let whereClause = '';
+		let params = [];
+		if (bodega) {
+			params.push(bodega);
+			whereClause += (whereClause ? ' AND ' : '') + `i.bodega = $${params.length}`;
+		}
+		if (marca) {
+			params.push(marca);
+			whereClause += (whereClause ? ' AND ' : '') + `i.marca = $${params.length}`;
+		}
+		if (ubicacion) {
+			params.push(ubicacion);
+			whereClause += (whereClause ? ' AND ' : '') + `i.ubicacion = $${params.length}`;
+		}
+		const whereSQL = whereClause ? `WHERE ${whereClause}` : '';
+
+		// Dynamic query construction for inventory
+		let inventoryResult;
+		if (bodega && marca && ubicacion) {
+			inventoryResult = await sql`
+				SELECT i.*, u.nombre, u.apellido
+				FROM inventario i
+				LEFT JOIN usuarios u ON i.actualizado_por = u.id
+				WHERE i.bodega = ${bodega} AND i.marca = ${marca} AND i.ubicacion = ${ubicacion}
+				and fecha_inventario IS NOT NULL
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+			`;
+		} else if (bodega && marca) {
+			inventoryResult = await sql`
+				SELECT i.*, u.nombre, u.apellido
+				FROM inventario i
+				LEFT JOIN usuarios u ON i.actualizado_por = u.id
+				WHERE i.bodega = ${bodega} AND i.marca = ${marca}
+				and fecha_inventario IS NOT NULL
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+			`;
+		} else if (bodega && ubicacion) {
+			inventoryResult = await sql`
+				SELECT i.*, u.nombre, u.apellido
+				FROM inventario i
+				LEFT JOIN usuarios u ON i.actualizado_por = u.id
+				WHERE i.bodega = ${bodega} AND i.ubicacion = ${ubicacion}
+				and fecha_inventario IS NOT NULL
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+			`;
+		} else if (bodega) {
+			inventoryResult = await sql`
+				SELECT i.*, u.nombre, u.apellido
+				FROM inventario i
+				LEFT JOIN usuarios u ON i.actualizado_por = u.id
+				WHERE i.bodega = ${bodega}
+				and fecha_inventario IS NOT NULL
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+			`;
+		} else {
+			// Fetch all records, limit for performance
+			inventoryResult = await sql`
+				SELECT i.*, u.nombre, u.apellido
+				FROM inventario i
+				LEFT JOIN usuarios u ON i.actualizado_por = u.id
+				where fecha_inventario IS NOT NULL
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				LIMIT 200
+			`;
+		}
 
 		if (inventoryResult.rows.length === 0) {
 			return successResponse([], 'No se encontraron productos para los criterios especificados');
 		}
 
-		// Get simplified movement totals for all products in this location
+		// Build movement query for all found products
 		const productCodes = inventoryResult.rows.map(row => row.codigo_barras);
-		
-		const movementResult = await sql`
-			SELECT 
-				codigo_barras,
-				SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
-				SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
-				SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
-			FROM movimientos 
-			WHERE 
-				codigo_barras = ANY(${productCodes}) AND
-				bodega = ${bodega} AND 
-				marca = ${marca} AND
-				ubicacion = ${ubicacion}
-			GROUP BY codigo_barras
-		`;
+		let movementResult = { rows: [] };
+		if (productCodes.length > 0) {
+			if (bodega && marca && ubicacion) {
+				movementResult = await sql`
+					SELECT codigo_barras,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
+						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
+					FROM movimientos
+					WHERE bodega = ${bodega} AND marca = ${marca} AND ubicacion = ${ubicacion} AND codigo_barras = ANY(${productCodes})
+					GROUP BY codigo_barras
+				`;
+			} else if (bodega && marca) {
+				movementResult = await sql`
+					SELECT codigo_barras,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
+						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
+					FROM movimientos
+					WHERE bodega = ${bodega} AND marca = ${marca} AND codigo_barras = ANY(${productCodes})
+					GROUP BY codigo_barras
+				`;
+			} else if (bodega && ubicacion) {
+				movementResult = await sql`
+					SELECT codigo_barras,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
+						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
+					FROM movimientos
+					WHERE bodega = ${bodega} AND ubicacion = ${ubicacion} AND codigo_barras = ANY(${productCodes})
+					GROUP BY codigo_barras
+				`;
+			} else if (bodega) {
+				movementResult = await sql`
+					SELECT codigo_barras,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
+						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
+					FROM movimientos
+					WHERE bodega = ${bodega} AND codigo_barras = ANY(${productCodes})
+					GROUP BY codigo_barras
+				`;
+			} else {
+				movementResult = await sql`
+					SELECT codigo_barras,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
+						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
+						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
+					FROM movimientos
+					WHERE codigo_barras = ANY(${productCodes})
+					GROUP BY codigo_barras
+				`;
+			}
+		}
 
 		// Create movement lookup map
 		const movementMap = {};

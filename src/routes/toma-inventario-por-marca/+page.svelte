@@ -106,17 +106,28 @@
 	async function saveChanges() {
 		const formData = {
 			id: $inventoryStore.currentProduct.id,
+			ubicacion: $inventoryStore.ubicacion,
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,
 			incidencia,
-			single_item_ean13: currentProduct.single_item_ean13,
-			master_carton_ean13: currentProduct.master_carton_ean13
+			single_item_ean13: $inventoryStore.currentProduct.single_item_ean13,
+			master_carton_ean13: $inventoryStore.currentProduct.master_carton_ean13
 		};
 
-		try {
-			const result = await inventoryAPI.saveProduct(formData);
+		console.log('Saving changes with data:', formData);
 
-			if (result.status === 'success') {
+		try {
+			const response = await fetch('/api/inventario/registro', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(formData)
+			});
+
+			const result = await response.json();
+
+			if (response.ok && result.status === 'success') {
 				addToast('Producto actualizado exitosamente!', 'success');
 				resetFields();
 			} else if (result.error?.code === 'NOT_FOUND') {
@@ -125,6 +136,7 @@
 				addToast(result.error?.message || 'Error al guardar el producto', 'error');
 			}
 		} catch (error) {
+			console.error('Error saving changes:', error);
 			addToast('Error de conexión al guardar el producto', 'error');
 		}
 	}
@@ -227,7 +239,7 @@
 	{#if selectedBodega && selectedMarca && ubicacion}
 		<div class="mb-4">
 			<label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-				Codigo Interno, Numero de Parte o EAN13
+				Codigo de Barras / Numero de Parte / EAN13
 			</label>
 			<input
 				type="text"

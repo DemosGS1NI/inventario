@@ -2,13 +2,12 @@
 	import { onMount, tick } from 'svelte';
 	import { addToast } from '$lib/stores/toast';
 	import BackToMenuButton from '$lib/BackToMenu.svelte';
+	import { inventoryAPI } from '$lib/services/api';
 
 	// Data variables - following existing patterns
 	let bodegas = [];
 	let marcas = [];
-	let ubicaciones = [];
 	let selectedBodega = '';
-	let selectedUbicacion = '';
 	let selectedMarca = '';
 	let codigoBarras = '';
 	let numeroDocumento = '';
@@ -27,55 +26,45 @@
 	];
 
 	onMount(async () => {
+		console.log('🔄 [movimientos] Component mounted');
 		await fetchBodegas();
 	});
 
 	async function fetchBodegas() {
+		console.log('🔍 [movimientos] Fetching bodegas');
 		try {
-			const res = await fetch('/api/inventario/fetch-bodegas');
-			const data = await res.json();
-			if (res.ok && data.status === 'success') {
-				bodegas = data.data;
+			const result = await inventoryAPI.fetchBodegas();
+			if (result.status === 'success') {
+				bodegas = result.data;
+				console.log('✅ [movimientos] Bodegas loaded:', { count: bodegas.length });
 			} else {
-				addToast('Error al cargar bodegas: ' + (data.message || 'Error desconocido'), 'error');
+				console.error('❌ [movimientos] Error loading bodegas:', result.message);
+				addToast('Error al cargar bodegas: ' + (result.message || 'Error desconocido'), 'error');
 			}
 		} catch (error) {
+			console.error('❌ [movimientos] Error loading bodegas:', error);
 			addToast('Error al cargar bodegas: ' + error.message, 'error');
 		}
 	}
 
-	async function fetchUbicaciones() {
-		if (!selectedBodega) return;
-
-		try {
-			const res = await fetch(
-				`/api/inventario/fetch-ubicaciones?bodega=${encodeURIComponent(selectedBodega)}`
-			);
-			const data = await res.json();
-			if (res.ok && data.status === 'success') {
-				ubicaciones = data.data;
-			} else {
-				addToast('Error al cargar ubicaciones: ' + (data.message || 'Error desconocido'), 'error');
-			}
-		} catch (error) {
-			addToast('Error al cargar ubicaciones: ' + error.message, 'error');
-		}
-	}
-
 	async function fetchMarcas() {
-		if (!selectedBodega || !selectedUbicacion) return;
+		if (!selectedBodega) {
+			console.log('⚠️ [movimientos] Missing required field for marcas:', { selectedBodega });
+			return;
+		}
 
+		console.log('🔍 [movimientos] Fetching marcas:', { selectedBodega });
 		try {
-			const res = await fetch(
-				`/api/inventario/fetch-marcas?bodega=${encodeURIComponent(selectedBodega)}&ubicacion=${encodeURIComponent(selectedUbicacion)}`
-			);
-			const data = await res.json();
-			if (res.ok && data.status === 'success') {
-				marcas = data.data;
+			const result = await inventoryAPI.fetchMarcas(selectedBodega);
+			if (result.status === 'success') {
+				marcas = result.data;
+				console.log('✅ [movimientos] Marcas loaded:', { count: marcas.length });
 			} else {
-				addToast('Error al cargar marcas: ' + (data.message || 'Error desconocido'), 'error');
+				console.error('❌ [movimientos] Error loading marcas:', result.message);
+				addToast('Error al cargar marcas: ' + (result.message || 'Error desconocido'), 'error');
 			}
 		} catch (error) {
+			console.error('❌ [movimientos] Error loading marcas:', error);
 			addToast('Error al cargar marcas: ' + error.message, 'error');
 		}
 	}
@@ -84,13 +73,9 @@
 		if (!selectedBodega || !selectedMarca || !codigoBarras) return;
 
 		try {
-			const res = await fetch(
-				`/api/inventario/registro?bodega=${encodeURIComponent(selectedBodega)}&marca=${encodeURIComponent(selectedMarca)}&codigo_barras=${encodeURIComponent(codigoBarras)}`
-			);
-			const data = await res.json();
-
-			if (res.ok && data.status === 'success') {
-				product = data.data;
+			const result = await inventoryAPI.fetchProductDetails(selectedBodega, selectedMarca, codigoBarras);
+			if (result.status === 'success' && result.data.length > 0) {
+				product = result.data[0];
 				addToast('Producto encontrado', 'success');
 			} else {
 				product = null;
@@ -104,26 +89,12 @@
 
 	async function handleBodegaChange(event) {
 		selectedBodega = event.target.value;
-		selectedUbicacion = '';
+		console.log('🔄 [movimientos] Bodega changed:', selectedBodega);
 		selectedMarca = '';
-		ubicaciones = [];
 		marcas = [];
 		product = null;
 		codigoBarras = '';
-
 		if (selectedBodega) {
-			await fetchUbicaciones();
-		}
-	}
-
-	async function handleUbicacionChange(event) {
-		selectedUbicacion = event.target.value;
-		selectedMarca = '';
-		marcas = [];
-		product = null;
-		codigoBarras = '';
-
-		if (selectedUbicacion) {
 			await fetchMarcas();
 		}
 	}
@@ -148,9 +119,9 @@
 		if (
 			!selectedBodega ||
 			!selectedMarca ||
-			!selectedUbicacion ||
 			!codigoBarras ||
 			!tipoMovimiento ||
+			!numeroDocumento.trim() ||
 			!cantidad
 		) {
 			addToast('Por favor complete todos los campos requeridos', 'error');
@@ -167,9 +138,9 @@
 		try {
 			const payload = {
 				bodega: selectedBodega,
-				ubicacion: selectedUbicacion,
+				ubicacion: product?.ubicacion || '',
 				marca: selectedMarca,
-				codigo_barras: codigoBarras,
+				codigo_barras: product?.codigo_barras,
 				numero_parte: product?.numero_parte || '',
 				descripcion: product?.descripcion || '',
 				tipo_movimiento: tipoMovimiento,
@@ -207,14 +178,6 @@
 		cantidad = 0;
 		product = null;
 	}
-
-	function resetLocation() {
-		selectedUbicacion = '';
-		selectedMarca = '';
-		ubicaciones = [];
-		marcas = [];
-		resetForm();
-	}
 </script>
 
 <div class="min-h-screen bg-gray-100 p-6">
@@ -242,26 +205,8 @@
 			</select>
 		</div>
 
-		<!-- Ubicacion Selection -->
-		{#if selectedBodega}
-			<div>
-				<label for="ubicacion" class="block text-sm font-medium text-gray-700">Ubicación *</label>
-				<select
-					id="ubicacion"
-					value={selectedUbicacion}
-					on:change={handleUbicacionChange}
-					class="w-full rounded border p-2 focus:border-blue-500 focus:ring-blue-500"
-				>
-					<option value="">Seleccionar Ubicación</option>
-					{#each ubicaciones as ubicacion}
-						<option value={ubicacion}>{ubicacion}</option>
-					{/each}
-				</select>
-			</div>
-		{/if}
-
 		<!-- Marca Selection -->
-		{#if selectedUbicacion}
+		{#if selectedBodega}
 			<div>
 				<label for="marca" class="block text-sm font-medium text-gray-700">Marca *</label>
 				<select
@@ -283,7 +228,7 @@
 	{#if selectedMarca}
 		<div class="mb-4">
 			<label for="codigoBarras" class="block text-sm font-medium text-gray-700">
-				Código de Barras / Número de Parte *
+				Código de Barras / Número de Parte / EAN 13*
 			</label>
 			<input
 				type="text"
@@ -301,6 +246,7 @@
 		<div class="mb-6 rounded bg-white p-4 shadow">
 			<h3 class="mb-2 text-lg font-semibold">Detalles del Producto</h3>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<p><strong>Ubicación:</strong> {product.ubicacion}</p>
 				<p><strong>Código:</strong> {product.codigo_barras}</p>
 				<p><strong>Número de Parte:</strong> {product.numero_parte}</p>
 				<p><strong>Descripción:</strong> {product.descripcion}</p>
@@ -347,7 +293,7 @@
 				<!-- Document Number -->
 				<div>
 					<label for="numeroDocumento" class="block text-sm font-medium text-gray-700"
-						>Número de Documento</label
+						>Número de Documento *</label
 					>
 					<input
 						type="text"
@@ -386,13 +332,6 @@
 					class="rounded bg-gray-500 px-6 py-2 text-white transition-colors hover:bg-gray-600"
 				>
 					Limpiar Formulario
-				</button>
-
-				<button
-					on:click={resetLocation}
-					class="rounded bg-yellow-500 px-6 py-2 text-white transition-colors hover:bg-yellow-600"
-				>
-					Cambiar Ubicación
 				</button>
 			</div>
 		</div>

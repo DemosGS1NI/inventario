@@ -1,0 +1,16 @@
+{
+  "project": {
+    "name": "toma",
+    "description": "Manejo de inventario",
+    "version": "1.0.0"
+  },
+  "build": {
+    "inputDir": ".",
+    "outputDir": "./docs",
+    "theme": "default"
+  },
+  "server": {
+    "port": 3001,
+    "host": "localhost"
+  }
+}

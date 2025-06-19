@@ -29,7 +29,7 @@
 <!-- Records Table -->
 {#if records.length > 0}
 	<div class="overflow-x-auto rounded-lg bg-white shadow">
-		<table class="min-w-full divide-y divide-gray-200">
+		<table class="min-w-[1200px] divide-y divide-gray-200">
 			<thead class="bg-gray-50">
 				<tr>
 					<th
@@ -37,55 +37,21 @@
 					>
 						Código
 					</th>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Parte</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Descripción</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Sistema</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Físico</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Dif</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Tipo</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-					>
-						Movimientos
-					</th>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>ItemEAN13</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>CajaEAN13</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Incidencia</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Inventariante</th
-					>
-					<th
-						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Fecha</th
-					>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Parte</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Descripción</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sistema</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Físico</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Dif</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Movimientos</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">ItemEAN13</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">CajaEAN13</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Incidencia</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Inventariante</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Bodega</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Ubicación</th>
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Marca</th>
 					<th
 						class="sticky right-0 bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 					>
@@ -96,9 +62,7 @@
 			<tbody class="divide-y divide-gray-200 bg-white">
 				{#each records as record}
 					<tr class="touch-manipulation hover:bg-gray-50">
-						<td class="sticky left-0 whitespace-nowrap bg-white px-6 py-4"
-							>{record.codigo_barras}</td
-						>
+						<td class="sticky left-0 whitespace-nowrap bg-white px-6 py-4">{record.codigo_barras}</td>
 						<td class="whitespace-nowrap px-6 py-4">{record.numero_parte}</td>
 						<td class="px-6 py-4">{record.descripcion}</td>
 						<td class="whitespace-nowrap px-6 py-4">{record.inventario_sistema}</td>
@@ -112,21 +76,15 @@
 						</td>
 						<td class="whitespace-nowrap px-6 py-4">
 							{#if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Faltante'}
-								<span
-									class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800"
-								>
+								<span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold leading-5 text-red-800">
 									{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
 								</span>
 							{:else if calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario) === 'Sobrante'}
-								<span
-									class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold leading-5 text-yellow-800"
-								>
+								<span class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold leading-5 text-yellow-800">
 									{calculateTipoDiferencia(record.inventario_sistema, record.inventario_fisico, record.fecha_inventario)}
 								</span>
 							{:else}
-								<span
-									class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800"
-								>
+								<span class="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
 									{calculateTipoDiferencia(
 										record.inventario_sistema,
 										record.inventario_fisico,
@@ -155,6 +113,9 @@
 						<td class="px-6 py-4">{record.incidencia}</td>
 						<td class="whitespace-nowrap px-6 py-4">{record.nombre}</td>
 						<td class="whitespace-nowrap px-6 py-4">{formatDateTime(record.fecha_inventario)}</td>
+						<td class="px-6 py-4">{record.bodega}</td>
+						<td class="px-6 py-4">{record.ubicacion}</td>
+						<td class="px-6 py-4">{record.marca}</td>
 						<td class="sticky right-0 whitespace-nowrap bg-white px-6 py-4">
 							<button
 								class="flex touch-manipulation items-center gap-2 rounded-lg bg-blue-500 px-4 py-3

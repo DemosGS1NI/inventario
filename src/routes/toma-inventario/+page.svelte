@@ -408,14 +408,14 @@ async function saveChanges() {
 		{#if selectedBodega && ubicacion && selectedMarca}
 			<div>
 				<label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-					4. Codigo Interno o Numero de Parte
+					4. Codigo de Barras / Numero de Parte / EAN-13
 				</label>
 				<input
 					type="text"
 					id="barcodeInput"
 					bind:value={codigoBarras}
 					bind:this={barcodeInput}
-					placeholder="Escanear el codigo de barras del producto"
+					placeholder="digite o escanee el código"
 					on:keydown={handleBarcodeInput}
 					class="block w-full rounded border p-2"
 				/>
@@ -452,7 +452,7 @@ async function saveChanges() {
 							id="singleItemEan13"
 							type="text"
 							bind:value={currentProduct.single_item_ean13}
-							maxlength="13"
+							maxlength="14"
 							placeholder="Escanear EAN-13 Unidad"
 							class="mt-1 block w-full rounded border p-2"
 						/>
@@ -466,7 +466,7 @@ async function saveChanges() {
 							id="masterCartonEan13"
 							type="text"
 							bind:value={currentProduct.master_carton_ean13}
-							maxlength="13"
+							maxlength="14"
 							placeholder="Escanear EAN-13 Caja Master"
 							class="mt-1 block w-full rounded border p-2"
 						/>
