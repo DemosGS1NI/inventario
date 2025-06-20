@@ -67,6 +67,11 @@
 	// Function to log out the user
 	async function logout() {
 		try {
+			// Clean menu cache
+			localStorage.removeItem(MENU_CACHE_KEY);
+
+			// Optionally, clean any other session-related localStorage here
+
 			const response = await fetch('/api/auth/logout', { method: 'POST' });
 			if (response.ok) {
 				alert('Logged out successfully');

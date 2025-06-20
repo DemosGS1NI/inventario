@@ -1,5 +1,5 @@
 // Auto-generated schema from database
-// Generated on: 2025-06-19T19:49:39.720Z
+// Generated on: 2025-06-20T17:14:18.295Z
 // Source: PostgreSQL database
 
 Project toma_inventario {
@@ -79,27 +79,6 @@ Table movimientos {
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
-Table productos {
-  id smallint [pk, increment]
-  gtin char(14) [not null]
-  serie varchar(10) [not null]
-  fecha_produccion date [not null]
-  numero_factura varchar(20)
-  fecha_registro_sistema timestamp [default: `CURRENT_TIMESTAMP`]
-  fecha_ultima_auditoria timestamp
-  fecha_registro_garantia timestamp
-  nombre_cliente varchar(50)
-  fecha_compra date
-  factura_cliente varchar(10)
-  distribuidor varchar(20)
-  correo_cliente varchar(100)
-  telefono_cliente char(10)
-  garantia_reclamada boolean [default: false]
-  fecha_reclamo timestamp
-  serie_reclamo varchar(10)
-  notas varchar(200)
-}
-
 Table revoked_tokens {
   jti varchar(255) [pk]
   expiry timestamp [not null]
@@ -110,10 +89,9 @@ Table roles {
   id smallint [pk, increment]
   nombre_rol varchar(50) [not null]
   descripcion text
-  opciones_menu json
-  accesos_api json
   fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
   fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`]
+  creado_por smallint [ref: > usuarios.id]
 }
 
 Table usuarios {
@@ -136,9 +114,9 @@ Table usuarios {
 Note schema_info {
   '''
   Database: PostgreSQL
-  Generated: 2025-06-19T19:49:39.722Z
-  Tables: 11
-  Foreign Keys: 6
+  Generated: 2025-06-20T17:14:18.306Z
+  Tables: 10
+  Foreign Keys: 7
   
   This schema was automatically generated from the database structure.
   Manual modifications may be overwritten on regeneration.

@@ -32,6 +32,7 @@ export async function GET({ url, locals }) {
         i.incidencia
       FROM inventario i
       WHERE i.fecha_inventario IS NOT NULL
+		 
     `;
 
 		let queryParams = [];
@@ -54,7 +55,7 @@ export async function GET({ url, locals }) {
 			paramIndex++;
 		}
 
-		inventoryQuery += ' ORDER BY i.bodega, i.ubicacion, i.marca, i.codigo_barras';
+		inventoryQuery += ' ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras ';
 
 		// Execute inventory query
 		const inventoryResult = await sql.query(inventoryQuery, queryParams);
@@ -152,17 +153,6 @@ export async function GET({ url, locals }) {
 			const stockEsperado = inventarioSistema + netMovimientosPreConteo;
 			const diferenciaAparente = inventarioFisico - inventarioSistema;
 			const diferenciaReal = inventarioFisico - stockEsperado;
-
-			console.log('Calculations:', {
-				entradasPreConteo,
-				salidasPreConteo,
-				netMovimientosPreConteo,
-				inventarioSistema: inventarioSistema,
-				inventarioFisico: inventarioFisico,
-				stockEsperado,
-				diferenciaAparente,
-				diferenciaReal
-			});
 
 			// Determine reconciliation status
 			let estadoReconciliacion = 'Sin Diferencia';

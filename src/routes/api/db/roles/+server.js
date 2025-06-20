@@ -11,7 +11,7 @@ export async function POST({ request, locals }) {
 	requireAdmin(locals);
 
 	try {
-		const { nombre_rol, descripcion, opciones_menu, accesos_api } = await request.json();
+		const { nombre_rol, descripcion } = await request.json();
 
 		// Validate input
 		if (!nombre_rol) {
@@ -27,10 +27,11 @@ export async function POST({ request, locals }) {
 			return errorResponse(409, 'CONFLICT', 'Ya existe un rol con ese nombre');
 		}
 
+		const creado_por = locals.user?.userId || null;
 		const result = await sql`
-      INSERT INTO roles (nombre_rol, descripcion, opciones_menu, accesos_api)
-      VALUES (${nombre_rol}, ${descripcion}, ${JSON.stringify(opciones_menu)}, ${JSON.stringify(accesos_api)})
-      RETURNING id, nombre_rol, descripcion, opciones_menu, accesos_api;
+      INSERT INTO roles (nombre_rol, descripcion, creado_por)
+      VALUES (${nombre_rol}, ${descripcion}, ${creado_por})
+      RETURNING id, nombre_rol, descripcion, creado_por;
     `;
 
 		return successResponse(
@@ -56,7 +57,7 @@ export async function GET({ locals }) {
 
 	try {
 		const result = await sql`
-      SELECT id, nombre_rol, descripcion, opciones_menu, accesos_api
+      SELECT id, nombre_rol, descripcion, creado_por
       FROM roles 
       ORDER BY id
     `;
@@ -79,7 +80,7 @@ export async function PUT({ request, locals }) {
 	requireAdmin(locals);
 
 	try {
-		const { id, nombre_rol, descripcion, opciones_menu, accesos_api } = await request.json();
+		const { id, nombre_rol, descripcion } = await request.json();
 
 		// Validate input
 		if (!id || !nombre_rol) {
@@ -108,11 +109,9 @@ export async function PUT({ request, locals }) {
 		const result = await sql`
       UPDATE roles
       SET nombre_rol = ${nombre_rol}, 
-          descripcion = ${descripcion},
-          opciones_menu = ${JSON.stringify(opciones_menu)},
-          accesos_api = ${JSON.stringify(accesos_api)}
+          descripcion = ${descripcion}
       WHERE id = ${id}
-      RETURNING id, nombre_rol, descripcion, opciones_menu, accesos_api;
+      RETURNING id, nombre_rol, descripcion, creado_por;
     `;
 
 		return successResponse(

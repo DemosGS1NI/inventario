@@ -3,22 +3,14 @@ import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { AUTH } from '$lib/constants.js';
+import { requireAuth, requireAdmin } from '$lib/authMiddleware';
 
 dotenv.config();
-
-// Authentication middleware
-function requireAuth(event) {
-	const user = event.locals.user;
-	if (!user) {
-		throw errorResponse(401, 'UNAUTHORIZED', 'Se requiere autenticacion');
-	}
-	return user;
-}
 
 export async function GET(event) {
 	try {
 		// Verify user is logged in
-		const user = requireAuth(event);
+		const user = requireAuth(event.locals);
 
 		const result = await sql`
       SELECT 
@@ -29,9 +21,19 @@ export async function GET(event) {
         u.rol_id, 
         r.nombre_rol, 
         u.activo,
-        u.debe_cambiar_pin
+        u.debe_cambiar_pin,
+        u.created_by,
+        creator.nombre AS creador_nombre,
+        creator.apellido AS creador_apellido,
+        u.updated_by,
+        updator.nombre AS actualizador_nombre,
+        updator.apellido AS actualizador_apellido,
+        u.fecha_creacion,
+        u.fecha_actualizacion
       FROM usuarios u
       LEFT JOIN roles r ON u.rol_id = r.id
+      LEFT JOIN usuarios creator ON u.created_by = creator.id
+      LEFT JOIN usuarios updator ON u.updated_by = updator.id
       ORDER BY u.id
     `;
 
@@ -46,7 +48,7 @@ export async function GET(event) {
 export async function POST(event) {
 	try {
 		// Verify user is logged in
-		const user = requireAuth(event);
+		const user = requireAuth(event.locals);
 
 		const { nombre, apellido, numero_telefono, rol_id } = await event.request.json();
 
@@ -61,6 +63,7 @@ export async function POST(event) {
 
 		// Hash the default PIN "0000"
 		const defaultPinHash = await bcrypt.hash(AUTH.DEFAULT_PIN, AUTH.BCRYPT_ROUNDS);
+		const created_by = user.userId;
 		const result = await sql`
       INSERT INTO usuarios (
         nombre, 
@@ -69,7 +72,9 @@ export async function POST(event) {
         rol_id, 
         pin_hash, 
         debe_cambiar_pin, 
-        activo
+        activo,
+        created_by,
+        updated_by
       )
       VALUES (
         ${nombre}, 
@@ -78,9 +83,11 @@ export async function POST(event) {
         ${rol_id}, 
         ${defaultPinHash}, 
         true, 
-        true
+        true,
+        ${created_by},
+        ${created_by}
       )
-      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin
+      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
     `;
 
 		return successResponse(
@@ -98,7 +105,7 @@ export async function POST(event) {
 export async function PUT(event) {
 	try {
 		// Verify user is logged in
-		const user = requireAuth(event);
+		const user = requireAuth(event.locals);
 
 		const { id, numero_telefono, nombre, apellido, rol_id, activo, debe_cambiar_pin } =
 			await event.request.json();
@@ -112,6 +119,7 @@ export async function PUT(event) {
 			);
 		}
 
+		const updated_by = user.userId;
 		const result = await sql`
       UPDATE usuarios
       SET 
@@ -120,9 +128,11 @@ export async function PUT(event) {
         numero_telefono = ${numero_telefono}, 
         rol_id = ${rol_id},  
         activo = ${activo},  
-        debe_cambiar_pin = ${debe_cambiar_pin}
+        debe_cambiar_pin = ${debe_cambiar_pin},
+        updated_by = ${updated_by},
+        fecha_actualizacion = CURRENT_TIMESTAMP
       WHERE id = ${id}
-      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin
+      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
     `;
 
 		if (result.rowCount === 0) {
@@ -143,7 +153,7 @@ export async function PUT(event) {
 export async function DELETE(event) {
 	try {
 		// Verify user is logged in
-		const user = requireAuth(event);
+		const user = requireAuth(event.locals);
 
 		const { id } = await event.request.json();
 

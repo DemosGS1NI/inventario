@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import BackToMenuButton from '$lib/BackToMenu.svelte';
 	import { addToast } from '$lib/stores/toast';
+	import { formatDateTime } from '$lib/utils/dateFormat.js';
 
 	let usuarios = [];
 	let roles = [];
@@ -164,19 +165,6 @@
 			<form on:submit|preventDefault={saveUser}>
 				<div class="grid grid-cols-1 gap-4">
 					<div>
-						<label for="numero_telefono" class="block text-sm font-medium text-gray-700"
-							>Teléfono</label
-						>
-						<input
-							type="text"
-							id="numero_telefono"
-							bind:value={currentUser.numero_telefono}
-							required
-							maxlength="10"
-							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
-						/>
-					</div>
-					<div>
 						<label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
 						<input
 							type="text"
@@ -220,15 +208,31 @@
 						/>
 					</div>
 					<div>
-						<label for="debe_cambiar_pin" class="block text-sm font-medium text-gray-700"
-							>Forzar Cambio de PIN</label
-						>
+						<label for="numero_telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
 						<input
-							type="checkbox"
-							id="debe_cambiar_pin"
-							bind:checked={currentUser.debe_cambiar_pin}
-							class="h-5 w-5 rounded border focus:border-primary focus:ring-primary"
+							type="text"
+							id="numero_telefono"
+							bind:value={currentUser.numero_telefono}
+							required
+							maxlength="10"
+							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
 						/>
+					</div>
+					<div>
+						<label for="fecha_creacion" class="block text-sm font-medium text-gray-700">Fecha creación</label>
+						<div id="fecha_creacion" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.fecha_creacion ? formatDateTime(currentUser.fecha_creacion) : '-'}</div>
+					</div>
+					<div>
+						<label for="creado_por" class="block text-sm font-medium text-gray-700">Creado por</label>
+						<div id="creado_por" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.creador_nombre ? `${currentUser.creador_nombre} ${currentUser.creador_apellido}` : '-'}</div>
+					</div>
+					<div>
+						<label for="fecha_actualizacion" class="block text-sm font-medium text-gray-700">Fecha actualización</label>
+						<div id="fecha_actualizacion" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.fecha_actualizacion ? formatDateTime(currentUser.fecha_actualizacion) : '-'}</div>
+					</div>
+					<div>
+						<label for="actualizado_por" class="block text-sm font-medium text-gray-700">Actualizado por</label>
+						<div id="actualizado_por" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.actualizador_nombre ? `${currentUser.actualizador_nombre} ${currentUser.actualizador_apellido}` : '-'}</div>
 					</div>
 				</div>
 				<div class="mt-4 flex justify-end space-x-4">
@@ -270,12 +274,15 @@
 		<table class="w-full table-auto border-collapse">
 			<thead class="bg-gray-200 text-gray-700">
 				<tr>
-					<th class="border px-4 py-3">Teléfono</th>
 					<th class="border px-4 py-3">Nombre</th>
 					<th class="border px-4 py-3">Apellido</th>
 					<th class="border px-4 py-3">Rol</th>
 					<th class="border px-4 py-3">Activo</th>
-					<th class="border px-4 py-3">Forzar Cambio de PIN</th>
+					<th class="border px-4 py-3">Teléfono</th>
+					<th class="border px-4 py-3">Fecha creación</th>
+					<th class="border px-4 py-3">Creado por</th>
+					<th class="border px-4 py-3">Fecha actualización</th>
+					<th class="border px-4 py-3">Actualizado por</th>
 					<th class="border px-4 py-3 text-center">Acciones</th>
 				</tr>
 			</thead>
@@ -283,14 +290,15 @@
 				{#if usuarios.length > 0}
 					{#each usuarios as usuario}
 						<tr class="hover:bg-gray-50">
-							<td class="border px-4 py-3">{usuario.numero_telefono}</td>
 							<td class="border px-4 py-3">{usuario.nombre}</td>
 							<td class="border px-4 py-3">{usuario.apellido}</td>
-							<td class="border px-4 py-3"
-								>{roles.find((r) => r.id === usuario.rol_id)?.nombre_rol || 'N/A'}</td
-							>
+							<td class="border px-4 py-3">{roles.find((r) => r.id === usuario.rol_id)?.nombre_rol || 'N/A'}</td>
 							<td class="border px-4 py-3 text-center">{usuario.activo ? 'Sí' : 'No'}</td>
-							<td class="border px-4 py-3 text-center">{usuario.debe_cambiar_pin ? 'Sí' : 'No'}</td>
+							<td class="border px-4 py-3">{usuario.numero_telefono}</td>
+							<td class="border px-4 py-3">{usuario.fecha_creacion ? formatDateTime(usuario.fecha_creacion) : '-'}</td>
+							<td class="border px-4 py-3 text-center">{usuario.creador_nombre ? `${usuario.creador_nombre} ${usuario.creador_apellido}` : '-'}</td>
+							<td class="border px-4 py-3">{usuario.fecha_actualizacion ? formatDateTime(usuario.fecha_actualizacion) : '-'}</td>
+							<td class="border px-4 py-3 text-center">{usuario.actualizador_nombre ? `${usuario.actualizador_nombre} ${usuario.actualizador_apellido}` : '-'}</td>
 							<td class="flex justify-center space-x-2 border px-4 py-3 text-center">
 								<button
 									class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
@@ -309,7 +317,7 @@
 					{/each}
 				{:else}
 					<tr>
-						<td colspan="7" class="border px-4 py-3 text-center text-gray-500">
+						<td colspan="9" class="border px-4 py-3 text-center text-gray-500">
 							No hay usuarios disponibles.
 						</td>
 					</tr>

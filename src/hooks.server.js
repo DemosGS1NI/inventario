@@ -56,5 +56,27 @@ export async function handle({ event, resolve }) {
 		console.log('User authenticated:', event.locals.user.userId);
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+
+	// Security headers
+	response.headers.set('X-Content-Type-Options', 'nosniff');
+	response.headers.set('X-Frame-Options', 'DENY');
+	response.headers.set('Referrer-Policy', 'same-origin');
+	// Uncomment and set your allowed origin for CORS if needed:
+	// response.headers.set('Access-Control-Allow-Origin', 'https://yourdomain.com');
+	// response.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+	// response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+	return response;
+}
+
+// Global error handlers for unhandled promise rejections and uncaught exceptions
+if (typeof process !== 'undefined' && process.on) {
+	process.on('unhandledRejection', (reason, promise) => {
+		console.error('Unhandled Rejection:', reason);
+	});
+	process.on('uncaughtException', (err) => {
+		console.error('Uncaught Exception:', err);
+		process.exit(1); // Optional: exit to avoid unknown state
+	});
 }

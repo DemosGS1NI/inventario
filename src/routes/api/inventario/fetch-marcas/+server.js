@@ -1,26 +1,35 @@
-import { json } from '@sveltejs/kit';
 import { sql } from '$lib/database.js';
+import { requireAuth } from '$lib/authMiddleware';
+import { successResponse, errorResponse } from '$lib/responseUtils';
 
-export async function GET({ url }) {
-	console.log('🔍 [fetch-marcas] Received request');
+function validateFetchMarcasParams(bodega, ubicacion) {
+	const errors = {};
+	if (!bodega || typeof bodega !== 'string' || bodega.trim() === '') {
+		errors.bodega = 'El parámetro "bodega" es requerido y debe ser un string no vacío';
+	}
+	if (ubicacion && typeof ubicacion !== 'string') {
+		errors.ubicacion = 'El parámetro "ubicacion" debe ser un string';
+	}
+	return {
+		isValid: Object.keys(errors).length === 0,
+		errors
+	};
+}
+
+export async function GET({ url, locals }) {
+	requireAuth(locals);
+
 	const bodega = url.searchParams.get('bodega');
 	const ubicacion = url.searchParams.get('ubicacion');
 
-	if (!bodega) {
-		console.log('⚠️ [fetch-marcas] Missing required parameter: bodega');
-		return json({
-			status: 'error',
-			message: 'Bodega is required'
-		}, { status: 400 });
+	const { isValid, errors } = validateFetchMarcasParams(bodega, ubicacion);
+	if (!isValid) {
+		return errorResponse(400, 'BAD_REQUEST', 'Parámetros inválidos', errors);
 	}
-
-	console.log('✅ [fetch-marcas] Using parameters:', { bodega, ubicacion });
 
 	try {
 		let result;
 		if (ubicacion) {
-			// If ubicacion is provided, filter by both bodega and ubicacion
-			console.log('🔍 [fetch-marcas] Executing query with bodega and ubicacion:', { bodega, ubicacion });
 			result = await sql`
 				SELECT DISTINCT marca
 				FROM inventario
@@ -30,8 +39,6 @@ export async function GET({ url }) {
 				ORDER BY marca ASC
 			`;
 		} else {
-			// If only bodega is provided, get all marcas for that bodega
-			console.log('🔍 [fetch-marcas] Executing query with bodega only:', { bodega });
 			result = await sql`
 				SELECT DISTINCT marca
 				FROM inventario
@@ -40,21 +47,15 @@ export async function GET({ url }) {
 				ORDER BY marca ASC
 			`;
 		}
-		
-		console.log('✅ [fetch-marcas] Query executed successfully:', { 
-			rowCount: result.rows?.length,
-			firstRow: result.rows?.[0]
-		});
 
-		return json({
-			status: 'success',
-			data: result.rows.map(row => row.marca)
-		});
+		const marcas = result.rows.map(row => row.marca);
+		const message = marcas.length > 0
+			? `Se encontraron ${marcas.length} marcas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`
+			: `No hay marcas configuradas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`;
+
+		return successResponse(marcas, message);
 	} catch (error) {
 		console.error('❌ [fetch-marcas] Database error:', error);
-		return json({
-			status: 'error',
-			message: 'Error fetching marcas: ' + error.message
-		}, { status: 500 });
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error fetching marcas', error.message);
 	}
 }

@@ -4,7 +4,7 @@
 	import { addToast } from '$lib/stores/toast';
 
 	let roles = [];
-	let currentRole = { id: null, nombre_rol: '', descripcion: '', permisos: {} };
+	let currentRole = { id: null, nombre_rol: '', descripcion: '' };
 	let showForm = false;
 
 	// Fetch all roles
@@ -23,16 +23,6 @@
 			addToast('Ocurrió un error al cargar roles.', 'error');
 		}
 	}
-
-	// Validate JSON fields
-	const isValidJSON = (value) => {
-		try {
-			JSON.parse(value);
-			return true;
-		} catch {
-			return false;
-		}
-	};
 
 	// Save or update a role
 	async function saveRole() {
@@ -69,8 +59,7 @@
 	}
 
 	function resetForm() {
-		currentRole = { id: null, nombre_rol: '', descripcion: '', permisos: {} };
-		showForm = false;
+		currentRole = { id: null, nombre_rol: '', descripcion: '' };
 	}
 
 	// Delete a role
@@ -148,30 +137,6 @@
 							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
 						></textarea>
 					</div>
-
-					<!-- Menu Options -->
-					<div>
-						<label for="opciones_menu" class="block text-sm font-medium text-gray-700"
-							>Opciones de Menú (JSON)</label
-						>
-						<textarea
-							id="opciones_menu"
-							bind:value={currentRole.opciones_menu}
-							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
-						></textarea>
-					</div>
-
-					<!-- API Access -->
-					<div>
-						<label for="accesos_api" class="block text-sm font-medium text-gray-700"
-							>Accesos a API (JSON)</label
-						>
-						<textarea
-							id="accesos_api"
-							bind:value={currentRole.accesos_api}
-							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
-						></textarea>
-					</div>
 				</div>
 
 				<!-- Form Actions -->
@@ -202,6 +167,7 @@
 		<table class="w-full table-auto border-collapse">
 			<thead class="bg-gray-200 text-gray-700">
 				<tr>
+					<th class="border px-4 py-3">ID</th>
 					<th class="border px-4 py-3">Rol</th>
 					<th class="border px-4 py-3">Descripción</th>
 					<th class="border px-4 py-3 text-center">Acciones</th>
@@ -235,7 +201,7 @@
 					{/each}
 				{:else}
 					<tr>
-						<td colspan="3" class="border px-4 py-3 text-center text-gray-500"
+						<td colspan="4" class="border px-4 py-3 text-center text-gray-500"
 							>No hay roles disponibles.</td
 						>
 					</tr>
