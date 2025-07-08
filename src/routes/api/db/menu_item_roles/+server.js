@@ -36,7 +36,11 @@ export async function POST({ request, locals }) {
       ON CONFLICT DO NOTHING
       RETURNING menu_item_id, role_id
     `;
-		return successResponse(result.rows[0] || { menu_item_id, role_id }, 'Rol asignado al ítem de menú satisfactoriamente', { status: 201 });
+		return successResponse(
+			result.rows[0] || { menu_item_id, role_id },
+			'Rol asignado al ítem de menú satisfactoriamente',
+			{ status: 201 }
+		);
 	} catch (error) {
 		console.error('Error asignando rol a ítem de menú:', error);
 		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error asignando rol a ítem de menú');

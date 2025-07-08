@@ -75,8 +75,6 @@
 					inventario_YYYY-MM-DD_HH-MM-SS.xlsx
 				</code>
 			</div>
-
-
 		</div>
 
 		<button

@@ -48,10 +48,11 @@ export async function GET({ url, locals }) {
 			`;
 		}
 
-		const marcas = result.rows.map(row => row.marca);
-		const message = marcas.length > 0
-			? `Se encontraron ${marcas.length} marcas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`
-			: `No hay marcas configuradas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`;
+		const marcas = result.rows.map((row) => row.marca);
+		const message =
+			marcas.length > 0
+				? `Se encontraron ${marcas.length} marcas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`
+				: `No hay marcas configuradas para la bodega "${bodega}"${ubicacion ? ` y ubicación "${ubicacion}"` : ''}`;
 
 		return successResponse(marcas, message);
 	} catch (error) {

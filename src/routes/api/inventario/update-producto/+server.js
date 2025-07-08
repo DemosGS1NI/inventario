@@ -53,4 +53,4 @@ export const PUT = async ({ request, locals }) => {
 			error.message
 		);
 	}
-}; 
+};

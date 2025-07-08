@@ -90,11 +90,7 @@ export async function POST(event) {
       RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
     `;
 
-		return successResponse(
-			result.rows[0],
-			'Usuario creado satisfactoriamente',
-			{ status: 201 }
-		);
+		return successResponse(result.rows[0], 'Usuario creado satisfactoriamente', { status: 201 });
 	} catch (error) {
 		console.error('Error creando usuario:', error);
 		if (error.status) return error;
@@ -139,10 +135,7 @@ export async function PUT(event) {
 			return errorResponse(404, 'NOT_FOUND', 'Usuario no encontrado');
 		}
 
-		return successResponse(
-			result.rows[0],
-			'Usuario actualizado satisfactoriamente'
-		);
+		return successResponse(result.rows[0], 'Usuario actualizado satisfactoriamente');
 	} catch (error) {
 		console.error('Error actualizando usuario:', error);
 		if (error.status) return error;

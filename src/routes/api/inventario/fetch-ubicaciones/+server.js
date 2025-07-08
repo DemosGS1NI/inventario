@@ -35,17 +35,18 @@ export async function GET({ url, locals }) {
 		const ubicaciones = result.rows.map((row) => row.ubicacion);
 
 		// Provide contextual message based on result
-		const contextualMessage = ubicaciones.length > 0 
-			? `Se encontraron ${ubicaciones.length} ubicaciones para la bodega "${bodega}"`
-			: `No hay ubicaciones configuradas para la bodega "${bodega}"`;
+		const contextualMessage =
+			ubicaciones.length > 0
+				? `Se encontraron ${ubicaciones.length} ubicaciones para la bodega "${bodega}"`
+				: `No hay ubicaciones configuradas para la bodega "${bodega}"`;
 
 		return successResponse(ubicaciones, contextualMessage);
 	} catch (error) {
 		console.error('Error al obtener ubicaciones:', error);
 		return errorResponse(
-			500, 
-			'INTERNAL_SERVER_ERROR', 
-			'Fallo al obtener ubicaciones', 
+			500,
+			'INTERNAL_SERVER_ERROR',
+			'Fallo al obtener ubicaciones',
 			error.message
 		);
 	}

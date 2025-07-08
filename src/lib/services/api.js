@@ -138,7 +138,7 @@ export const inventoryAPI = {
 				message: 'An unexpected error occurred'
 			};
 		}
-	},
+	}
 
 	// A VER QUE TRUENA PORQUE ESTO NO DEBE ESTAR AQUI -JB
 	// async saveProduct(formData) {

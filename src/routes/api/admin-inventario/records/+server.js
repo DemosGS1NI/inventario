@@ -95,7 +95,7 @@ export async function GET({ url, locals }) {
 		}
 
 		// Build movement query for all found products
-		const productCodes = inventoryResult.rows.map(row => row.codigo_barras);
+		const productCodes = inventoryResult.rows.map((row) => row.codigo_barras);
 		let movementResult = { rows: [] };
 		if (productCodes.length > 0) {
 			if (bodega && marca && ubicacion) {
@@ -153,7 +153,7 @@ export async function GET({ url, locals }) {
 
 		// Create movement lookup map
 		const movementMap = {};
-		movementResult.rows.forEach(row => {
+		movementResult.rows.forEach((row) => {
 			movementMap[row.codigo_barras] = {
 				totalEntradas: parseInt(row.total_entradas) || 0,
 				totalSalidas: parseInt(row.total_salidas) || 0,
@@ -162,7 +162,7 @@ export async function GET({ url, locals }) {
 		});
 
 		// Combine inventory data with simplified movement data
-		const enrichedRecords = inventoryResult.rows.map(record => ({
+		const enrichedRecords = inventoryResult.rows.map((record) => ({
 			...record,
 			movements: movementMap[record.codigo_barras] || {
 				totalEntradas: 0,
@@ -232,6 +232,11 @@ export async function PUT({ request, locals }) {
 		}
 	} catch (error) {
 		console.error('Error al actualizar producto:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al actualizar producto', error.message);
+		return errorResponse(
+			500,
+			'INTERNAL_SERVER_ERROR',
+			'Fallo al actualizar producto',
+			error.message
+		);
 	}
 }

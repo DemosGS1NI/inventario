@@ -62,15 +62,14 @@ export async function GET({ locals }) {
 					Descripción: row.descripcion,
 					'Inventario Sistema': row.inventario_sistema,
 					'Inventario Físico': row.inventario_fisico,
-					'Movimientos Netos': netMovementsMap.get(key) ||  '', // Use net movements from the map
+					'Movimientos Netos': netMovementsMap.get(key) || '', // Use net movements from the map
 					'Fecha Inventario': row.fecha_inventario ? new Date(row.fecha_inventario) : null,
 					'Categoría Incidencia': row.categoria_incidencia || '',
 					Incidencia: row.incidencia || '',
 					'EAN13 Unidad': row.single_item_ean13 || '',
 					'EAN13 Caja Master': row.master_carton_ean13 || '',
 					'Actualizado Por': row.actualizado || '',
-					'Validado Por': row.validado || '',
-		
+					'Validado Por': row.validado || ''
 				};
 			});
 
@@ -81,21 +80,20 @@ export async function GET({ locals }) {
 				{ wch: 15 }, // Bodega
 				{ wch: 12 }, // Ubicación
 				{ wch: 15 }, // Marca
-				{ wch: 8  }, // ID
+				{ wch: 8 }, // ID
 				{ wch: 15 }, // Código de Barras
 				{ wch: 20 }, // Número de Parte
 				{ wch: 30 }, // Descripción
 				{ wch: 12 }, // Inventario Sistema
 				{ wch: 12 }, // Inventario Físico
-				{ wch: 18 }, // Movimientos Netos				
+				{ wch: 18 }, // Movimientos Netos
 				{ wch: 20 }, // Fecha Inventario
 				{ wch: 20 }, // Categoría Incidencia
 				{ wch: 30 }, // Incidencia
 				{ wch: 15 }, // EAN13 Unidad
 				{ wch: 15 }, // EAN13 Caja Master
 				{ wch: 20 }, // Actualizado Por
-				{ wch: 20 }  // Validado Por
-
+				{ wch: 20 } // Validado Por
 			];
 
 			inventarioWorksheet['!cols'] = inventarioColWidths;

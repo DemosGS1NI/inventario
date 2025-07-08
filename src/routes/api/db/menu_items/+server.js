@@ -32,7 +32,9 @@ export async function POST({ request, locals }) {
       VALUES (${category_id}, ${label}, ${href}, ${order_index ?? 0}, ${is_active ?? true})
       RETURNING id, category_id, label, href, order_index, is_active
     `;
-		return successResponse(result.rows[0], 'Ítem de menú creado satisfactoriamente', { status: 201 });
+		return successResponse(result.rows[0], 'Ítem de menú creado satisfactoriamente', {
+			status: 201
+		});
 	} catch (error) {
 		console.error('Error creando ítem de menú:', error);
 		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Error creando ítem de menú');
@@ -42,6 +44,7 @@ export async function POST({ request, locals }) {
 // Update a menu item
 export async function PUT({ request, locals }) {
 	requireAdmin(locals);
+
 	try {
 		const { id, category_id, label, href, order_index, is_active } = await request.json();
 		if (!id || !category_id || !label) {

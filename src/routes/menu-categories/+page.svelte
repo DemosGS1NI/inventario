@@ -85,7 +85,10 @@
 	<div class="mb-6 flex justify-center">
 		<button
 			class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600"
-			on:click={() => { showForm = true; currentCategory = { id: null, name: '', order_index: 0 }; }}
+			on:click={() => {
+				showForm = true;
+				currentCategory = { id: null, name: '', order_index: 0 };
+			}}
 		>
 			Agregar Categoría
 		</button>
@@ -117,8 +120,20 @@
 					</div>
 				</div>
 				<div class="mt-4 flex justify-end space-x-4">
-					<button type="button" on:click={() => { showForm = false; currentCategory = { id: null, name: '', order_index: 0 }; }} class="rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400">Cancelar</button>
-					<button type="submit" class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600" disabled={loading}>
+					<button
+						type="button"
+						on:click={() => {
+							showForm = false;
+							currentCategory = { id: null, name: '', order_index: 0 };
+						}}
+						class="rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400"
+						>Cancelar</button
+					>
+					<button
+						type="submit"
+						class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
+						disabled={loading}
+					>
 						{#if loading}Guardando...{:else}Guardar{/if}
 					</button>
 				</div>
@@ -146,14 +161,22 @@
 							<td class="border px-4 py-3">{cat.name}</td>
 							<td class="border px-4 py-3">{cat.order_index}</td>
 							<td class="flex justify-center space-x-2 border px-4 py-3 text-center">
-								<button class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600" on:click={() => editCategory(cat)}>Editar</button>
-								<button class="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-600" on:click={() => deleteCategory(cat.id)}>Eliminar</button>
+								<button
+									class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+									on:click={() => editCategory(cat)}>Editar</button
+								>
+								<button
+									class="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-600"
+									on:click={() => deleteCategory(cat.id)}>Eliminar</button
+								>
 							</td>
 						</tr>
 					{/each}
 				{:else}
 					<tr>
-						<td colspan="3" class="border px-4 py-3 text-center text-gray-500">No hay categorías disponibles.</td>
+						<td colspan="3" class="border px-4 py-3 text-center text-gray-500"
+							>No hay categorías disponibles.</td
+						>
 					</tr>
 				{/if}
 			</tbody>

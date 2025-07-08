@@ -76,9 +76,9 @@ export async function GET({ url, locals }) {
 	} catch (error) {
 		console.error('❌ Error al obtener inventario:', error);
 		return errorResponse(
-			500, 
-			'DATABASE_ERROR', 
-			'Error al obtener registros de inventario', 
+			500,
+			'DATABASE_ERROR',
+			'Error al obtener registros de inventario',
 			error.message
 		);
 	}

@@ -115,7 +115,9 @@
 </script>
 
 <div class="min-h-screen bg-gray-100 p-6">
-	<h1 class="mb-6 text-center text-3xl font-bold text-gray-800">Gestión de Roles por Ítem de Menú</h1>
+	<h1 class="mb-6 text-center text-3xl font-bold text-gray-800">
+		Gestión de Roles por Ítem de Menú
+	</h1>
 	<div class="mb-6">
 		<BackToMenuButton />
 	</div>
@@ -123,11 +125,14 @@
 	<!-- Add Assignment Section at the top -->
 	<div class="mb-6 flex justify-center">
 		{#if !showAddForm}
-			<button class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600" on:click={() => showAddForm = true}>
+			<button
+				class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600"
+				on:click={() => (showAddForm = true)}
+			>
 				Agregar Asignación
 			</button>
 		{:else}
-			<div class="flex flex-wrap gap-4 justify-center items-end">
+			<div class="flex flex-wrap items-end justify-center gap-4">
 				<div>
 					<label for="role-select" class="block text-sm font-medium text-gray-700">Rol</label>
 					<select id="role-select" bind:value={selectedRole} class="w-48 rounded border px-3 py-2">
@@ -138,7 +143,9 @@
 					</select>
 				</div>
 				<div>
-					<label for="item-select" class="block text-sm font-medium text-gray-700">Ítem de Menú</label>
+					<label for="item-select" class="block text-sm font-medium text-gray-700"
+						>Ítem de Menú</label
+					>
 					<select id="item-select" bind:value={selectedItem} class="w-48 rounded border px-3 py-2">
 						<option value="" disabled>Seleccione un ítem</option>
 						{#each items as item}
@@ -146,17 +153,29 @@
 						{/each}
 					</select>
 				</div>
-				<button class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600" on:click={assignRole} disabled={loading || !selectedItem || !selectedRole}>
+				<button
+					class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600"
+					on:click={assignRole}
+					disabled={loading || !selectedItem || !selectedRole}
+				>
 					{#if loading}Asignando...{:else}Asignar Opciones de Menú{/if}
 				</button>
-				<button type="button" class="rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400" on:click={() => { showAddForm = false; selectedItem = ''; selectedRole = ''; }}>
+				<button
+					type="button"
+					class="rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400"
+					on:click={() => {
+						showAddForm = false;
+						selectedItem = '';
+						selectedRole = '';
+					}}
+				>
 					Cancelar
 				</button>
 			</div>
 		{/if}
 	</div>
 
-	<div class="overflow-x-auto rounded bg-white shadow-md mt-8">
+	<div class="mt-8 overflow-x-auto rounded bg-white shadow-md">
 		<table class="w-full table-auto border-collapse">
 			<thead class="bg-gray-200 text-gray-700">
 				<tr>
@@ -169,21 +188,26 @@
 			<tbody class="text-gray-600">
 				{#if assignments.length > 0}
 					{#each assignments as a, i}
-						{#if i === 0 || a.role_id !== assignments[i-1].role_id}
-							<tr><td colspan="4" class="bg-blue-100 font-bold px-4 py-2">{a.role_name}</td></tr>
+						{#if i === 0 || a.role_id !== assignments[i - 1].role_id}
+							<tr><td colspan="4" class="bg-blue-100 px-4 py-2 font-bold">{a.role_name}</td></tr>
 						{/if}
 						<tr class="hover:bg-gray-50">
 							<td class="border px-4 py-3">{a.role_name}</td>
 							<td class="border px-4 py-3">{a.category_name}</td>
 							<td class="border px-4 py-3">{a.menu_item_label}</td>
 							<td class="flex justify-center space-x-2 border px-4 py-3 text-center">
-								<button class="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-600" on:click={() => removeAssignment(a.menu_item_id, a.role_id)}>Eliminar</button>
+								<button
+									class="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-600"
+									on:click={() => removeAssignment(a.menu_item_id, a.role_id)}>Eliminar</button
+								>
 							</td>
 						</tr>
 					{/each}
 				{:else}
 					<tr>
-						<td colspan="4" class="border px-4 py-3 text-center text-gray-500">No hay asignaciones disponibles.</td>
+						<td colspan="4" class="border px-4 py-3 text-center text-gray-500"
+							>No hay asignaciones disponibles.</td
+						>
 					</tr>
 				{/if}
 			</tbody>

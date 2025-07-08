@@ -208,7 +208,9 @@
 						/>
 					</div>
 					<div>
-						<label for="numero_telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
+						<label for="numero_telefono" class="block text-sm font-medium text-gray-700"
+							>Teléfono</label
+						>
 						<input
 							type="text"
 							id="numero_telefono"
@@ -219,20 +221,42 @@
 						/>
 					</div>
 					<div>
-						<label for="fecha_creacion" class="block text-sm font-medium text-gray-700">Fecha creación</label>
-						<div id="fecha_creacion" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.fecha_creacion ? formatDateTime(currentUser.fecha_creacion) : '-'}</div>
+						<label for="fecha_creacion" class="block text-sm font-medium text-gray-700"
+							>Fecha creación</label
+						>
+						<div id="fecha_creacion" class="w-full rounded border bg-gray-100 px-3 py-2">
+							{currentUser.fecha_creacion ? formatDateTime(currentUser.fecha_creacion) : '-'}
+						</div>
 					</div>
 					<div>
-						<label for="creado_por" class="block text-sm font-medium text-gray-700">Creado por</label>
-						<div id="creado_por" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.creador_nombre ? `${currentUser.creador_nombre} ${currentUser.creador_apellido}` : '-'}</div>
+						<label for="creado_por" class="block text-sm font-medium text-gray-700"
+							>Creado por</label
+						>
+						<div id="creado_por" class="w-full rounded border bg-gray-100 px-3 py-2">
+							{currentUser.creador_nombre
+								? `${currentUser.creador_nombre} ${currentUser.creador_apellido}`
+								: '-'}
+						</div>
 					</div>
 					<div>
-						<label for="fecha_actualizacion" class="block text-sm font-medium text-gray-700">Fecha actualización</label>
-						<div id="fecha_actualizacion" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.fecha_actualizacion ? formatDateTime(currentUser.fecha_actualizacion) : '-'}</div>
+						<label for="fecha_actualizacion" class="block text-sm font-medium text-gray-700"
+							>Fecha actualización</label
+						>
+						<div id="fecha_actualizacion" class="w-full rounded border bg-gray-100 px-3 py-2">
+							{currentUser.fecha_actualizacion
+								? formatDateTime(currentUser.fecha_actualizacion)
+								: '-'}
+						</div>
 					</div>
 					<div>
-						<label for="actualizado_por" class="block text-sm font-medium text-gray-700">Actualizado por</label>
-						<div id="actualizado_por" class="w-full rounded border bg-gray-100 px-3 py-2">{currentUser.actualizador_nombre ? `${currentUser.actualizador_nombre} ${currentUser.actualizador_apellido}` : '-'}</div>
+						<label for="actualizado_por" class="block text-sm font-medium text-gray-700"
+							>Actualizado por</label
+						>
+						<div id="actualizado_por" class="w-full rounded border bg-gray-100 px-3 py-2">
+							{currentUser.actualizador_nombre
+								? `${currentUser.actualizador_nombre} ${currentUser.actualizador_apellido}`
+								: '-'}
+						</div>
 					</div>
 				</div>
 				<div class="mt-4 flex justify-end space-x-4">
@@ -292,13 +316,29 @@
 						<tr class="hover:bg-gray-50">
 							<td class="border px-4 py-3">{usuario.nombre}</td>
 							<td class="border px-4 py-3">{usuario.apellido}</td>
-							<td class="border px-4 py-3">{roles.find((r) => r.id === usuario.rol_id)?.nombre_rol || 'N/A'}</td>
+							<td class="border px-4 py-3"
+								>{roles.find((r) => r.id === usuario.rol_id)?.nombre_rol || 'N/A'}</td
+							>
 							<td class="border px-4 py-3 text-center">{usuario.activo ? 'Sí' : 'No'}</td>
 							<td class="border px-4 py-3">{usuario.numero_telefono}</td>
-							<td class="border px-4 py-3">{usuario.fecha_creacion ? formatDateTime(usuario.fecha_creacion) : '-'}</td>
-							<td class="border px-4 py-3 text-center">{usuario.creador_nombre ? `${usuario.creador_nombre} ${usuario.creador_apellido}` : '-'}</td>
-							<td class="border px-4 py-3">{usuario.fecha_actualizacion ? formatDateTime(usuario.fecha_actualizacion) : '-'}</td>
-							<td class="border px-4 py-3 text-center">{usuario.actualizador_nombre ? `${usuario.actualizador_nombre} ${usuario.actualizador_apellido}` : '-'}</td>
+							<td class="border px-4 py-3"
+								>{usuario.fecha_creacion ? formatDateTime(usuario.fecha_creacion) : '-'}</td
+							>
+							<td class="border px-4 py-3 text-center"
+								>{usuario.creador_nombre
+									? `${usuario.creador_nombre} ${usuario.creador_apellido}`
+									: '-'}</td
+							>
+							<td class="border px-4 py-3"
+								>{usuario.fecha_actualizacion
+									? formatDateTime(usuario.fecha_actualizacion)
+									: '-'}</td
+							>
+							<td class="border px-4 py-3 text-center"
+								>{usuario.actualizador_nombre
+									? `${usuario.actualizador_nombre} ${usuario.actualizador_apellido}`
+									: '-'}</td
+							>
 							<td class="flex justify-center space-x-2 border px-4 py-3 text-center">
 								<button
 									class="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"

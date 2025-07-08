@@ -6,7 +6,7 @@
 /**
  * Calculates the difference between physical and system inventory
  * @param {number} inventario_sistema - System inventory count
- * @param {number} inventario_fisico - Physical inventory count  
+ * @param {number} inventario_fisico - Physical inventory count
  * @param {string|null} fecha_inventario - Inventory date
  * @returns {string|number} - Difference or empty string if not counted
  */
@@ -62,7 +62,7 @@ export function getMovementSummary(movements) {
 	const net = movements.netMovimientos;
 	const sign = net > 0 ? '+' : '';
 	const colorClass = net > 0 ? 'text-green-600' : 'text-red-600';
-	
+
 	return {
 		display: `Net: ${sign}${net}`,
 		class: colorClass

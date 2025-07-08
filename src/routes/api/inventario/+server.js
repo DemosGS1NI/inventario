@@ -84,6 +84,11 @@ export async function DELETE({ request, locals }) {
 		);
 	} catch (error) {
 		console.error('Error al limpiar tablas:', error);
-		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al limpiar las tablas', error.message);
+		return errorResponse(
+			500,
+			'INTERNAL_SERVER_ERROR',
+			'Fallo al limpiar las tablas',
+			error.message
+		);
 	}
 }

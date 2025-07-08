@@ -78,7 +78,11 @@ export async function GET({ url, locals }) {
 		// Check if a record was found
 		if (query.rows.length === 0) {
 			console.log('No se encontró registro de inventario con los criterios especificados');
-			return errorResponse(404, 'NOT_FOUND', 'No se encontró registro de inventario con los criterios especificados');
+			return errorResponse(
+				404,
+				'NOT_FOUND',
+				'No se encontró registro de inventario con los criterios especificados'
+			);
 		}
 
 		// Return the single record
@@ -104,8 +108,8 @@ export async function PUT({ request, locals }) {
 		const {
 			id,
 			// bodega,                 // ← RECEIVED: But not used (this field does not need to be updated)
-			// marca,                  // ← RECEIVED: But not used (this field does not need to be updated)  
-			ubicacion,                 // ← RECEIVED: For updating (this is what changes)
+			// marca,                  // ← RECEIVED: But not used (this field does not need to be updated)
+			ubicacion, // ← RECEIVED: For updating (this is what changes)
 			inventario_fisico,
 			categoria_incidencia,
 			incidencia,
@@ -144,7 +148,9 @@ export async function PUT({ request, locals }) {
 		}
 
 		// Log the update for audit purposes
-		console.log(`Producto actualizado: ID ${id}, Nueva Ubicación: ${ubicacion}, Usuario: ${user.userId}`);
+		console.log(
+			`Producto actualizado: ID ${id}, Nueva Ubicación: ${ubicacion}, Usuario: ${user.userId}`
+		);
 
 		return successResponse(result.rows[0], 'Registro de inventario actualizado satisfactoriamente');
 	} catch (error) {

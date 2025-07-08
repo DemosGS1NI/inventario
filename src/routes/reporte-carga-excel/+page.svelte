@@ -59,7 +59,7 @@
 	<h1 class="mb-6 text-center text-3xl font-bold text-gray-800">
 		Reporte de Resultado de Carga EXCEL
 	</h1>
-	<div class="text-center text-xs text-gray-500 mt-1">
+	<div class="mt-1 text-center text-xs text-gray-500">
 		Se han dejado columnas sin mostrar de manera intencionada
 	</div>
 
@@ -80,26 +80,65 @@
 		<table class="min-w-full border border-gray-300 bg-white">
 			<thead>
 				<tr class="bg-gray-200">
-					<th class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">ID</th>
-					<th class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Bodega</th>
-					<th class="hidden md:table-cell border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Marca</th>
-					<th class="hidden lg:table-cell border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Código de Barras</th>
-					<th class="hidden lg:table-cell border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Número de Parte</th>
-					<th class="hidden lg:table-cell border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Descripción</th>
-					<th class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700">Inv. Sistema</th>
+					<th
+						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
+						>ID</th
+					>
+					<th
+						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
+						>Bodega</th
+					>
+					<th
+						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 md:table-cell"
+						>Marca</th
+					>
+					<th
+						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
+						>Código de Barras</th
+					>
+					<th
+						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
+						>Número de Parte</th
+					>
+					<th
+						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
+						>Descripción</th
+					>
+					<th
+						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
+						>Inv. Sistema</th
+					>
 				</tr>
 			</thead>
 			<tbody>
 				{#if items && items.length > 0}
 					{#each items as item}
 						<tr class="transition-colors hover:bg-gray-50">
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.id}</td>
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.bodega}</td>
-							<td class="hidden md:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.marca}</td>
-							<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.codigo_barras}</td>
-							<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.numero_parte}</td>
-							<td class="hidden lg:table-cell border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.descripcion}</td>
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800">{item.inventario_sistema}</td>
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
+								>{item.id}</td
+							>
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
+								>{item.bodega}</td
+							>
+							<td
+								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 md:table-cell"
+								>{item.marca}</td
+							>
+							<td
+								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
+								>{item.codigo_barras}</td
+							>
+							<td
+								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
+								>{item.numero_parte}</td
+							>
+							<td
+								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
+								>{item.descripcion}</td
+							>
+							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
+								>{item.inventario_sistema}</td
+							>
 						</tr>
 					{/each}
 				{:else if !loading}
@@ -114,21 +153,23 @@
 	</div>
 
 	<!-- Pagination Controls -->
-	<div class="flex flex-col items-center justify-between gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row">
+	<div
+		class="flex flex-col items-center justify-between gap-4 rounded-lg bg-white p-4 shadow-md sm:flex-row"
+	>
 		<button
 			on:click={() => changePage(currentPage - 1)}
 			disabled={currentPage === 1 || loading}
-			class="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+			class="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
 		>
 			← Anterior
 		</button>
-		
+
 		<div class="text-center">
 			<div class="text-sm font-medium text-gray-700">
 				Página {currentPage} de {totalPages}
 			</div>
 			{#if totalRecords > 0}
-				<div class="text-xs text-gray-500 mt-1">
+				<div class="mt-1 text-xs text-gray-500">
 					Registros {startRecord}-{endRecord} de {totalRecords}
 				</div>
 			{/if}
@@ -137,7 +178,7 @@
 		<button
 			on:click={() => changePage(currentPage + 1)}
 			disabled={currentPage === totalPages || loading || totalPages === 0}
-			class="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+			class="rounded-lg bg-blue-500 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
 		>
 			Siguiente →
 		</button>

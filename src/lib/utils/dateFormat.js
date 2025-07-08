@@ -22,7 +22,7 @@ export function formatDateTime(dateString) {
 
 		// Apply GMT-6 offset (subtract 6 hours)
 		const utcTime = date.getTime();
-		const gmt6Time = new Date(utcTime - (6 * 60 * 60 * 1000));
+		const gmt6Time = new Date(utcTime - 6 * 60 * 60 * 1000);
 
 		// Get components in GMT-6
 		const year = gmt6Time.getUTCFullYear().toString();
@@ -40,8 +40,18 @@ export function formatDateTime(dateString) {
 		const formattedHours = hours.toString().padStart(2, '0');
 
 		const months = [
-			'ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN',
-			'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'
+			'ENE',
+			'FEB',
+			'MAR',
+			'ABR',
+			'MAY',
+			'JUN',
+			'JUL',
+			'AGO',
+			'SEP',
+			'OCT',
+			'NOV',
+			'DIC'
 		];
 
 		return `${day}-${months[month]}-${year.slice(-2)} ${formattedHours}:${minute}:${second} ${ampm}`;

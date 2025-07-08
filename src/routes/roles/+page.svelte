@@ -116,7 +116,9 @@
 				<div class="grid grid-cols-1 gap-4">
 					<!-- Role Name -->
 					<div>
-						<label for="nombre_rol" class="block text-sm font-medium text-gray-700">Nombre del Rol</label>
+						<label for="nombre_rol" class="block text-sm font-medium text-gray-700"
+							>Nombre del Rol</label
+						>
 						<input
 							type="text"
 							id="nombre_rol"

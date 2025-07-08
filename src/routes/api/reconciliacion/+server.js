@@ -55,7 +55,8 @@ export async function GET({ url, locals }) {
 			paramIndex++;
 		}
 
-		inventoryQuery += ' ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras ';
+		inventoryQuery +=
+			' ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras ';
 
 		// Execute inventory query
 		const inventoryResult = await sql.query(inventoryQuery, queryParams);

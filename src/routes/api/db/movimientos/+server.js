@@ -61,9 +61,9 @@ export async function POST({ request, locals }) {
 
 		// Check for unique constraint violation (PostgreSQL: 23505, SQLite: 'UNIQUE constraint failed', MySQL: ER_DUP_ENTRY)
 		const isUniqueViolation =
-			(error.code === '23505') || // PostgreSQL
+			error.code === '23505' || // PostgreSQL
 			(error.message && error.message.includes('UNIQUE constraint')) || // SQLite
-			(error.code === 'ER_DUP_ENTRY'); // MySQL
+			error.code === 'ER_DUP_ENTRY'; // MySQL
 
 		if (isUniqueViolation) {
 			return errorResponse(

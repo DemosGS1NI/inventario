@@ -4,93 +4,93 @@ import fs from 'fs';
 
 // Helper function to map PostgreSQL types to DBML types
 function mapDataType(pgType, characterMaxLength) {
-  switch (pgType) {
-    case 'character varying':
-      return characterMaxLength ? `varchar(${characterMaxLength})` : 'varchar';
-    case 'character':
-      return characterMaxLength ? `char(${characterMaxLength})` : 'char';
-    case 'text':
-      return 'text';
-    case 'integer':
-      return 'integer';
-    case 'bigint':
-      return 'bigint';
-    case 'smallint':
-      return 'smallint';
-    case 'boolean':
-      return 'boolean';
-    case 'timestamp without time zone':
-    case 'timestamp with time zone':
-      return 'timestamp';
-    case 'date':
-      return 'date';
-    case 'time without time zone':
-    case 'time with time zone':
-      return 'time';
-    case 'json':
-    case 'jsonb':
-      return 'json';
-    case 'uuid':
-      return 'uuid';
-    case 'numeric':
-    case 'decimal':
-      return 'decimal';
-    case 'real':
-    case 'double precision':
-      return 'float';
-    default:
-      return pgType;
-  }
+	switch (pgType) {
+		case 'character varying':
+			return characterMaxLength ? `varchar(${characterMaxLength})` : 'varchar';
+		case 'character':
+			return characterMaxLength ? `char(${characterMaxLength})` : 'char';
+		case 'text':
+			return 'text';
+		case 'integer':
+			return 'integer';
+		case 'bigint':
+			return 'bigint';
+		case 'smallint':
+			return 'smallint';
+		case 'boolean':
+			return 'boolean';
+		case 'timestamp without time zone':
+		case 'timestamp with time zone':
+			return 'timestamp';
+		case 'date':
+			return 'date';
+		case 'time without time zone':
+		case 'time with time zone':
+			return 'time';
+		case 'json':
+		case 'jsonb':
+			return 'json';
+		case 'uuid':
+			return 'uuid';
+		case 'numeric':
+		case 'decimal':
+			return 'decimal';
+		case 'real':
+		case 'double precision':
+			return 'float';
+		default:
+			return pgType;
+	}
 }
 
 // Helper function to clean up PostgreSQL default values for DBML
 function formatDefaultValue(defaultValue, dataType) {
-  if (!defaultValue) return null;
-  
-  // Remove PostgreSQL casting syntax
-  let cleaned = defaultValue.replace(/::[\w\s\[\]]+/g, '');
-  
-  // Handle sequences (auto-increment)
-  if (cleaned.includes('nextval(')) {
-    return null; // Will be handled as 'increment' constraint
-  }
-  
-  // Handle current timestamp
-  if (cleaned.includes('CURRENT_TIMESTAMP') || cleaned.includes('now()')) {
-    return '`CURRENT_TIMESTAMP`';
-  }
-  
-  // Handle boolean values
-  if (dataType === 'boolean') {
-    if (cleaned === 'true' || cleaned === "'t'") return 'true';
-    if (cleaned === 'false' || cleaned === "'f'") return 'false';
-  }
-  
-  // Handle string literals
-  if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
-    return cleaned;
-  }
-  
-  // Handle numeric values
-  if (!isNaN(cleaned)) {
-    return cleaned;
-  }
-  
-  // Default case - wrap in quotes if it's not already
-  return `'${cleaned}'`;
+	if (!defaultValue) return null;
+
+	// Remove PostgreSQL casting syntax
+	let cleaned = defaultValue.replace(/::[\w\s\[\]]+/g, '');
+
+	// Handle sequences (auto-increment)
+	if (cleaned.includes('nextval(')) {
+		return null; // Will be handled as 'increment' constraint
+	}
+
+	// Handle current timestamp
+	if (cleaned.includes('CURRENT_TIMESTAMP') || cleaned.includes('now()')) {
+		return '`CURRENT_TIMESTAMP`';
+	}
+
+	// Handle boolean values
+	if (dataType === 'boolean') {
+		if (cleaned === 'true' || cleaned === "'t'") return 'true';
+		if (cleaned === 'false' || cleaned === "'f'") return 'false';
+	}
+
+	// Handle string literals
+	if (cleaned.startsWith("'") && cleaned.endsWith("'")) {
+		return cleaned;
+	}
+
+	// Handle numeric values
+	if (!isNaN(cleaned)) {
+		return cleaned;
+	}
+
+	// Default case - wrap in quotes if it's not already
+	return `'${cleaned}'`;
 }
 
 // Helper function to check if column is auto-increment
 function isAutoIncrement(defaultValue) {
-  return defaultValue && defaultValue.includes('nextval(');
+	return defaultValue && defaultValue.includes('nextval(');
 }
 
 async function generateSchema() {
-  try {
-    console.log('🔄 Fetching database schema information...');
-    
-    // Get comprehensive table information including constraints
-    const tables = await sql`
+	try {
+		console.log('🔄 Fetching database schema information...');
+
+		// Get comprehensive table information including constraints
+		const tables = await sql`
       SELECT DISTINCT
         c.table_name,
         c.column_name,
@@ -131,9 +131,9 @@ async function generateSchema() {
       ORDER BY c.table_name, c.ordinal_position
     `;
 
-    // Get foreign key relationships
-    console.log('🔄 Fetching foreign key relationships...');
-    const foreignKeys = await sql`
+		// Get foreign key relationships
+		console.log('🔄 Fetching foreign key relationships...');
+		const foreignKeys = await sql`
       SELECT
         tc.table_name,
         kcu.column_name,
@@ -151,10 +151,10 @@ async function generateSchema() {
         AND tc.table_schema = 'public'
     `;
 
-    console.log('📝 Generating DBML content...');
-    
-    // Generate DBML content
-    let dbmlContent = `// Auto-generated schema from database
+		console.log('📝 Generating DBML content...');
+
+		// Generate DBML content
+		let dbmlContent = `// Auto-generated schema from database
 // Generated on: ${new Date().toISOString()}
 // Source: PostgreSQL database
 
@@ -165,78 +165,78 @@ Project toma_inventario {
 
 `;
 
-    // Group columns by table
-    const tableMap = {};
-    tables.rows.forEach(row => {
-      if (!tableMap[row.table_name]) {
-        tableMap[row.table_name] = [];
-      }
-      tableMap[row.table_name].push(row);
-    });
+		// Group columns by table
+		const tableMap = {};
+		tables.rows.forEach((row) => {
+			if (!tableMap[row.table_name]) {
+				tableMap[row.table_name] = [];
+			}
+			tableMap[row.table_name].push(row);
+		});
 
-    // Generate table definitions
-    Object.entries(tableMap).forEach(([tableName, columns]) => {
-      dbmlContent += `Table ${tableName} {\n`;
-      
-      columns.forEach(col => {
-        // Map PostgreSQL type to DBML type
-        const dbmlType = mapDataType(col.data_type, col.character_maximum_length);
-        let line = `  ${col.column_name} ${dbmlType}`;
-        
-        // Collect constraints
-        const constraints = [];
-        
-        // Primary key
-        if (col.is_primary_key) {
-          constraints.push('pk');
-          
-          // Check if it's auto-increment
-          if (isAutoIncrement(col.column_default)) {
-            constraints.push('increment');
-          }
-        }
-        
-        // Unique constraint
-        if (col.is_unique && !col.is_primary_key) {
-          constraints.push('unique');
-        }
-        
-        // Not null constraint
-        if (col.is_nullable === 'NO' && !col.is_primary_key) {
-          constraints.push('not null');
-        }
-        
-        // Default value (only if not auto-increment)
-        if (col.column_default && !isAutoIncrement(col.column_default)) {
-          const defaultVal = formatDefaultValue(col.column_default, col.data_type);
-          if (defaultVal) {
-            constraints.push(`default: ${defaultVal}`);
-          }
-        }
-        
-        // Foreign key reference
-        const fk = foreignKeys.rows.find(fk => 
-          fk.table_name === tableName && fk.column_name === col.column_name
-        );
-        if (fk) {
-          constraints.push(`ref: > ${fk.foreign_table_name}.${fk.foreign_column_name}`);
-        }
-        
-        // Add constraints to line
-        if (constraints.length > 0) {
-          line += ` [${constraints.join(', ')}]`;
-        }
-        
-        dbmlContent += line + '\n';
-      });
-      
-      dbmlContent += '}\n\n';
-    });
+		// Generate table definitions
+		Object.entries(tableMap).forEach(([tableName, columns]) => {
+			dbmlContent += `Table ${tableName} {\n`;
 
-    // Note: Foreign key relationships are already defined inline in table definitions
+			columns.forEach((col) => {
+				// Map PostgreSQL type to DBML type
+				const dbmlType = mapDataType(col.data_type, col.character_maximum_length);
+				let line = `  ${col.column_name} ${dbmlType}`;
 
-    // Add documentation notes
-    dbmlContent += `// Generated Schema Summary
+				// Collect constraints
+				const constraints = [];
+
+				// Primary key
+				if (col.is_primary_key) {
+					constraints.push('pk');
+
+					// Check if it's auto-increment
+					if (isAutoIncrement(col.column_default)) {
+						constraints.push('increment');
+					}
+				}
+
+				// Unique constraint
+				if (col.is_unique && !col.is_primary_key) {
+					constraints.push('unique');
+				}
+
+				// Not null constraint
+				if (col.is_nullable === 'NO' && !col.is_primary_key) {
+					constraints.push('not null');
+				}
+
+				// Default value (only if not auto-increment)
+				if (col.column_default && !isAutoIncrement(col.column_default)) {
+					const defaultVal = formatDefaultValue(col.column_default, col.data_type);
+					if (defaultVal) {
+						constraints.push(`default: ${defaultVal}`);
+					}
+				}
+
+				// Foreign key reference
+				const fk = foreignKeys.rows.find(
+					(fk) => fk.table_name === tableName && fk.column_name === col.column_name
+				);
+				if (fk) {
+					constraints.push(`ref: > ${fk.foreign_table_name}.${fk.foreign_column_name}`);
+				}
+
+				// Add constraints to line
+				if (constraints.length > 0) {
+					line += ` [${constraints.join(', ')}]`;
+				}
+
+				dbmlContent += line + '\n';
+			});
+
+			dbmlContent += '}\n\n';
+		});
+
+		// Note: Foreign key relationships are already defined inline in table definitions
+
+		// Add documentation notes
+		dbmlContent += `// Generated Schema Summary
 Note schema_info {
   '''
   Database: PostgreSQL
@@ -250,33 +250,32 @@ Note schema_info {
 }
 `;
 
-    // Write to file
-    const filename = 'toma-inventario-schema.dbml';
-    fs.writeFileSync(filename, dbmlContent);
-    
-    console.log('✅ Schema generated successfully!');
-    console.log(`📝 File: ${filename}`);
-    console.log(`📊 Tables processed: ${Object.keys(tableMap).length}`);
-    console.log(`🔗 Foreign keys found: ${foreignKeys.rows.length}`);
-    
-  } catch (error) {
-    console.error('❌ Error generating schema:', error);
-    throw error;
-  } finally {
-    // Close database connection
-    if (sql.end) {
-      await sql.end();
-    }
-  }
+		// Write to file
+		const filename = 'toma-inventario-schema.dbml';
+		fs.writeFileSync(filename, dbmlContent);
+
+		console.log('✅ Schema generated successfully!');
+		console.log(`📝 File: ${filename}`);
+		console.log(`📊 Tables processed: ${Object.keys(tableMap).length}`);
+		console.log(`🔗 Foreign keys found: ${foreignKeys.rows.length}`);
+	} catch (error) {
+		console.error('❌ Error generating schema:', error);
+		throw error;
+	} finally {
+		// Close database connection
+		if (sql.end) {
+			await sql.end();
+		}
+	}
 }
 
 // Run the generator
 generateSchema()
-  .then(() => {
-    console.log('🎉 Schema generation completed successfully!');
-    process.exit(0);
-  })
-  .catch(error => {
-    console.error('❌ Fatal error:', error);
-    process.exit(1);
-  });
+	.then(() => {
+		console.log('🎉 Schema generation completed successfully!');
+		process.exit(0);
+	})
+	.catch((error) => {
+		console.error('❌ Fatal error:', error);
+		process.exit(1);
+	});

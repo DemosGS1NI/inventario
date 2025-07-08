@@ -34,19 +34,10 @@ export async function POST({ request, locals }) {
       RETURNING id, nombre_rol, descripcion, creado_por;
     `;
 
-		return successResponse(
-			result.rows[0],
-			'Rol creado satisfactoriamente',
-			{ status: 201 }
-		);
+		return successResponse(result.rows[0], 'Rol creado satisfactoriamente', { status: 201 });
 	} catch (error) {
 		console.error('Error creating role:', error);
-		return errorResponse(
-			500,
-			'INTERNAL_SERVER_ERROR',
-			'Fallo al crear un rol',
-			error.message
-		);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al crear un rol', error.message);
 	}
 }
 
@@ -65,12 +56,7 @@ export async function GET({ locals }) {
 		return successResponse(result.rows, 'Roles obtenidos satisfactoriamente');
 	} catch (error) {
 		console.error('Error fetching roles:', error);
-		return errorResponse(
-			500,
-			'INTERNAL_SERVER_ERROR',
-			'Fallo al obtener roles',
-			error.message
-		);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al obtener roles', error.message);
 	}
 }
 
@@ -114,18 +100,10 @@ export async function PUT({ request, locals }) {
       RETURNING id, nombre_rol, descripcion, creado_por;
     `;
 
-		return successResponse(
-			result.rows[0],
-			'Rol actualizado satisfactoriamente'
-		);
+		return successResponse(result.rows[0], 'Rol actualizado satisfactoriamente');
 	} catch (error) {
 		console.error('Error updating role:', error);
-		return errorResponse(
-			500,
-			'INTERNAL_SERVER_ERROR',
-			'Fallo al actualizar rol',
-			error.message
-		);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al actualizar rol', error.message);
 	}
 }
 
@@ -162,11 +140,6 @@ export async function DELETE({ request, locals }) {
 		return successResponse(null, 'Rol eliminado satisfactoriamente');
 	} catch (error) {
 		console.error('Error deleting role:', error);
-		return errorResponse(
-			500,
-			'INTERNAL_SERVER_ERROR',
-			'Fallo al eliminar rol',
-			error.message
-		);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', 'Fallo al eliminar rol', error.message);
 	}
 }

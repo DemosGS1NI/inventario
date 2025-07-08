@@ -64,12 +64,6 @@ export async function POST({ request, locals }) {
 		return successResponse(json, null, 'PIN cambiado satisfactoriamente');
 	} catch (error) {
 		console.error('Error during PIN change:', error);
-		return errorResponse(
-			json,
-			statusCode,
-			'INTERNAL_SERVER_ERROR',
-			errorMessage,
-			errorDetails
-		);
+		return errorResponse(json, statusCode, 'INTERNAL_SERVER_ERROR', errorMessage, errorDetails);
 	}
 }

@@ -227,12 +227,12 @@
 		}
 	}
 
-async function saveChanges() {
+	async function saveChanges() {
 		const formData = {
 			id: $inventoryStore.currentProduct.id,
 			// bodega: $inventoryStore.selectedBodega,         // ← Not sent (this field does not need to be updated)
 			// marca: $inventoryStore.selectedMarca,           // ← Not sent (this field does not need to be updated)
-			ubicacion: $inventoryStore.ubicacion,             // ← SENT: New consolidated location			
+			ubicacion: $inventoryStore.ubicacion, // ← SENT: New consolidated location
 			// ❌ REMOVED: codigo_barras (could be a numero_parte, don't overwrite actual barcode)
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,

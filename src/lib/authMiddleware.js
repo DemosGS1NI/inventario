@@ -9,9 +9,11 @@ import { errorResponse } from '$lib/responseUtils';
  */
 export function requireAuth(locals) {
 	const userId = locals.user?.userId;
+
 	if (!userId) {
-		throw errorResponse(401, 'UNAUTHORIZED', 'Authentication required');
+		return errorResponse(401, 'UNAUTHORIZED', 'Authentication required');
 	}
+
 	return locals.user;
 }
 
@@ -23,8 +25,9 @@ export function requireAuth(locals) {
  */
 export function requireAdmin(locals) {
 	const user = requireAuth(locals); // This will throw if not authenticated
-	if (user.userRole !== 'Admin') {
-		throw errorResponse(403, 'FORBIDDEN', 'Admin access required');
+	if (user.userRole !== 'Admin' && user.userRole !== 'SuperAdmin') {
+		return errorResponse(403, 'FORBIDDEN', 'Admin access required');
 	}
+
 	return user;
 }

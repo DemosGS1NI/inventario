@@ -92,7 +92,6 @@ export async function POST({ request, getClientAddress }) {
 			return errorResponse(400, 'VALIDATION_ERROR', 'Numero de Telefono y Pin son requeridos');
 		}
 
-
 		// Validate PIN format (basic validation)
 		if (!/^\d{4,6}$/.test(pin)) {
 			return errorResponse(400, 'VALIDATION_ERROR', 'El PIN debe tener entre 4 y 6 digitos');

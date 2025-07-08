@@ -41,11 +41,11 @@ export async function GET({ locals }) {
 		return successResponse(menu, 'Menu items retrieved successfully');
 	} catch (error) {
 		console.error('Error fetching menu:', error);
-		
+
 		// Enhanced error handling
 		let errorMessage = 'Error retrieving menu items';
 		let errorDetails = error.message;
-		
+
 		// Check for specific database errors
 		if (error.code === '42P01') {
 			errorMessage = 'Database table not found';
@@ -58,11 +58,6 @@ export async function GET({ locals }) {
 			errorDetails = 'Referenced record does not exist';
 		}
 
-		return errorResponse(
-			500,
-			'INTERNAL_SERVER_ERROR',
-			errorMessage,
-			errorDetails
-		);
+		return errorResponse(500, 'INTERNAL_SERVER_ERROR', errorMessage, errorDetails);
 	}
 }

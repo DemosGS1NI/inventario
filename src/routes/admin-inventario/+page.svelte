@@ -3,7 +3,7 @@
 	// External libraries
 	import { onMount, onDestroy } from 'svelte';
 	import { Maximize2, Minimize2, RefreshCw, AlertTriangle } from 'lucide-svelte';
-	
+
 	// Internal components and utilities
 	import BackToMenu from '$lib/BackToMenu.svelte';
 	import { adminInventoryStore } from '$lib/stores/adminInventory';
@@ -34,12 +34,9 @@
 
 	// Compute Vista Actual stats reactively
 	$: vistaActualStats = {
-		
-		counted: records.length,      // Adjust 'counted' if your field is different
-		validated: records.filter(r => r.validado === true).length  // Adjust 'validated' if your field is different
-
+		counted: records.length, // Adjust 'counted' if your field is different
+		validated: records.filter((r) => r.validado === true).length // Adjust 'validated' if your field is different
 	};
-	
 
 	// Restore showProgress from sessionStorage before mount (browser only)
 	if (typeof window !== 'undefined') {
@@ -190,9 +187,9 @@
 
 	async function fetchMarcas() {
 		if (!selectedBodega || !selectedUbicacion) {
-			console.log('⚠️ [admin-inventario] Missing required fields for marcas:', { 
-				selectedBodega, 
-				selectedUbicacion 
+			console.log('⚠️ [admin-inventario] Missing required fields for marcas:', {
+				selectedBodega,
+				selectedUbicacion
 			});
 			adminInventoryStore.setMarcas([]);
 			return;
@@ -226,7 +223,11 @@
 		}
 	}
 
-	async function fetchRecords(bodega = selectedBodega, marca = selectedMarca, ubicacion = selectedUbicacion) {
+	async function fetchRecords(
+		bodega = selectedBodega,
+		marca = selectedMarca,
+		ubicacion = selectedUbicacion
+	) {
 		// No longer require all filters; fetch all records if none selected
 		adminInventoryStore.setLoading(true);
 		try {
@@ -259,15 +260,19 @@
 		}
 	}
 
-	async function fetchProgressData(bodega = selectedBodega, marca = selectedMarca, ubicacion = selectedUbicacion) {
+	async function fetchProgressData(
+		bodega = selectedBodega,
+		marca = selectedMarca,
+		ubicacion = selectedUbicacion
+	) {
 		try {
 			let url = '/api/admin-inventario/progress';
 			const params = new URLSearchParams();
-			
+
 			if (bodega) params.append('bodega', bodega);
 			if (marca) params.append('marca', marca);
 			if (ubicacion) params.append('ubicacion', ubicacion);
-			
+
 			if (params.toString()) {
 				url += '?' + params.toString();
 			}
@@ -350,7 +355,9 @@
 
 <!-- ===== MAIN TEMPLATE ===== -->
 <div
-	class="min-h-screen bg-gray-100 p-4 {isFullscreen ? 'fixed inset-0 z-50' : ''} touch-manipulation flex flex-col"
+	class="min-h-screen bg-gray-100 p-4 {isFullscreen
+		? 'fixed inset-0 z-50'
+		: ''} flex touch-manipulation flex-col"
 >
 	<!-- Header with controls -->
 	<div class="sticky top-0 z-10 mb-4 flex items-center justify-between bg-gray-100 p-2">
@@ -389,10 +396,10 @@
 	</div>
 
 	<!-- Show/Hide Progress Toggle -->
-	<div class="flex items-center mb-2">
+	<div class="mb-2 flex items-center">
 		<button
-			class="rounded bg-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-400 transition-colors mr-2"
-			on:click={() => showProgress = !showProgress}
+			class="mr-2 rounded bg-gray-300 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-400"
+			on:click={() => (showProgress = !showProgress)}
 		>
 			{showProgress ? 'Ocultar Progreso' : 'Mostrar Progreso'}
 		</button>
@@ -400,17 +407,17 @@
 
 	<!-- Progress Tracking -->
 	{#if showProgress}
-		<AdminProgress {progressData} {vistaActualStats}  />
+		<AdminProgress {progressData} {vistaActualStats} />
 	{/if}
 
 	<!-- Filters -->
-	<AdminFilters 
-		{bodegas} 
-		{marcas} 
-		{ubicaciones} 
-		{selectedBodega} 
-		{selectedMarca} 
-		{selectedUbicacion} 
+	<AdminFilters
+		{bodegas}
+		{marcas}
+		{ubicaciones}
+		{selectedBodega}
+		{selectedMarca}
+		{selectedUbicacion}
 		{loading}
 		on:bodegaChange={handleBodegaChange}
 		on:ubicacionChange={handleUbicacionChange}
@@ -445,12 +452,15 @@
 	{/if}
 
 	<!-- Records Table -->
-	<div class="overflow-x-auto overflow-y-auto rounded bg-white shadow flex-1 min-h-0" style="max-height: 50vh;">
-		<AdminTable 
-			{records} 
-			{selectedBodega} 
-			{selectedMarca} 
-			{selectedUbicacion} 
+	<div
+		class="min-h-0 flex-1 overflow-x-auto overflow-y-auto rounded bg-white shadow"
+		style="max-height: 50vh;"
+	>
+		<AdminTable
+			{records}
+			{selectedBodega}
+			{selectedMarca}
+			{selectedUbicacion}
 			{loading}
 			on:validate={validateRecord}
 		/>

@@ -31,14 +31,15 @@ export async function GET({ url, locals }) {
 			totalProducts: parseInt(overall.total_products),
 			countedProducts: parseInt(overall.counted_products),
 			validatedProducts: parseInt(overall.validated_products),
-			percentageCounted: overall.total_products > 0 
-				? Math.round((overall.counted_products / overall.total_products) * 100 * 10) / 10 
-				: 0,
-			percentageValidated: overall.total_products > 0 
-				? Math.round((overall.validated_products / overall.total_products) * 100 * 10) / 10 
-				: 0
+			percentageCounted:
+				overall.total_products > 0
+					? Math.round((overall.counted_products / overall.total_products) * 100 * 10) / 10
+					: 0,
+			percentageValidated:
+				overall.total_products > 0
+					? Math.round((overall.validated_products / overall.total_products) * 100 * 10) / 10
+					: 0
 		};
-
 
 		// Get additional summary statistics
 		const summaryStats = await sql`
@@ -56,18 +57,20 @@ export async function GET({ url, locals }) {
 			pendingValidation: parseInt(summary.pending_validation)
 		};
 
-		return successResponse({
-			overallExercise: overallData,
-			summary: additionalStats,
-			lastUpdated: new Date().toISOString()
-		}, 'Estadísticas de progreso obtenidas satisfactoriamente');
-
+		return successResponse(
+			{
+				overallExercise: overallData,
+				summary: additionalStats,
+				lastUpdated: new Date().toISOString()
+			},
+			'Estadísticas de progreso obtenidas satisfactoriamente'
+		);
 	} catch (error) {
 		console.error('Error al obtener estadísticas de progreso:', error);
 		return errorResponse(
-			500, 
-			'INTERNAL_SERVER_ERROR', 
-			'Fallo al obtener estadísticas de progreso', 
+			500,
+			'INTERNAL_SERVER_ERROR',
+			'Fallo al obtener estadísticas de progreso',
 			error.message
 		);
 	}

@@ -73,7 +73,11 @@
 		if (!selectedBodega || !selectedMarca || !codigoBarras) return;
 
 		try {
-			const result = await inventoryAPI.fetchProductDetails(selectedBodega, selectedMarca, codigoBarras);
+			const result = await inventoryAPI.fetchProductDetails(
+				selectedBodega,
+				selectedMarca,
+				codigoBarras
+			);
 			if (result.status === 'success' && result.data.length > 0) {
 				product = result.data[0];
 				addToast('Producto encontrado', 'success');

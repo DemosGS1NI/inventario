@@ -160,7 +160,6 @@
 		return tipo === 'IN' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
 	}
 
-
 	// Add delete function
 	async function deleteMovement(movementId, movementDescription) {
 		if (!confirm(`¿Está seguro que desea eliminar este movimiento?\n\n${movementDescription}`)) {
@@ -265,7 +264,6 @@
 				>
 					Limpiar Filtros
 				</button>
-
 			</div>
 		</div>
 	</div>

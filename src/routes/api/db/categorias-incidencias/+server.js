@@ -33,11 +33,7 @@ export async function POST({ request, locals }) {
       RETURNING id, categoria, descripcion;
     `;
 
-		return successResponse(
-			result.rows[0],
-			'Categoria creada satisfactoriamente',
-			{ status: 201 }
-		);
+		return successResponse(result.rows[0], 'Categoria creada satisfactoriamente', { status: 201 });
 	} catch (error) {
 		console.error('Error creating category:', error);
 		return errorResponse(
@@ -112,10 +108,7 @@ export async function PUT({ request, locals }) {
       RETURNING id, categoria, descripcion;
     `;
 
-		return successResponse(
-			result.rows[0],
-			'Categoría actualizada satisfactoriamente'
-		);
+		return successResponse(result.rows[0], 'Categoría actualizada satisfactoriamente');
 	} catch (error) {
 		console.error('Error updating category:', error);
 		return errorResponse(

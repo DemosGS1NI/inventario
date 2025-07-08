@@ -6,7 +6,8 @@ import { successResponse, errorResponse } from '$lib/responseUtils';
 export async function GET({ locals }) {
 	requireAuth(locals);
 	try {
-		const result = await sql`SELECT id, name, order_index FROM menu_categories ORDER BY order_index, id`;
+		const result =
+			await sql`SELECT id, name, order_index FROM menu_categories ORDER BY order_index, id`;
 		return successResponse(result.rows, 'Categorías de menú obtenidas satisfactoriamente');
 	} catch (error) {
 		console.error('Error obteniendo categorías de menú:', error);

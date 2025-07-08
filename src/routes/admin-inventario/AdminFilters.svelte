@@ -1,24 +1,24 @@
 <script>
 	import { ChevronDown } from 'lucide-svelte';
 	import { createEventDispatcher } from 'svelte';
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	export let bodegas = [];
 	export let marcas = [];
 	export let ubicaciones = [];
 	export let selectedBodega = '';
 	export let selectedMarca = '';
 	export let selectedUbicacion = '';
-	
+
 	function handleBodegaChange(event) {
 		dispatch('bodegaChange', event.target.value);
 	}
-	
+
 	function handleUbicacionChange(event) {
 		dispatch('ubicacionChange', event.target.value);
 	}
-	
+
 	function handleMarcaChange(event) {
 		dispatch('marcaChange', event.target.value);
 	}
@@ -30,7 +30,7 @@
 </script>
 
 <!-- Filters -->
-<div class="sticky top-16 z-10 mb-6 flex flex-col gap-4 bg-gray-100 p-2 md:flex-row items-center">
+<div class="sticky top-16 z-10 mb-6 flex flex-col items-center gap-4 bg-gray-100 p-2 md:flex-row">
 	<div class="relative flex-1">
 		<select
 			value={selectedBodega}
@@ -92,7 +92,7 @@
 	<!-- Limpiar Filtros button at the same level -->
 	<button
 		on:click={handleClearFilters}
-		class="h-12 rounded bg-gray-500 px-4 py-2 text-white transition-colors hover:bg-gray-600 ml-2"
+		class="ml-2 h-12 rounded bg-gray-500 px-4 py-2 text-white transition-colors hover:bg-gray-600"
 	>
 		Limpiar Filtros
 	</button>
