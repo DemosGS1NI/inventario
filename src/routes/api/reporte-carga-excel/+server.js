@@ -39,8 +39,8 @@ export async function GET({ url, locals }) {
 			);
 		}
 
-		// Fetch paginated data with explicit query
-		const query = `
+		// Fetch paginated data with tagged template (works with both pg and @vercel/postgres)
+		const result = await sql`
 			SELECT 
 				id,
 				bodega,
@@ -51,11 +51,9 @@ export async function GET({ url, locals }) {
 				inventario_sistema
 			FROM inventario
 			ORDER BY bodega, marca, id
-			LIMIT $1 
-			OFFSET $2;
+			LIMIT ${limit}
+			OFFSET ${offset};
 		`;
-
-		const result = await sql.query(query, [limit, offset]);
 
 		// Return the rows directly as items
 		const response = {
