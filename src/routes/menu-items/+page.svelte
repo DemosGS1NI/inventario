@@ -118,7 +118,9 @@
 
 <div class="min-h-screen bg-gray-100 p-6">
 	<h1 class="mb-6 text-center text-3xl font-bold text-gray-800">Gestión de Ítems de Menú</h1>
-
+	<div class="mb-6">
+		<BackToMenuButton />
+	</div>
 	<div class="mb-6 flex justify-center">
 		<button
 			class="rounded bg-blue-500 px-6 py-2 font-bold text-white hover:bg-blue-600"
@@ -226,9 +228,7 @@
 		</div>
 	{/if}
 
-	<div class="mb-6">
-		<BackToMenuButton />
-	</div>
+
 
 	<div class="overflow-x-auto rounded bg-white shadow-md">
 		<table class="w-full table-auto border-collapse">
