@@ -129,7 +129,7 @@ export async function PUT({ request, locals }) {
 		const result = await sql`
 			UPDATE inventario
 			SET 
-				ubicacion = ${ubicacion},                                   
+		        ubicacion = COALESCE(${ubicacion}, ubicacion),                                   
 				inventario_fisico = COALESCE(${inventario_fisico}, inventario_fisico),
 				categoria_incidencia = COALESCE(${categoria_incidencia}, categoria_incidencia),
 				incidencia = COALESCE(${incidencia}, incidencia),

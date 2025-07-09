@@ -138,13 +138,17 @@ export const inventoryAPI = {
 				message: 'An unexpected error occurred'
 			};
 		}
-	}
+	},
 
-	// A VER QUE TRUENA PORQUE ESTO NO DEBE ESTAR AQUI -JB
-	// async saveProduct(formData) {
-	// 	return await apiCall('/api/inventario/registro', {
-	// 		method: 'PUT',
-	// 		body: JSON.stringify(formData)
-	// 	});
-	// }
+	/**
+	 * Saves product changes to the inventory (unified API)
+	 * @param {Object} formData - The product data to update
+	 * @returns {Promise<Object>} API response
+	 */
+	async saveProduct(formData) {
+		return await apiCall('/api/inventario/registro', {
+			method: 'PUT',
+			body: JSON.stringify(formData)
+		});
+	}
 };

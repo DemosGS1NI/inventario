@@ -30,9 +30,9 @@
 	//     inventoryStore.setSelectedMarca(event.target.value);
 	// }
 
-	// async function handleUbicacionChange(event) {
-	//     inventoryStore.setUbicacion(event.target.value);
-	// }
+	async function handleUbicacionChange(event) {
+		inventoryStore.setUbicacion(event.target.value);
+	}
 
 	// Form state variables
 	let barcodeInput;
@@ -102,6 +102,7 @@
 	async function saveChanges() {
 		const formData = {
 			id: $inventoryStore.currentProduct.id,
+			// ubicacion is intentionally omitted because it is not editable here
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,
 			incidencia,
@@ -110,9 +111,17 @@
 		};
 
 		try {
-			const result = await inventoryAPI.saveProduct(formData);
+			const response = await fetch('/api/inventario/registro', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(formData)
+			});
 
-			if (result.status === 'success') {
+			const result = await response.json();
+
+			if (response.ok && result.status === 'success') {
 				addToast('Producto actualizado exitosamente!', 'success');
 				resetFields();
 			} else if (result.error?.code === 'NOT_FOUND') {
@@ -124,6 +133,8 @@
 			addToast('Error de conexión al guardar el producto', 'error');
 		}
 	}
+
+
 
 	function resetFields() {
 		codigoBarras = '';
