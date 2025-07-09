@@ -288,7 +288,7 @@
 							id="masterCartonEan13"
 							type="text"
 							bind:value={currentProduct.master_carton_ean13}
-							maxlength="13"
+							maxlength="14"
 							placeholder="Escanear EAN-13 Caja Master"
 							class="mt-1 block w-full rounded border p-2"
 						/>
