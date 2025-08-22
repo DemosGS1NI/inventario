@@ -143,8 +143,6 @@
 		</div>
 	{/if}
 
-
-
 	<div class="overflow-x-auto rounded bg-white shadow-md">
 		<table class="w-full table-auto border-collapse">
 			<thead class="bg-gray-200 text-gray-700">

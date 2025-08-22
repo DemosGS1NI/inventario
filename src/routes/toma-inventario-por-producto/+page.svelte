@@ -134,8 +134,6 @@
 		}
 	}
 
-
-
 	function resetFields() {
 		codigoBarras = '';
 		stockQuantity = 0;
