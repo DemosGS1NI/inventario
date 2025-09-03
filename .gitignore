@@ -19,3 +19,14 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# VSCODE settings
+.vscode/
+.vscode/*
+
+# dbdocs.io generated files
+/docs/
+*.dbdocs-build/
+
+# dbdocs.io config (if you want to keep tokens private)
+# .dbdocs.json

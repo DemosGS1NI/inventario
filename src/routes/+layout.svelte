@@ -1,26 +1,25 @@
 <script>
 	export let data;
-  
+
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
 
-    injectSpeedInsights();
+	injectSpeedInsights();
 
 	import Toast from '$lib/components/Toast.svelte';
 
 	// Access user-related data if needed
 	const { userName, userRole } = data;
-  </script>
-  
-  <!-- Load Global CSS -->
-  <style>
-	@import '../app.css';
-  </style>
-  
-  <div class="flex flex-col min-h-screen">
+</script>
+
+<div class="flex min-h-screen flex-col">
 	<!-- Main Content -->
 	<main class="flex-grow">
-  		<Toast />	
-	  <slot />
+		<Toast />
+		<slot />
 	</main>
-  </div>
-  
+</div>
+
+<!-- Load Global CSS -->
+<style>
+	@import '../app.css';
+</style>

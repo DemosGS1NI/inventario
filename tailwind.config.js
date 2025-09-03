@@ -8,17 +8,17 @@ export default {
 			colors: {
 				primary: {
 					DEFAULT: '#1E40AF', // Blue
-					hover: '#1D4ED8',
+					hover: '#1D4ED8'
 				},
 				secondary: {
 					DEFAULT: '#6B7280', // Gray
-					hover: '#4B5563',
+					hover: '#4B5563'
 				},
 				success: '#16A34A', // Green
 				error: '#DC2626', // Red
-				warning: '#F59E0B', // Yellow
-			},
-		},
+				warning: '#F59E0B' // Yellow
+			}
+		}
 	},
-	plugins: [forms],
+	plugins: [forms]
 };
