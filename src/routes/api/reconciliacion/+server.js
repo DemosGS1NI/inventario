@@ -1,7 +1,7 @@
 import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAuth } from '$lib/authMiddleware';
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -243,38 +243,33 @@ export async function GET({ url, locals }) {
 				}));
 
 				// Create workbook and worksheet
-				const workbook = XLSX.utils.book_new();
-				const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-				// Set column widths for better readability
-				const colWidths = [
-					{ wch: 15 }, // Bodega
-					{ wch: 12 }, // Ubicación
-					{ wch: 15 }, // Marca
-					{ wch: 15 }, // Código de Barras
-					{ wch: 20 }, // Número de Parte
-					{ wch: 30 }, // Descripción
-					{ wch: 12 }, // Inventario Sistema
-					{ wch: 12 }, // Inventario Físico
-					{ wch: 12 }, // Stock Esperado
-					{ wch: 15 }, // Diferencia Aparente
-					{ wch: 12 }, // Diferencia Real
-					{ wch: 20 }, // Estado Reconciliación
-					{ wch: 15 }, // Entradas Pre-Conteo
-					{ wch: 15 }, // Salidas Pre-Conteo
-					{ wch: 20 }, // Net Movimientos Pre-Conteo
-					{ wch: 15 }, // Entradas Post-Conteo
-					{ wch: 15 }, // Salidas Post-Conteo
-					{ wch: 20 }, // Fecha Inventario
-					{ wch: 20 }, // Categoría Incidencia
-					{ wch: 30 }, // Incidencia
-					{ wch: 40 } // Explicación
+				const workbook = new ExcelJS.Workbook();
+				const worksheet = workbook.addWorksheet('Reconciliación');
+				worksheet.columns = [
+					{ header: 'Bodega', key: 'Bodega', width: 15 },
+					{ header: 'Ubicación', key: 'Ubicación', width: 12 },
+					{ header: 'Marca', key: 'Marca', width: 15 },
+					{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
+					{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
+					{ header: 'Descripción', key: 'Descripción', width: 30 },
+					{ header: 'Inventario Sistema', key: 'Inventario Sistema', width: 12 },
+					{ header: 'Inventario Físico', key: 'Inventario Físico', width: 12 },
+					{ header: 'Stock Esperado', key: 'Stock Esperado', width: 12 },
+					{ header: 'Diferencia Aparente', key: 'Diferencia Aparente', width: 15 },
+					{ header: 'Diferencia Real', key: 'Diferencia Real', width: 12 },
+					{ header: 'Estado Reconciliación', key: 'Estado Reconciliación', width: 20 },
+					{ header: 'Entradas Pre-Conteo', key: 'Entradas Pre-Conteo', width: 15 },
+					{ header: 'Salidas Pre-Conteo', key: 'Salidas Pre-Conteo', width: 15 },
+					{ header: 'Net Movimientos Pre-Conteo', key: 'Net Movimientos Pre-Conteo', width: 20 },
+					{ header: 'Entradas Post-Conteo', key: 'Entradas Post-Conteo', width: 15 },
+					{ header: 'Salidas Post-Conteo', key: 'Salidas Post-Conteo', width: 15 },
+					{ header: 'Fecha Inventario', key: 'Fecha Inventario', width: 20 },
+					{ header: 'Categoría Incidencia', key: 'Categoría Incidencia', width: 20 },
+					{ header: 'Incidencia', key: 'Incidencia', width: 30 },
+					{ header: 'Explicación', key: 'Explicación', width: 40 }
 				];
 
-				worksheet['!cols'] = colWidths;
-
-				// Add the worksheet to workbook
-				XLSX.utils.book_append_sheet(workbook, worksheet, 'Reconciliación');
+				worksheet.addRows(excelData);
 
 				// Create summary sheet
 				const summaryData = [
@@ -285,16 +280,15 @@ export async function GET({ url, locals }) {
 					{ Métrica: 'Sin Diferencia', Valor: summary.noDiscrepancy }
 				];
 
-				const summarySheet = XLSX.utils.json_to_sheet(summaryData);
-				summarySheet['!cols'] = [{ wch: 25 }, { wch: 15 }];
-				XLSX.utils.book_append_sheet(workbook, summarySheet, 'Resumen');
+				const summarySheet = workbook.addWorksheet('Resumen');
+				summarySheet.columns = [
+					{ header: 'Métrica', key: 'Métrica', width: 25 },
+					{ header: 'Valor', key: 'Valor', width: 15 }
+				];
+				summarySheet.addRows(summaryData);
 
 				// Generate Excel file buffer
-				const excelBuffer = XLSX.write(workbook, {
-					type: 'buffer',
-					bookType: 'xlsx',
-					compression: true
-				});
+				const excelBuffer = await workbook.xlsx.writeBuffer();
 
 				// Generate filename with timestamp
 				const timestamp = new Date().toISOString().split('T')[0];

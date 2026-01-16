@@ -1,6 +1,6 @@
 // src/routes/api/carga-datos-excel/+server.js
 import dotenv from 'dotenv';
-import xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
 import { sql } from '$lib/database';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { requireAdmin } from '$lib/authMiddleware';
@@ -34,21 +34,61 @@ export const POST = async ({ request, locals }) => {
 			);
 		}
 
-		// Read Excel file
-		const buffer = await file.arrayBuffer();
-		const workbook = xlsx.read(new Uint8Array(buffer), { type: 'array' });
+		// Read Excel file with exceljs to avoid vulnerable xlsx dependency
+		const buffer = Buffer.from(await file.arrayBuffer());
+		const workbook = new ExcelJS.Workbook();
+		await workbook.xlsx.load(buffer);
 
 		// Use first sheet or look for common names
-		let sheet = workbook.Sheets['Sheet1'];
-		if (!sheet && workbook.SheetNames.length > 0) {
-			sheet = workbook.Sheets[workbook.SheetNames[0]];
+		let worksheet = workbook.getWorksheet('Sheet1');
+		if (!worksheet && workbook.worksheets.length > 0) {
+			[worksheet] = workbook.worksheets;
 		}
 
-		if (!sheet) {
+		if (!worksheet) {
 			return errorResponse(400, 'NO_SHEETS', 'No se encontró ninguna hoja en el archivo Excel');
 		}
 
-		const data = xlsx.utils.sheet_to_json(sheet);
+		const headerRow = worksheet.getRow(1);
+		const headers = headerRow.values
+			.slice(1)
+			.map((value) => {
+				if (value === null || value === undefined) return null;
+				if (typeof value === 'object' && value.text) return value.text.trim();
+				return String(value).trim();
+			})
+			.filter(Boolean);
+
+		if (headers.length === 0) {
+			return errorResponse(400, 'EMPTY_SHEET', 'La hoja no contiene encabezados');
+		}
+
+		const normalizeCellValue = (cellValue) => {
+			if (cellValue === null || cellValue === undefined) return null;
+			if (cellValue instanceof Date) return cellValue.toISOString();
+			if (typeof cellValue === 'object' && cellValue.text) return cellValue.text;
+			if (typeof cellValue === 'object' && Array.isArray(cellValue.richText)) {
+				return cellValue.richText.map((part) => part.text).join('');
+			}
+			return cellValue;
+		};
+
+		const data = [];
+		worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+			if (rowNumber === 1) return; // Skip headers
+
+			const rowData = {};
+			headers.forEach((header, index) => {
+				const cellValue = normalizeCellValue(row.getCell(index + 1).value);
+				rowData[header] = cellValue;
+			});
+
+			// Skip completely empty rows
+			const hasValues = Object.values(rowData).some((value) => value !== null && value !== '');
+			if (hasValues) {
+				data.push(rowData);
+			}
+		});
 
 		if (!data || data.length === 0) {
 			return errorResponse(400, 'EMPTY_SHEET', 'El archivo está vacío');
