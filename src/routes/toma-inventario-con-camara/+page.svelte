@@ -1,6 +1,6 @@
 <script>
 	import { onMount, tick, onDestroy } from 'svelte';
-	import Quagga from 'quagga';
+	import Quagga from '@ericblade/quagga2';
 	import BackToMenuButton from '$lib/BackToMenu.svelte';
 	import { addToast } from '$lib/stores/toast'; // ADD THIS IMPORT
 

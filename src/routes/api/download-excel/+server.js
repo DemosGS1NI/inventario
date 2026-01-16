@@ -1,5 +1,5 @@
 import { sql } from '$lib/database';
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { format } from 'date-fns';
 import { requireAdmin } from '$lib/authMiddleware';
 import dotenv from 'dotenv';
@@ -36,7 +36,7 @@ export async function GET({ locals }) {
     `;
 
 		// Create a workbook
-		const workbook = XLSX.utils.book_new();
+		const workbook = new ExcelJS.Workbook();
 
 		// Build a map for quick lookup of net movements by product
 		const netMovementsMap = new Map();
@@ -62,7 +62,7 @@ export async function GET({ locals }) {
 					Descripción: row.descripcion,
 					'Inventario Sistema': row.inventario_sistema,
 					'Inventario Físico': row.inventario_fisico,
-					'Movimientos Netos': netMovementsMap.get(key) || '', // Use net movements from the map
+					'Movimientos Netos': netMovementsMap.get(key) || '',
 					'Fecha Inventario': row.fecha_inventario ? new Date(row.fecha_inventario) : null,
 					'Categoría Incidencia': row.categoria_incidencia || '',
 					Incidencia: row.incidencia || '',
@@ -73,31 +73,28 @@ export async function GET({ locals }) {
 				};
 			});
 
-			const inventarioWorksheet = XLSX.utils.json_to_sheet(inventarioData);
-
-			// Set column widths for inventory sheet (add one for Movimientos Netos)
-			const inventarioColWidths = [
-				{ wch: 15 }, // Bodega
-				{ wch: 12 }, // Ubicación
-				{ wch: 15 }, // Marca
-				{ wch: 8 }, // ID
-				{ wch: 15 }, // Código de Barras
-				{ wch: 20 }, // Número de Parte
-				{ wch: 30 }, // Descripción
-				{ wch: 12 }, // Inventario Sistema
-				{ wch: 12 }, // Inventario Físico
-				{ wch: 18 }, // Movimientos Netos
-				{ wch: 20 }, // Fecha Inventario
-				{ wch: 20 }, // Categoría Incidencia
-				{ wch: 30 }, // Incidencia
-				{ wch: 15 }, // EAN13 Unidad
-				{ wch: 15 }, // EAN13 Caja Master
-				{ wch: 20 }, // Actualizado Por
-				{ wch: 20 } // Validado Por
+			const inventarioSheet = workbook.addWorksheet('Inventario');
+			inventarioSheet.columns = [
+				{ header: 'Bodega', key: 'Bodega', width: 15 },
+				{ header: 'Ubicación', key: 'Ubicación', width: 12 },
+				{ header: 'Marca', key: 'Marca', width: 15 },
+				{ header: 'ID', key: 'ID', width: 8 },
+				{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
+				{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
+				{ header: 'Descripción', key: 'Descripción', width: 30 },
+				{ header: 'Inventario Sistema', key: 'Inventario Sistema', width: 12 },
+				{ header: 'Inventario Físico', key: 'Inventario Físico', width: 12 },
+				{ header: 'Movimientos Netos', key: 'Movimientos Netos', width: 18 },
+				{ header: 'Fecha Inventario', key: 'Fecha Inventario', width: 20 },
+				{ header: 'Categoría Incidencia', key: 'Categoría Incidencia', width: 20 },
+				{ header: 'Incidencia', key: 'Incidencia', width: 30 },
+				{ header: 'EAN13 Unidad', key: 'EAN13 Unidad', width: 15 },
+				{ header: 'EAN13 Caja Master', key: 'EAN13 Caja Master', width: 15 },
+				{ header: 'Actualizado Por', key: 'Actualizado Por', width: 20 },
+				{ header: 'Validado Por', key: 'Validado Por', width: 20 }
 			];
 
-			inventarioWorksheet['!cols'] = inventarioColWidths;
-			XLSX.utils.book_append_sheet(workbook, inventarioWorksheet, 'Inventario');
+			inventarioSheet.addRows(inventarioData);
 		}
 
 		// Process Movements Data
@@ -117,26 +114,23 @@ export async function GET({ locals }) {
 				Usuario: row.usuario_nombre || ''
 			}));
 
-			const movimientosWorksheet = XLSX.utils.json_to_sheet(movimientosData);
-
-			// Set column widths for movements sheet
-			const movimientosColWidths = [
-				{ wch: 15 }, // Bodega
-				{ wch: 12 }, // Ubicación
-				{ wch: 15 }, // Marca
-				{ wch: 15 }, // Código de Barras
-				{ wch: 20 }, // Número de Parte
-				{ wch: 25 }, // Descripción
-				{ wch: 12 }, // Tipo Movimiento
-				{ wch: 10 }, // Cantidad
-				{ wch: 15 }, // Número Documento
-				{ wch: 25 }, // Comentarios
-				{ wch: 20 }, // Fecha Movimiento
-				{ wch: 20 } // Usuario
+			const movimientosSheet = workbook.addWorksheet('Movimientos');
+			movimientosSheet.columns = [
+				{ header: 'Bodega', key: 'Bodega', width: 15 },
+				{ header: 'Ubicación', key: 'Ubicación', width: 12 },
+				{ header: 'Marca', key: 'Marca', width: 15 },
+				{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
+				{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
+				{ header: 'Descripción', key: 'Descripción', width: 25 },
+				{ header: 'Tipo Movimiento', key: 'Tipo Movimiento', width: 12 },
+				{ header: 'Cantidad', key: 'Cantidad', width: 10 },
+				{ header: 'Número Documento', key: 'Número Documento', width: 15 },
+				{ header: 'Comentarios', key: 'Comentarios', width: 25 },
+				{ header: 'Fecha Movimiento', key: 'Fecha Movimiento', width: 20 },
+				{ header: 'Usuario', key: 'Usuario', width: 20 }
 			];
 
-			movimientosWorksheet['!cols'] = movimientosColWidths;
-			XLSX.utils.book_append_sheet(workbook, movimientosWorksheet, 'Movimientos');
+			movimientosSheet.addRows(movimientosData);
 		}
 
 		// Create summary sheet
@@ -155,12 +149,7 @@ export async function GET({ locals }) {
 		const fileName = `inventario_${timestamp}.xlsx`;
 
 		// Write workbook to a buffer with explicit options
-		const buffer = XLSX.write(workbook, {
-			type: 'buffer',
-			bookType: 'xlsx',
-			cellDates: true,
-			numbers: Number
-		});
+		const buffer = await workbook.xlsx.writeBuffer();
 
 		// Prepare file for download
 		console.log(`Generated Excel file: ${fileName}`);
