@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { addToast } from '$lib/stores/toast';
 
+	export let data;
 	let numero_telefono = '';
 	let pin = '';
 
@@ -64,7 +65,14 @@
 
 <div class="flex min-h-screen items-center justify-center bg-gray-100">
 	<div class="w-full max-w-sm rounded-lg bg-white p-6 shadow-lg">
-		<h2 class="mb-6 text-center text-2xl font-bold text-gray-800">Toma de Inventario</h2>
+		<h2 class="text-2xl font-bold text-gray-800">Toma de Inventario</h2>
+		{#if data?.environmentLabel}
+			<div class="mb-4 text-right text-sm font-semibold text-red-600">
+				{data.environmentLabel}
+			</div>
+		{:else}
+			<div class="mb-4"></div>
+		{/if}
 
 		<form on:submit|preventDefault={login} class="space-y-4" aria-live="polite">
 			<div>

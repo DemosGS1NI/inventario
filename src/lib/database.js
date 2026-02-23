@@ -148,15 +148,14 @@ async function initializeDatabase() {
 
 		const { Pool } = await import('pg');
 
-		// Connection configuration for local development
+		// Connection configuration for local development (Neon requires SSL)
 		const connectionConfig = {
 			connectionString: process.env.POSTGRES_URL,
-			// Connection pool settings for local development
-			max: 20, // Maximum number of clients in the pool
-			idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-			connectionTimeoutMillis: 5000, // Return error after 5 seconds if connection fails
-			allowExitOnIdle: true, // Allow the pool to close when no queries are running
-			ssl: false // Disable SSL for local development
+			max: 20,
+			idleTimeoutMillis: 30000,
+			connectionTimeoutMillis: 5000,
+			allowExitOnIdle: true,
+			ssl: { rejectUnauthorized: false }
 		};
 
 		pool = new Pool(connectionConfig);
