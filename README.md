@@ -1,5 +1,5 @@
 # sv
-
+#forced deployment June 8 2025 due to a hard reset to rollback a lot of untested changes
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
 ## Creating a project.
