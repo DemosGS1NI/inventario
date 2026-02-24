@@ -1,10 +1,7 @@
 // src/lib/database.js
-// Environment-aware database adapter with connection pooling and query caching
-import { dev } from '$app/environment';
+// Environment-aware database adapter using @vercel/postgres with query caching
 import dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config();
+import { sql as vercelSql } from '@vercel/postgres';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -129,318 +126,86 @@ function detectModifiedTables(query) {
 	return Array.from(modifiedTables);
 }
 
-let pool;
 let connectionInfo = {};
 const queryCache = new QueryCache();
 
-// Initialize based on environment
+// Initialize single client using @vercel/postgres everywhere
 async function initializeDatabase() {
-	// Validate POSTGRES_URL exists
 	if (!process.env.POSTGRES_URL) {
 		throw new Error('POSTGRES_URL environment variable is required');
 	}
 
-	let dbClient;
-
-	if (dev) {
-		// Development: Use pg with local PostgreSQL
-		console.log('🔧 Initializing LOCAL database connection...');
-
-		const { Pool } = await import('pg');
-
-		// Connection configuration for local development (Neon requires SSL)
-		const connectionConfig = {
-			connectionString: process.env.POSTGRES_URL,
-			max: 20,
-			idleTimeoutMillis: 30000,
-			connectionTimeoutMillis: 5000,
-			allowExitOnIdle: true,
-			ssl: { rejectUnauthorized: false }
-		};
-
-		pool = new Pool(connectionConfig);
-
-		// Connection event handlers for monitoring
-		pool.on('connect', (client) => {
-			console.log('🟢 New database client connected');
-		});
-
-		pool.on('error', (err, client) => {
-			console.error('🔴 Database pool error:', err);
-		});
-
-		// Test connection
-		try {
-			const testResult = await pool.query('SELECT 1 as test, NOW() as timestamp');
-			console.log('✅ Local database connected successfully');
-			connectionInfo = {
-				environment: 'development',
-				type: 'postgresql',
-				poolSize: connectionConfig.max,
-				status: 'connected',
-				connectionString: process.env.POSTGRES_URL.replace(/:[^:@]*@/, ':****@') // Masked for security
-			};
-		} catch (error) {
-			console.error('❌ Local database connection failed:', error.message);
-			throw new Error(`Local database connection failed: ${error.message}`);
+	const dbClient = async function (strings, ...values) {
+		if (!Array.isArray(strings)) {
+			throw new Error('sql must be used as a tagged template: sql`...`');
 		}
 
-		// Create sql function that mimics @vercel/postgres template literal syntax
-		dbClient = async function (strings, ...values) {
-			if (Array.isArray(strings)) {
-				// Handle template literals: sql`SELECT * FROM users WHERE id = ${id}`
-				let query = '';
-				const params = [];
+		let query = '';
+		const params = [];
 
-				for (let i = 0; i < strings.length; i++) {
-					query += strings[i];
-					if (i < values.length) {
-						const value = values[i];
-						// Handle unsafe raw SQL
-						if (value && typeof value === 'object' && value.__unsafe) {
-							query += value.__unsafe;
-						} else {
-							params.push(value);
-							query += `$${params.length}`;
-						}
-					}
-				}
-
-				// Check if this is a cacheable SELECT query
-				const isCacheable =
-					query.trim().toLowerCase().startsWith('select') &&
-					!query.toLowerCase().includes('now()') &&
-					!query.toLowerCase().includes('current_timestamp');
-
-				if (isCacheable) {
-					const cachedResult = queryCache.get(query, params);
-					if (cachedResult) {
-						return cachedResult;
-					}
-				}
-
-				try {
-					const result = await pool.query(query, params);
-					const formattedResult = {
-						rows: result.rows,
-						rowCount: result.rowCount
-					};
-
-					if (isCacheable) {
-						queryCache.set(query, params, formattedResult);
-					} else {
-						// For non-SELECT queries, invalidate cache for modified tables
-						const modifiedTables = detectModifiedTables(query);
-						modifiedTables.forEach((table) => {
-							queryCache.invalidateTable(table);
-						});
-					}
-
-					return formattedResult;
-				} catch (error) {
-					console.error('🔴 SQL Query Error (DEV):', error.message);
-					console.error('Query:', query);
-					console.error('Params:', params);
-					throw error;
-				}
-			}
-
-			// Handle direct string queries (fallback)
-			const result = await pool.query(strings, values);
-			return {
-				rows: result.rows,
-				rowCount: result.rowCount
-			};
-		};
-
-		// Add query method for compatibility
-		dbClient.query = async (text, params = []) => {
-			try {
-				const result = await pool.query(text, params);
-
-				// Check if this is a cacheable SELECT query
-				const isCacheable =
-					text.trim().toLowerCase().startsWith('select') &&
-					!text.toLowerCase().includes('now()') &&
-					!text.toLowerCase().includes('current_timestamp');
-
-				if (isCacheable) {
-					const cachedResult = queryCache.get(text, params);
-					if (cachedResult) {
-						return cachedResult;
-					}
-				}
-
-				const formattedResult = {
-					rows: result.rows,
-					rowCount: result.rowCount
-				};
-
-				if (isCacheable) {
-					queryCache.set(text, params, formattedResult);
+		for (let i = 0; i < strings.length; i++) {
+			query += strings[i];
+			if (i < values.length) {
+				const value = values[i];
+				if (value && typeof value === 'object' && value.__unsafe) {
+					query += value.__unsafe;
 				} else {
-					// For non-SELECT queries, invalidate cache for modified tables
-					const modifiedTables = detectModifiedTables(text);
-					modifiedTables.forEach((table) => {
-						queryCache.invalidateTable(table);
-					});
+					params.push(value);
+					query += `$${params.length}`;
 				}
-
-				return formattedResult;
-			} catch (error) {
-				console.error('🔴 SQL Query Error (DEV):', error.message);
-				console.error('Query:', text);
-				console.error('Params:', params);
-				throw error;
 			}
-		};
-	} else {
-		// Production: Use @vercel/postgres with Neon
-		console.log('🚀 Initializing PRODUCTION database connection...');
+		}
+
+		const normalized = query.trim().toLowerCase();
+		const isCacheable =
+			normalized.startsWith('select') &&
+			!normalized.includes('now()') &&
+			!normalized.includes('current_timestamp');
+
+		if (isCacheable) {
+			const cachedResult = queryCache.get(query, params);
+			if (cachedResult) return cachedResult;
+		}
 
 		try {
-			const vercelPg = await import('@vercel/postgres');
-			const originalSql = vercelPg.sql;
+			const result = await vercelSql(strings, ...values);
+			const formattedResult = { rows: result.rows, rowCount: result.rowCount };
 
-			// Wrap the original sql function to add caching
-			dbClient = async function (strings, ...values) {
-				if (Array.isArray(strings)) {
-					let query = '';
-					const params = [];
+			if (isCacheable) {
+				queryCache.set(query, params, formattedResult);
+			} else {
+				const modifiedTables = detectModifiedTables(query);
+				modifiedTables.forEach((table) => queryCache.invalidateTable(table));
+			}
 
-					for (let i = 0; i < strings.length; i++) {
-						query += strings[i];
-						if (i < values.length) {
-							const value = values[i];
-							if (value && typeof value === 'object' && value.__unsafe) {
-								query += value.__unsafe;
-							} else {
-								params.push(value);
-								query += `$${params.length}`;
-							}
-						}
-					}
-
-					// Check if this is a cacheable SELECT query
-					const isCacheable =
-						query.trim().toLowerCase().startsWith('select') &&
-						!query.toLowerCase().includes('now()') &&
-						!query.toLowerCase().includes('current_timestamp');
-
-					if (isCacheable) {
-						const cachedResult = queryCache.get(query, params);
-						if (cachedResult) {
-							return cachedResult;
-						}
-					}
-
-					try {
-						const result = await originalSql(strings, ...values);
-						const formattedResult = {
-							rows: result.rows,
-							rowCount: result.rowCount
-						};
-
-						if (isCacheable) {
-							queryCache.set(query, params, formattedResult);
-						} else {
-							// For non-SELECT queries, invalidate cache for modified tables
-							const modifiedTables = detectModifiedTables(query);
-							modifiedTables.forEach((table) => {
-								queryCache.invalidateTable(table);
-							});
-						}
-
-						return formattedResult;
-					} catch (error) {
-						console.error('🔴 SQL Query Error (PROD):', error.message);
-						console.error('Query:', query);
-						console.error('Params:', params);
-						throw error;
-					}
-				}
-
-				// Handle direct string queries (fallback)
-				const result = await originalSql(strings, values);
-				return {
-					rows: result.rows,
-					rowCount: result.rowCount
-				};
-			};
-
-			// Add query method for compatibility
-			dbClient.query = async (text, params = []) => {
-				try {
-					const result = await originalSql(text, params);
-
-					// Check if this is a cacheable SELECT query
-					const isCacheable =
-						text.trim().toLowerCase().startsWith('select') &&
-						!text.toLowerCase().includes('now()') &&
-						!text.toLowerCase().includes('current_timestamp');
-
-					if (isCacheable) {
-						const cachedResult = queryCache.get(text, params);
-						if (cachedResult) {
-							return cachedResult;
-						}
-					}
-
-					const formattedResult = {
-						rows: result.rows,
-						rowCount: result.rowCount
-					};
-
-					if (isCacheable) {
-						queryCache.set(text, params, formattedResult);
-					} else {
-						// For non-SELECT queries, invalidate cache for modified tables
-						const modifiedTables = detectModifiedTables(text);
-						modifiedTables.forEach((table) => {
-							queryCache.invalidateTable(table);
-						});
-					}
-
-					return formattedResult;
-				} catch (error) {
-					console.error('🔴 SQL Query Error (PROD):', error.message);
-					console.error('Query:', text);
-					console.error('Params:', params);
-					throw error;
-				}
-			};
-
-			console.log('✅ Production database connected successfully');
-			connectionInfo = {
-				environment: 'production',
-				type: 'neon',
-				status: 'connected'
-			};
+			return formattedResult;
 		} catch (error) {
-			console.error('❌ Production database connection failed:', error.message);
-			throw new Error(`Production database connection failed: ${error.message}`);
+			console.error('🔴 SQL Query Error:', error.message);
+			console.error('Query:', query);
+			console.error('Params:', params);
+			throw error;
 		}
-	}
+	};
 
-	// Add cache invalidation method
 	dbClient.invalidateCache = async (tableName) => {
 		queryCache.invalidateTable(tableName);
 	};
 
+	connectionInfo = {
+		environment: process.env.NODE_ENV || 'production',
+		type: 'neon',
+		status: 'connected'
+	};
+
+	console.log('✅ Database initialized with @vercel/postgres');
 	return dbClient;
 }
 
-// Initialize the database connection
 const sql = await initializeDatabase();
 
-// Export the sql function and database info
 export { sql, connectionInfo };
 
-// Graceful shutdown function
 export async function shutdownDatabase() {
-	if (pool) {
-		console.log('🛑 Shutting down database pool...');
-		await pool.end();
-		console.log('✅ Database pool shut down successfully');
-	}
+	// No persistent pool to close with @vercel/postgres
+	console.log('🛑 shutdownDatabase called (no-op for vercel/postgres)');
 }

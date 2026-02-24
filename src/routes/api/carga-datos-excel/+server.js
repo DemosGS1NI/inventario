@@ -23,7 +23,7 @@ export const POST = async ({ request, locals }) => {
 		}
 
 		// Check if table has existing data FIRST - before processing the file
-		const existingDataCheck = await sql.query('SELECT COUNT(*) as record_count FROM inventario');
+		const existingDataCheck = await sql`SELECT COUNT(*) as record_count FROM inventario`;
 		const existingRecordCount = parseInt(existingDataCheck.rows[0].record_count);
 
 		if (existingRecordCount > 0) {
@@ -95,41 +95,37 @@ export const POST = async ({ request, locals }) => {
 		}
 
 		try {
-			// Allow legacy headers and new headers (codigo, GTIN, DUN)
-			const values = data
-				.map((row) => {
-					const codigoBarras = row.codigo || row.codigo_barras || null;
-					const gtin = row.GTIN || row.gtin || row.gtin13 || row.GTIN13 ||row.single_item_ean13 || null;
-					const masterCarton = row.DUN || row.dun14 || row.master_carton_ean13 || null;
-					const singleItem = row.GTIN || row.gtin13 || row.GTIN13 || row.gtin || row.single_item_ean13 || null;
+			// Allow legacy headers and new headers (codigo, GTIN, DUN) using tagged templates
+			await sql`BEGIN`;
+			for (const row of data) {
+				const codigoBarras = row.codigo || row.codigo_barras || null;
+				const gtin = row.GTIN || row.gtin || row.gtin13 || row.GTIN13 || row.single_item_ean13 || null;
+				const masterCarton = row.DUN || row.dun14 || row.master_carton_ean13 || null;
+				const singleItem = row.GTIN || row.gtin13 || row.GTIN13 || row.gtin || row.single_item_ean13 || null;
 
-					const esc = (v) => `'${v.toString().replace(/'/g, "''")}'`;
-
-					return `(
-				${row.id || 'NULL'},
-				${codigoBarras ? esc(codigoBarras) : 'NULL'},
-				${gtin ? esc(gtin) : 'NULL'},
-				${row.bodega ? esc(row.bodega) : 'NULL'},
-				${row.ubicacion ? esc(row.ubicacion) : 'NULL'},
-				${row.marca ? esc(row.marca) : 'NULL'},
-				${row.numero_parte ? esc(row.numero_parte) : 'NULL'},
-				${row.descripcion ? esc(row.descripcion) : 'NULL'},
-				${row.inventario_sistema || 'NULL'},
-				${masterCarton ? esc(masterCarton) : 'NULL'},
-				${singleItem ? esc(singleItem) : 'NULL'}
-			)`;
-				})
-				.join(',');
-
-			await sql.query(`
-				INSERT INTO inventario (
-					id, codigo_barras, gtin, bodega, ubicacion, marca,
-					numero_parte, descripcion, inventario_sistema, master_carton_ean13, single_item_ean13
-				) VALUES ${values}
-			`);
+				await sql`
+					INSERT INTO inventario (
+						id, codigo_barras, gtin, bodega, ubicacion, marca,
+						numero_parte, descripcion, inventario_sistema, master_carton_ean13, single_item_ean13
+					) VALUES (
+						${row.id || null},
+						${codigoBarras},
+						${gtin},
+						${row.bodega || null},
+						${row.ubicacion || null},
+						${row.marca || null},
+						${row.numero_parte || null},
+						${row.descripcion || null},
+						${row.inventario_sistema || null},
+						${masterCarton},
+						${singleItem}
+					)
+				`;
+			}
+			await sql`COMMIT`;
 
 			// Verify count
-			const finalCount = await sql.query('SELECT COUNT(*) as count FROM inventario');
+			const finalCount = await sql`SELECT COUNT(*) as count FROM inventario`;
 			const insertedCount = parseInt(finalCount.rows[0].count);
 
 			return successResponse(
@@ -138,8 +134,12 @@ export const POST = async ({ request, locals }) => {
 			);
 		} catch (error) {
 			console.error('Error al procesar el archivo:', error);
+			try {
+				await sql`ROLLBACK`;
+			} catch (rollbackErr) {
+				console.error('Error durante el rollback:', rollbackErr);
+			}
 
-			// Show both error message and detail to the user
 			let fullErrorMessage = error.message;
 			if (error.detail) {
 				fullErrorMessage += `. ${error.detail}`;

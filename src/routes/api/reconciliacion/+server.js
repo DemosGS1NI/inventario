@@ -16,50 +16,29 @@ export async function GET({ url, locals }) {
 		const ubicacion = url.searchParams.get('ubicacion');
 
 		// Build base query for inventory records that have been physically counted
-		let inventoryQuery = `
-      SELECT 
-        i.id,
-        i.bodega,
-        i.ubicacion, 
-        i.marca,
-        i.codigo_barras,
-        i.numero_parte,
-        i.descripcion,
-        i.inventario_sistema,
-        i.inventario_fisico,
-        i.fecha_inventario,
-        i.categoria_incidencia,
-        i.incidencia
-      FROM inventario i
-      WHERE i.fecha_inventario IS NOT NULL
-		 
-    `;
+		const inventoryFilters = [sql`i.fecha_inventario IS NOT NULL`];
+		if (bodega) inventoryFilters.push(sql`i.bodega = ${bodega}`);
+		if (marca) inventoryFilters.push(sql`i.marca = ${marca}`);
+		if (ubicacion) inventoryFilters.push(sql`i.ubicacion = ${ubicacion}`);
 
-		let queryParams = [];
-		let paramIndex = 1;
-
-		// Add filters
-		if (bodega) {
-			inventoryQuery += ` AND i.bodega = $${paramIndex}`;
-			queryParams.push(bodega);
-			paramIndex++;
-		}
-		if (marca) {
-			inventoryQuery += ` AND i.marca = $${paramIndex}`;
-			queryParams.push(marca);
-			paramIndex++;
-		}
-		if (ubicacion) {
-			inventoryQuery += ` AND i.ubicacion = $${paramIndex}`;
-			queryParams.push(ubicacion);
-			paramIndex++;
-		}
-
-		inventoryQuery +=
-			' ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras ';
-
-		// Execute inventory query
-		const inventoryResult = await sql.query(inventoryQuery, queryParams);
+		const inventoryResult = await sql`
+			SELECT 
+				i.id,
+				i.bodega,
+				i.ubicacion, 
+				i.marca,
+				i.codigo_barras,
+				i.numero_parte,
+				i.descripcion,
+				i.inventario_sistema,
+				i.inventario_fisico,
+				i.fecha_inventario,
+				i.categoria_incidencia,
+				i.incidencia
+			FROM inventario i
+			WHERE ${sql.join(inventoryFilters, sql` AND `)}
+			ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+		`;
 
 		if (inventoryResult.rows.length === 0) {
 			return successResponse(
@@ -79,31 +58,19 @@ export async function GET({ url, locals }) {
 		// Get all movements for the products found
 		const productCodes = inventoryResult.rows.map((row) => row.codigo_barras);
 
-		let movementsQuery = `
-      SELECT 
-        m.*,
-        u.nombre || ' ' || u.apellido AS usuario_nombre
-      FROM movimientos m
-      LEFT JOIN usuarios u ON m.usuario_id = u.id
-      WHERE m.codigo_barras = ANY($1)
-    `;
+		const movementFilters = [sql`m.codigo_barras = ANY(${productCodes})`];
+		if (bodega) movementFilters.push(sql`m.bodega = ${bodega}`);
+		if (marca && ubicacion) movementFilters.push(sql`m.marca = ${marca} AND m.ubicacion = ${ubicacion}`);
 
-		let movementsParams = [productCodes];
-
-		// Add movement filters to match inventory filters
-		if (bodega) {
-			movementsQuery += ` AND m.bodega = $2`;
-			movementsParams.push(bodega);
-		}
-		if (marca && ubicacion) {
-			const startParam = bodega ? 3 : 2;
-			movementsQuery += ` AND m.marca = $${startParam} AND m.ubicacion = $${startParam + 1}`;
-			movementsParams.push(marca, ubicacion);
-		}
-
-		movementsQuery += ' ORDER BY m.fecha_movimiento ASC';
-
-		const movementsResult = await sql.query(movementsQuery, movementsParams);
+		const movementsResult = await sql`
+			SELECT 
+				m.*,
+				u.nombre || ' ' || u.apellido AS usuario_nombre
+			FROM movimientos m
+			LEFT JOIN usuarios u ON m.usuario_id = u.id
+			WHERE ${sql.join(movementFilters, sql` AND `)}
+			ORDER BY m.fecha_movimiento ASC
+		`;
 
 		// Process reconciliation analysis
 		// Process reconciliation analysis
