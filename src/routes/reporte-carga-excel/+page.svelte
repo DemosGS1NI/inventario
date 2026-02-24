@@ -59,9 +59,7 @@
 	<h1 class="mb-6 text-center text-3xl font-bold text-gray-800">
 		Reporte de Resultado de Carga EXCEL
 	</h1>
-	<div class="mt-1 text-center text-xs text-gray-500">
-		Se han dejado columnas sin mostrar de manera intencionada
-	</div>
+	<div class="mt-1 text-center text-xs text-gray-500">Mostrando todas las columnas importadas</div>
 
 	<!-- Back to Main Menu Button -->
 	<div class="mb-6">
@@ -80,65 +78,62 @@
 		<table class="min-w-full border border-gray-300 bg-white">
 			<thead>
 				<tr class="bg-gray-200">
-					<th
-						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
-						>ID</th
-					>
-					<th
-						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
-						>Bodega</th
-					>
-					<th
-						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 md:table-cell"
-						>Marca</th
-					>
-					<th
-						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
-						>Código de Barras</th
-					>
-					<th
-						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
-						>Número de Parte</th
-					>
-					<th
-						class="hidden border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700 lg:table-cell"
-						>Descripción</th
-					>
-					<th
-						class="border-b border-gray-300 px-4 py-3 text-center text-sm font-semibold text-gray-700"
-						>Inv. Sistema</th
-					>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						ID
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Bodega
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Marca
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Ubicación
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Código
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						N.º Parte
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Descripción
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						Inv. Sistema
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						GTIN
+					</th>
+					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+						DUN
+					</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#if items && items.length > 0}
 					{#each items as item}
 						<tr class="transition-colors hover:bg-gray-50">
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
-								>{item.id}</td
-							>
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
-								>{item.bodega}</td
-							>
-							<td
-								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 md:table-cell"
-								>{item.marca}</td
-							>
-							<td
-								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
-								>{item.codigo_barras}</td
-							>
-							<td
-								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
-								>{item.numero_parte}</td
-							>
-							<td
-								class="hidden border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800 lg:table-cell"
-								>{item.descripcion}</td
-							>
-							<td class="border-b border-gray-200 px-4 py-3 text-center text-sm text-gray-800"
-								>{item.inventario_sistema}</td
-							>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.id}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.bodega}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.marca}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.ubicacion}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.codigo_barras}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.numero_parte}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.descripcion}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.inventario_sistema}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.gtin}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.master_carton_ean13}</td>
 						</tr>
 					{/each}
 				{:else if !loading}

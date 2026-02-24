@@ -3,30 +3,28 @@
 	import { addToast } from '$lib/stores/toast';
 
 	export let data;
-	let numero_telefono = '';
-	let pin = '';
+	let username = '';
+	let password = '';
 
 	// Focus the first input field on load
 	onMount(() => {
-		document.getElementById('numero_telefono').focus();
+		document.getElementById('username')?.focus();
 	});
 
 	async function login() {
 		// Validate inputs before sending request (Improved)
-		if (!numero_telefono.trim() || !pin.trim()) {
+		if (!username.trim() || !password.trim()) {
 			addToast('Por favor, complete todos los campos.', 'error');
 			return;
 		}
 
-		// Validate phone number format
-		if (!/^\d{8,15}$/.test(numero_telefono.trim())) {
-			addToast('El número de teléfono debe contener solo dígitos (8-15 caracteres).', 'error');
+		if (username.length < 3 || username.length > 50) {
+			addToast('El usuario debe tener entre 3 y 50 caracteres.', 'error');
 			return;
 		}
 
-		// Validate PIN format
-		if (pin.length < 4 || pin.length > 20) {
-			addToast('El PIN debe tener entre 4 y 20 caracteres.', 'error');
+		if (password.length < 4 || password.length > 100) {
+			addToast('La contraseña debe tener entre 4 y 100 caracteres.', 'error');
 			return;
 		}
 
@@ -36,7 +34,7 @@
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ numero_telefono, pin })
+				body: JSON.stringify({ username: username.toLowerCase(), password })
 			});
 
 			const result = await response.json();
@@ -76,30 +74,25 @@
 
 		<form on:submit|preventDefault={login} class="space-y-4" aria-live="polite">
 			<div>
-				<label for="numero_telefono" class="block text-sm font-medium text-gray-700">
-					Numero de Teléfono
-				</label>
+				<label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
 				<input
-					type="tel"
-					id="numero_telefono"
-					bind:value={numero_telefono}
-					placeholder="Ingrese su numero de teléfono"
-					maxlength="15"
-					pattern="[0-9]*"
-					inputmode="numeric"
+					type="text"
+					id="username"
+					bind:value={username}
+					placeholder="Ingrese su usuario"
+					maxlength="50"
 					class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
 					required
-					aria-describedby="telefono-help"
 				/>
 			</div>
 
 			<div>
-				<label for="pin" class="block text-sm font-medium text-gray-700">PIN</label>
+				<label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
 				<input
 					type="password"
-					id="pin"
-					bind:value={pin}
-					placeholder="Ingrese su PIN"
+					id="password"
+					bind:value={password}
+					placeholder="Ingrese su contraseña"
 					class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
 					required
 					autocomplete="off"

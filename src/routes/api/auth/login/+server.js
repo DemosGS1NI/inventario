@@ -85,32 +85,35 @@ export async function POST({ request, getClientAddress }) {
 	}
 
 	try {
-		const { numero_telefono, pin } = await request.json();
+		const { username, password } = await request.json();
 
 		// Validate input
-		if (!numero_telefono || !pin) {
-			return errorResponse(400, 'VALIDATION_ERROR', 'Numero de Telefono y Pin son requeridos');
+		if (!username || !password) {
+			return errorResponse(400, 'VALIDATION_ERROR', 'Usuario y contraseña son requeridos');
 		}
 
-		// Validate PIN format (basic validation)
-		if (!/^\d{4,6}$/.test(pin)) {
-			return errorResponse(400, 'VALIDATION_ERROR', 'El PIN debe tener entre 4 y 6 digitos');
+		// Basic validation
+		if (username.length < 3 || username.length > 50) {
+			return errorResponse(400, 'VALIDATION_ERROR', 'El usuario debe tener entre 3 y 50 caracteres');
+		}
+		if (password.length < 4 || password.length > 100) {
+			return errorResponse(400, 'VALIDATION_ERROR', 'La contraseña debe tener entre 4 y 100 caracteres');
 		}
 
-		// Fetch user by phone number
+		// Fetch user by username
 		const result = await sql`
-      SELECT u.id, pin_hash, activo, debe_cambiar_pin, nombre, r.nombre_rol
+      SELECT u.id, u.password_hash, u.activo, u.debe_cambiar_pin, u.nombre, r.nombre_rol
       FROM usuarios u
       JOIN roles r ON u.rol_id = r.id
-      WHERE numero_telefono = ${numero_telefono}
+      WHERE u.username = ${username.toLowerCase()}
     `;
 
 		const user = result.rows[0];
 
-		// Check if user exists and PIN is correct
-		if (!user || !(await bcrypt.compare(pin, user.pin_hash))) {
+		// Check if user exists and password is correct
+		if (!user || !(await bcrypt.compare(password, user.password_hash))) {
 			recordFailedAttempt(ip);
-			return errorResponse(401, 'INVALID_CREDENTIALS', 'Numero de Telefono o PIN invalido');
+			return errorResponse(401, 'INVALID_CREDENTIALS', 'Usuario o contraseña inválido');
 		}
 
 		// Check if user account is active

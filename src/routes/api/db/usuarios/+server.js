@@ -15,6 +15,7 @@ export async function GET(event) {
 		const result = await sql`
       SELECT 
         u.id, 
+				u.username,
         u.nombre, 
         u.apellido, 
         u.numero_telefono, 
@@ -29,7 +30,7 @@ export async function GET(event) {
         updator.nombre AS actualizador_nombre,
         updator.apellido AS actualizador_apellido,
         u.fecha_creacion,
-        u.fecha_actualizacion
+				u.fecha_actualizacion
       FROM usuarios u
       LEFT JOIN roles r ON u.rol_id = r.id
       LEFT JOIN usuarios creator ON u.created_by = creator.id
@@ -50,44 +51,49 @@ export async function POST(event) {
 		// Verify user is logged in
 		const user = requireAuth(event.locals);
 
-		const { nombre, apellido, numero_telefono, rol_id } = await event.request.json();
+		const { nombre, apellido, numero_telefono, rol_id, username, password } =
+			await event.request.json();
 
 		// Validate required fields
-		if (!nombre || !apellido || !numero_telefono || !rol_id) {
+		if (!nombre || !apellido || !numero_telefono || !rol_id || !username || !password) {
 			return errorResponse(
 				400,
 				'INVALID_INPUT',
-				'Falta algun campo requerido (Nombre, Apellido, Telefono, Rol)'
+				'Falta algun campo requerido (Usuario, Nombre, Apellido, Telefono, Rol, Contraseña)'
 			);
 		}
 
-		// Hash the default PIN "0000"
-		const defaultPinHash = await bcrypt.hash(AUTH.DEFAULT_PIN, AUTH.BCRYPT_ROUNDS);
+		// Hash the provided password (also set pin_hash for backward compat)
+		const passwordHash = await bcrypt.hash(password, AUTH.BCRYPT_ROUNDS);
 		const created_by = user.userId;
 		const result = await sql`
       INSERT INTO usuarios (
-        nombre, 
-        apellido, 
-        numero_telefono, 
-        rol_id, 
-        pin_hash, 
-        debe_cambiar_pin, 
-        activo,
-        created_by,
-        updated_by
+				nombre, 
+				apellido, 
+				numero_telefono, 
+				username,
+				rol_id, 
+				pin_hash,
+				password_hash,
+				debe_cambiar_pin, 
+				activo,
+				created_by,
+				updated_by
       )
       VALUES (
         ${nombre}, 
         ${apellido}, 
         ${numero_telefono}, 
+				${username.toLowerCase()},
         ${rol_id}, 
-        ${defaultPinHash}, 
-        true, 
-        true,
+				${passwordHash},
+				${passwordHash},
+				false, 
+				true,
         ${created_by},
         ${created_by}
       )
-      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
+			RETURNING id, username, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
     `;
 
 		return successResponse(result.rows[0], 'Usuario creado satisfactoriamente', { status: 201 });
@@ -103,33 +109,69 @@ export async function PUT(event) {
 		// Verify user is logged in
 		const user = requireAuth(event.locals);
 
-		const { id, numero_telefono, nombre, apellido, rol_id, activo, debe_cambiar_pin } =
+		const { id, numero_telefono, nombre, apellido, rol_id, activo, debe_cambiar_pin, username, password } =
 			await event.request.json();
 
 		// Validate required fields
-		if (!id || !nombre || !apellido || !numero_telefono || !rol_id) {
+		if (!id || !nombre || !apellido || !numero_telefono || !rol_id || !username) {
 			return errorResponse(
 				400,
 				'INVALID_INPUT',
-				'Falta algun campo requerido (Nombre, Apellido, Telefono, Rol)'
+				'Falta algun campo requerido (Usuario, Nombre, Apellido, Telefono, Rol)'
 			);
 		}
 
 		const updated_by = user.userId;
-		const result = await sql`
-      UPDATE usuarios
-      SET 
-        nombre = ${nombre}, 
-        apellido = ${apellido}, 
-        numero_telefono = ${numero_telefono}, 
-        rol_id = ${rol_id},  
-        activo = ${activo},  
-        debe_cambiar_pin = ${debe_cambiar_pin},
-        updated_by = ${updated_by},
-        fecha_actualizacion = CURRENT_TIMESTAMP
-      WHERE id = ${id}
-      RETURNING id, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
-    `;
+		const fields = {
+			nombre,
+			apellido,
+			numero_telefono,
+			username: username.toLowerCase(),
+			rol_id,
+			activo,
+			debe_cambiar_pin,
+			updated_by
+		};
+
+		if (password) {
+			const passwordHash = await bcrypt.hash(password, AUTH.BCRYPT_ROUNDS);
+			fields.password_hash = passwordHash;
+			fields.pin_hash = passwordHash;
+		}
+
+		const result = password
+			? await sql`
+				UPDATE usuarios
+				SET 
+					nombre = ${fields.nombre},
+					apellido = ${fields.apellido},
+					numero_telefono = ${fields.numero_telefono},
+					username = ${fields.username},
+					rol_id = ${fields.rol_id},
+					activo = ${fields.activo},
+					debe_cambiar_pin = ${fields.debe_cambiar_pin},
+					updated_by = ${fields.updated_by},
+					fecha_actualizacion = CURRENT_TIMESTAMP,
+					password_hash = ${fields.password_hash},
+					pin_hash = ${fields.pin_hash}
+				WHERE id = ${id}
+				RETURNING id, username, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
+			`
+			: await sql`
+				UPDATE usuarios
+				SET 
+					nombre = ${fields.nombre},
+					apellido = ${fields.apellido},
+					numero_telefono = ${fields.numero_telefono},
+					username = ${fields.username},
+					rol_id = ${fields.rol_id},
+					activo = ${fields.activo},
+					debe_cambiar_pin = ${fields.debe_cambiar_pin},
+					updated_by = ${fields.updated_by},
+					fecha_actualizacion = CURRENT_TIMESTAMP
+				WHERE id = ${id}
+				RETURNING id, username, nombre, apellido, numero_telefono, rol_id, activo, debe_cambiar_pin, created_by, updated_by
+			`;
 
 		if (result.rowCount === 0) {
 			return errorResponse(404, 'NOT_FOUND', 'Usuario no encontrado');

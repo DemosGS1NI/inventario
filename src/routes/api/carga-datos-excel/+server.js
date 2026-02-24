@@ -95,23 +95,30 @@ export const POST = async ({ request, locals }) => {
 		}
 
 		try {
-			// Batch insert all records using the working pattern
+			// Allow legacy headers and new headers (codigo, GTIN, DUN)
 			const values = data
-				.map(
-					(row) => `(
+				.map((row) => {
+					const codigoBarras = row.codigo || row.codigo_barras || null;
+					const gtin = row.GTIN || row.gtin || row.gtin13 || row.GTIN13 ||row.single_item_ean13 || null;
+					const masterCarton = row.DUN || row.dun14 || row.master_carton_ean13 || null;
+					const singleItem = row.GTIN || row.gtin13 || row.GTIN13 || row.gtin || row.single_item_ean13 || null;
+
+					const esc = (v) => `'${v.toString().replace(/'/g, "''")}'`;
+
+					return `(
 				${row.id || 'NULL'},
-				${row.codigo_barras ? `'${row.codigo_barras.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.gtin ? `'${row.gtin.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.bodega ? `'${row.bodega.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.ubicacion ? `'${row.ubicacion.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.marca ? `'${row.marca.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.numero_parte ? `'${row.numero_parte.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.descripcion ? `'${row.descripcion.toString().replace(/'/g, "''")}'` : 'NULL'},
+				${codigoBarras ? esc(codigoBarras) : 'NULL'},
+				${gtin ? esc(gtin) : 'NULL'},
+				${row.bodega ? esc(row.bodega) : 'NULL'},
+				${row.ubicacion ? esc(row.ubicacion) : 'NULL'},
+				${row.marca ? esc(row.marca) : 'NULL'},
+				${row.numero_parte ? esc(row.numero_parte) : 'NULL'},
+				${row.descripcion ? esc(row.descripcion) : 'NULL'},
 				${row.inventario_sistema || 'NULL'},
-				${row.master_carton_ean13 ? `'${row.master_carton_ean13.toString().replace(/'/g, "''")}'` : 'NULL'},
-				${row.single_item_ean13 ? `'${row.single_item_ean13.toString().replace(/'/g, "''")}'` : 'NULL'}
-			)`
-				)
+				${masterCarton ? esc(masterCarton) : 'NULL'},
+				${singleItem ? esc(singleItem) : 'NULL'}
+			)`;
+				})
 				.join(',');
 
 			await sql.query(`

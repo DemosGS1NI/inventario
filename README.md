@@ -1,41 +1,64 @@
-# sv
-#forced deployment June 8 2025 due to a hard reset to rollback a lot of untested changes
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+# Inventario App
 
-## Creating a project.
+SvelteKit-based inventory application backed by Postgres (Neon). Includes DB migrations, seeding, and environment-aware login labeling.
 
-If you're seeing this, you've probably already done this step. Congrats!
-This should be the development branch
+## Prerequisites
+- Node 18+
+- Postgres database URL (Neon recommended)
 
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
+## Environment
+Create `.env` with at least:
+```
+POSTGRES_URL=postgresql://user:pass@host/db?sslmode=require
+JWT_SECRET=your-long-secret
+DATA=development  # label shown on login (e.g., development, demo, comesa)
 ```
 
-## Developing
+## Install
+```
+npm install
+```
 
-I need to update this readme.
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
+## Run (dev)
+```
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+## Migrations
+We use node-pg-migrate via `scripts/run-migrate.js`.
+- Apply: `npm run migrate:apply`
+- Down:  `npm run migrate:down`
 
-To create a production version of your app:
+Current migrations:
+- 20260223-003-init-js.js: creates schema
+- 20260223-004-seed-admin.js: seeds admin role/user (phone 99999999, PIN 9999; hashed)
+- 20260223-005-seed-menu-data.js: seeds roles 1-3, menu categories/items, and role links
 
-```bash
-npm run build
+If schemas change, add a new migration file (do not edit applied ones), then run `npm run migrate:apply`.
+
+## Seeding
+`npm run migrate:apply` will also run the seed migrations listed above. Admin default:
+- Phone: 99999999
+- PIN:   9999
+
+## Database docs
+Regenerate DBML from the database:
+```
+npm run generate-schema
+```
+Outputs: `toma-inventario-schema.dbml`
+
+## Testing
+```
+npm test
 ```
 
-You can preview the production build with `npm run preview`.
+## Deployment
+Use `@sveltejs/adapter-vercel`. Set env vars in Vercel (POSTGRES_URL, JWT_SECRET, DATA). Run migrations against the target DB before or during deploy (one-time per release):
+```
+npm run migrate:apply
+```
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Notes
+- Login page shows DATA label below the title (red, right-aligned) so users know which dataset they are accessing.
+- DB clients are configured for Neon SSL.

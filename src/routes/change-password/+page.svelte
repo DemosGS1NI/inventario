@@ -3,23 +3,23 @@
 	import BackToMenu from '$lib/BackToMenu.svelte';
 	import { addToast } from '$lib/stores/toast';
 
-	let newPin = '';
-	let confirmNewPin = '';
+	let newPassword = '';
+	let confirmNewPassword = '';
 
 	const validateInputs = () => {
 		// Trim inputs to avoid blank spaces
-		newPin = newPin.trim();
-		confirmNewPin = confirmNewPin.trim();
+		newPassword = newPassword.trim();
+		confirmNewPassword = confirmNewPassword.trim();
 
 		// Check for empty inputs
-		if (!newPin || !confirmNewPin) {
+		if (!newPassword || !confirmNewPassword) {
 			addToast('Todos los campos son obligatorios.', 'error');
 			return false;
 		}
 
 		// Check for mismatched PINs
-		if (newPin !== confirmNewPin) {
-			addToast('Los PINs no coinciden.', 'error');
+		if (newPassword !== confirmNewPassword) {
+			addToast('Las contraseñas no coinciden.', 'error');
 			return false;
 		}
 
@@ -27,26 +27,26 @@
 		return true;
 	};
 
-	const changePin = async () => {
+	const changePassword = async () => {
 		// Validate inputs before sending request
 		if (!validateInputs()) return;
 
 		try {
-			console.log(newPin, confirmNewPin);
+			console.log(newPassword, confirmNewPassword);
 
-			const response = await fetch('/api/auth/change-pin', {
+			const response = await fetch('/api/auth/change-password', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					newPin,
-					confirmNewPin
+					newPassword,
+					confirmNewPassword
 				})
 			});
 
 			if (response.ok) {
-				addToast('¡PIN ha sido cambiado satisfactoriamente!', 'success');
+				addToast('¡Contraseña cambiada satisfactoriamente!', 'success');
 				setTimeout(() => {
 					goto('/menu');
 				}, 1500); // Give user time to see the success message
@@ -63,32 +63,32 @@
 <div class="flex min-h-screen items-center justify-center bg-gray-100">
 	<form
 		class="w-full max-w-md rounded-lg bg-white p-6 shadow-md"
-		on:submit|preventDefault={changePin}
+		on:submit|preventDefault={changePassword}
 	>
-		<h2 class="mb-4 text-center text-2xl font-bold">Cambiar PIN</h2>
+		<h2 class="mb-4 text-center text-2xl font-bold">Cambiar Contraseña</h2>
 
 		<BackToMenu />
 
 		<div class="mb-4">
-			<label for="newPin" class="mb-2 block font-medium text-gray-700">
-				Ingrese su nuevo PIN:
+			<label for="newPassword" class="mb-2 block font-medium text-gray-700">
+				Ingrese su nueva contraseña:
 			</label>
 			<input
 				type="password"
-				id="newPin"
+				id="newPassword"
 				class="w-full rounded-lg border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				bind:value={newPin}
+				bind:value={newPassword}
 			/>
 		</div>
 		<div class="mb-4">
-			<label for="confirmNewPin" class="mb-2 block font-medium text-gray-700">
-				Confirme su nuevo PIN:
+			<label for="confirmNewPassword" class="mb-2 block font-medium text-gray-700">
+				Confirme su nueva contraseña:
 			</label>
 			<input
 				type="password"
-				id="confirmNewPin"
+				id="confirmNewPassword"
 				class="w-full rounded-lg border border-gray-300 p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-				bind:value={confirmNewPin}
+				bind:value={confirmNewPassword}
 			/>
 		</div>
 
@@ -96,7 +96,7 @@
 			type="submit"
 			class="w-full rounded-lg bg-blue-500 px-4 py-2 font-medium text-white hover:bg-blue-600"
 		>
-			Cambiar PIN
+			Cambiar Contraseña
 		</button>
 	</form>
 </div>
