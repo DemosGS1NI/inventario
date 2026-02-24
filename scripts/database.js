@@ -29,7 +29,7 @@ async function initializeDatabase() {
 			idleTimeoutMillis: 30000,
 			connectionTimeoutMillis: 5000,
 			allowExitOnIdle: true,
-			ssl: false
+			ssl: { rejectUnauthorized: false }
 		};
 
 		pool = new Pool(connectionConfig);
