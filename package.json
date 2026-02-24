@@ -22,28 +22,28 @@
 		"migrate:down": "DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config -e 'if(!process.env.POSTGRES_URL){console.error(\"POSTGRES_URL is required\");process.exit(1)}' && DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config ./node_modules/.bin/node-pg-migrate down --database \"$POSTGRES_URL\" --migrations-dir migrations --sql-file --verbose"
 	},
 	"devDependencies": {
-		"@sveltejs/kit": "^2.10.0",
-		"@sveltejs/vite-plugin-svelte": "^4.0.0",
+		"@sveltejs/kit": "^2.11.3",
+		"@sveltejs/vite-plugin-svelte": "^5.1.1",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/svelte": "^5.2.6",
-		"@vitest/coverage-v8": "^1.6.0",
-		"@vitest/ui": "^1.6.0",
+		"@vitest/coverage-v8": "^2.1.4",
+		"@vitest/ui": "^2.1.4",
 		"autoprefixer": "^10.4.20",
 		"jsdom": "^24.1.3",
 		"prettier": "^3.3.2",
 		"prettier-plugin-svelte": "^3.2.6",
 		"prettier-plugin-tailwindcss": "^0.6.5",
-		"svelte": "^5.0.0",
+		"svelte": "^5.51.5",
 		"svelte2tsx": "^0.7.46",
 		"tailwindcss": "^3.4.9",
-		"vite": "^5.0.3",
-		"vitest": "^1.6.0",
-		"node-pg-migrate": "^7.6.2",
+		"vite": "^6.0.0",
+		"vitest": "^2.1.4",
+		"node-pg-migrate": "^8.0.4",
 		"pg": "^8.16.0"
 	},
 	"dependencies": {
 		"@ericblade/quagga2": "^1.4.0",
-		"@sveltejs/adapter-vercel": "^5.5.2",
+		"@sveltejs/adapter-vercel": "^6.3.2",
 		"@tailwindcss/forms": "^0.5.9",
 		"@vercel/postgres": "^0.10.0",
 		"@vercel/speed-insights": "^1.1.0",
@@ -53,5 +53,10 @@
 		"exceljs": "^4.4.0",
 		"jsonwebtoken": "^9.0.2",
 		"lucide-svelte": "^0.471.0"
+	},
+	"overrides": {
+		"cookie": "^0.7.0",
+		"devalue": "^5.6.3",
+		"svelte": "^5.51.5"
 	}
 }
