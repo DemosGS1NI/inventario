@@ -49,7 +49,7 @@ export const up = async (pgm) => {
 		{ id: 12, category_id: 3, label: 'Roles', href: '/roles', order_index: 2, is_active: true },
 		{ id: 13, category_id: 3, label: 'Categorias de Incidencias', href: '/categorias-incidencias', order_index: 3, is_active: true },
 		{ id: 15, category_id: 3, label: 'Limpieza de Tokens Vencidos', href: '/limpieza-tokens', order_index: 5, is_active: true },
-		{ id: 16, category_id: 4, label: 'Cambiar PIN', href: '/change-pin', order_index: 1, is_active: true },
+		{ id: 16, category_id: 4, label: 'Cambiar Password', href: '/change-password', order_index: 1, is_active: true },
 		{ id: 17, category_id: 4, label: 'Salir del Sistema', href: null, order_index: 2, is_active: true },
 		{ id: 14, category_id: 3, label: 'Limpieza de Tablas de Inventario y Movimientos', href: '/limpieza-tablas', order_index: 4, is_active: true },
 		{ id: 18, category_id: 3, label: 'Categorias del Menu Principal', href: '/menu-categories', order_index: 6, is_active: true },

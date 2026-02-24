@@ -45,10 +45,14 @@ export async function GET({ url, locals }) {
 				id,
 				bodega,
 				marca,
+				ubicacion,
 				codigo_barras,
 				numero_parte,
 				descripcion,
-				inventario_sistema
+				inventario_sistema,
+				gtin,
+				master_carton_ean13,
+				single_item_ean13
 			FROM inventario
 			ORDER BY bodega, marca, id
 			LIMIT ${limit}

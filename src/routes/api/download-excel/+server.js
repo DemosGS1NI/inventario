@@ -12,17 +12,28 @@ export async function GET({ locals }) {
 	try {
 		// Fetch inventory records with user names
 		const inventarioResult = await sql`
-       SELECT i.bodega, i.ubicacion, i.marca, i.id, i.codigo_barras, i.numero_parte, i.descripcion,
-              i.inventario_sistema, i.inventario_fisico,
-              timezone('America/Chicago', i.fecha_inventario) as fecha_inventario, 
-              i.categoria_incidencia, i.incidencia, i.single_item_ean13, i.master_carton_ean13,
-              u1.nombre || ' ' || u1.apellido AS actualizado,
-              u2.nombre || ' ' || u2.apellido AS validado
-        FROM inventario i 
-        LEFT JOIN usuarios u1 ON i.actualizado_por = u1.id
-        LEFT JOIN usuarios u2 ON i.validado_por = u2.id
-        ORDER BY i.bodega, i.ubicacion, i.marca, i.id
-    `;
+			SELECT i.id,
+			       i.bodega,
+			       i.marca,
+			       i.ubicacion,
+			       i.descripcion,
+			       i.codigo_barras,
+			       i.numero_parte,
+			       i.inventario_sistema,
+			       i.inventario_fisico,
+			       i.gtin,
+			       i.single_item_ean13,
+			       i.master_carton_ean13,
+			       i.categoria_incidencia,
+			       i.incidencia,
+			       timezone('America/Chicago', i.fecha_inventario) as fecha_inventario,
+			       u1.nombre || ' ' || u1.apellido AS actualizado,
+			       u2.nombre || ' ' || u2.apellido AS validado
+			FROM inventario i 
+			LEFT JOIN usuarios u1 ON i.actualizado_por = u1.id
+			LEFT JOIN usuarios u2 ON i.validado_por = u2.id
+			ORDER BY i.bodega, i.ubicacion, i.marca, i.id
+		`;
 
 		// Fetch movements records with user names
 		const movimientosResult = await sql`
@@ -53,45 +64,47 @@ export async function GET({ locals }) {
 			const inventarioData = inventarioResult.rows.map((row) => {
 				const key = `${row.bodega}||${row.ubicacion || ''}||${row.marca}||${row.codigo_barras}`;
 				return {
-					Bodega: row.bodega,
-					Ubicación: row.ubicacion,
-					Marca: row.marca,
-					ID: row.id,
-					'Código de Barras': row.codigo_barras,
-					'Número de Parte': row.numero_parte,
-					Descripción: row.descripcion,
-					'Inventario Sistema': row.inventario_sistema,
-					'Inventario Físico': row.inventario_fisico,
-					'Movimientos Netos': netMovementsMap.get(key) || '',
-					'Fecha Inventario': row.fecha_inventario ? new Date(row.fecha_inventario) : null,
-					'Categoría Incidencia': row.categoria_incidencia || '',
-					Incidencia: row.incidencia || '',
-					'EAN13 Unidad': row.single_item_ean13 || '',
-					'EAN13 Caja Master': row.master_carton_ean13 || '',
-					'Actualizado Por': row.actualizado || '',
-					'Validado Por': row.validado || ''
+					// Template-aligned columns first
+					id: row.id,
+					bodega: row.bodega,
+					marca: row.marca,
+					ubicacion: row.ubicacion,
+					codigo: row.codigo_barras,
+					numero_parte: row.numero_parte,
+					descripcion: row.descripcion,
+					inventario_sistema: row.inventario_sistema,
+					GTIN: row.gtin || row.single_item_ean13 || '',
+					DUN: row.master_carton_ean13 || '',
+					// System/extra columns afterwards
+					inventario_fisico: row.inventario_fisico,
+					movimientos_netos: netMovementsMap.get(key) || '',
+					fecha_inventario: row.fecha_inventario ? new Date(row.fecha_inventario) : null,
+					categoria_incidencia: row.categoria_incidencia || '',
+					incidencia: row.incidencia || '',
+					actualizado_por: row.actualizado || '',
+					validado_por: row.validado || ''
 				};
 			});
 
 			const inventarioSheet = workbook.addWorksheet('Inventario');
 			inventarioSheet.columns = [
-				{ header: 'Bodega', key: 'Bodega', width: 15 },
-				{ header: 'Ubicación', key: 'Ubicación', width: 12 },
-				{ header: 'Marca', key: 'Marca', width: 15 },
-				{ header: 'ID', key: 'ID', width: 8 },
-				{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
-				{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
-				{ header: 'Descripción', key: 'Descripción', width: 30 },
-				{ header: 'Inventario Sistema', key: 'Inventario Sistema', width: 12 },
-				{ header: 'Inventario Físico', key: 'Inventario Físico', width: 12 },
-				{ header: 'Movimientos Netos', key: 'Movimientos Netos', width: 18 },
-				{ header: 'Fecha Inventario', key: 'Fecha Inventario', width: 20 },
-				{ header: 'Categoría Incidencia', key: 'Categoría Incidencia', width: 20 },
-				{ header: 'Incidencia', key: 'Incidencia', width: 30 },
-				{ header: 'EAN13 Unidad', key: 'EAN13 Unidad', width: 15 },
-				{ header: 'EAN13 Caja Master', key: 'EAN13 Caja Master', width: 15 },
-				{ header: 'Actualizado Por', key: 'Actualizado Por', width: 20 },
-				{ header: 'Validado Por', key: 'Validado Por', width: 20 }
+				{ header: 'id', key: 'id', width: 10 },
+				{ header: 'bodega', key: 'bodega', width: 15 },
+				{ header: 'marca', key: 'marca', width: 15 },
+				{ header: 'ubicacion', key: 'ubicacion', width: 15 },
+				{ header: 'codigo', key: 'codigo', width: 18 },
+				{ header: 'numero_parte', key: 'numero_parte', width: 18 },
+				{ header: 'descripcion', key: 'descripcion', width: 30 },
+				{ header: 'inventario_sistema', key: 'inventario_sistema', width: 18 },
+				{ header: 'GTIN', key: 'GTIN', width: 18 },
+				{ header: 'DUN', key: 'DUN', width: 18 },
+				{ header: 'inventario_fisico', key: 'inventario_fisico', width: 18 },
+				{ header: 'movimientos_netos', key: 'movimientos_netos', width: 18 },
+				{ header: 'fecha_inventario', key: 'fecha_inventario', width: 20 },
+				{ header: 'categoria_incidencia', key: 'categoria_incidencia', width: 22 },
+				{ header: 'incidencia', key: 'incidencia', width: 28 },
+				{ header: 'actualizado_por', key: 'actualizado_por', width: 20 },
+				{ header: 'validado_por', key: 'validado_por', width: 20 }
 			];
 
 			inventarioSheet.addRows(inventarioData);

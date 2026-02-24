@@ -9,12 +9,14 @@
 	let loading = false;
 	let currentUser = {
 		id: null,
+		username: '',
 		numero_telefono: '',
 		nombre: '',
 		apellido: '',
 		rol_id: null,
 		activo: true,
-		debe_cambiar_pin: false
+		debe_cambiar_pin: false,
+		password: ''
 	};
 	let showForm = false;
 
@@ -58,10 +60,17 @@
 		const method = currentUser.id ? 'PUT' : 'POST';
 		loading = true;
 		try {
+			const payload = { ...currentUser };
+
+			// Do not send empty password on update
+			if (method === 'PUT' && !payload.password) {
+				delete payload.password;
+			}
+
 			const response = await fetch('/api/db/usuarios', {
 				method,
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(currentUser)
+				body: JSON.stringify(payload)
 			});
 
 			const data = await response.json();
@@ -75,12 +84,14 @@
 				showForm = false;
 				currentUser = {
 					id: null,
+					username: '',
 					numero_telefono: '',
 					nombre: '',
 					apellido: '',
 					rol_id: null,
 					activo: true,
-					debe_cambiar_pin: true
+					debe_cambiar_pin: true,
+					password: ''
 				};
 			} else {
 				addToast(data.error?.message || 'Error al guardar el usuario.', 'error');
@@ -147,12 +158,14 @@
 				showForm = true;
 				currentUser = {
 					id: null,
+					username: '',
 					numero_telefono: '',
 					nombre: '',
 					apellido: '',
 					rol_id: null,
 					activo: true,
-					debe_cambiar_pin: true
+					debe_cambiar_pin: true,
+					password: ''
 				};
 			}}
 		>
@@ -164,6 +177,17 @@
 		<div class="mx-auto mb-6 max-w-lg rounded bg-white px-8 py-6 shadow-md">
 			<form on:submit|preventDefault={saveUser}>
 				<div class="grid grid-cols-1 gap-4">
+					<div>
+						<label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
+						<input
+							type="text"
+							id="username"
+							bind:value={currentUser.username}
+							required
+							maxlength="50"
+							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
+						/>
+					</div>
 					<div>
 						<label for="nombre" class="block text-sm font-medium text-gray-700">Nombre</label>
 						<input
@@ -198,25 +222,35 @@
 							{/each}
 						</select>
 					</div>
-					<div>
-						<label for="activo" class="block text-sm font-medium text-gray-700">Activo</label>
+					<div class="flex items-center space-x-2">
+						<label for="activo" class="text-sm font-medium text-gray-700">Activo</label>
 						<input
 							type="checkbox"
 							id="activo"
 							bind:checked={currentUser.activo}
-							class="h-5 w-5 rounded border focus:border-primary focus:ring-primary"
+							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 						/>
 					</div>
 					<div>
-						<label for="numero_telefono" class="block text-sm font-medium text-gray-700"
-							>Teléfono</label
-						>
+						<label for="numero_telefono" class="block text-sm font-medium text-gray-700">Teléfono</label>
 						<input
 							type="text"
 							id="numero_telefono"
 							bind:value={currentUser.numero_telefono}
 							required
 							maxlength="10"
+							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
+						/>
+					</div>
+					<div>
+						<label for="password" class="block text-sm font-medium text-gray-700">
+							Contraseña (dejar en blanco para no cambiar)
+						</label>
+						<input
+							type="password"
+							id="password"
+							bind:value={currentUser.password}
+							maxlength="100"
 							class="w-full rounded border px-3 py-2 focus:border-primary focus:ring-primary"
 						/>
 					</div>
@@ -266,12 +300,14 @@
 							showForm = false;
 							currentUser = {
 								id: null,
+								username: '',
 								numero_telefono: '',
 								nombre: '',
 								apellido: '',
 								rol_id: null,
 								activo: true,
-								debe_cambiar_pin: true
+								debe_cambiar_pin: true,
+								password: ''
 							};
 						}}
 						class="rounded bg-gray-300 px-4 py-2 font-bold text-gray-800 hover:bg-gray-400"
@@ -298,6 +334,7 @@
 		<table class="w-full table-auto border-collapse">
 			<thead class="bg-gray-200 text-gray-700">
 				<tr>
+					<th class="border px-4 py-3">Usuario</th>
 					<th class="border px-4 py-3">Nombre</th>
 					<th class="border px-4 py-3">Apellido</th>
 					<th class="border px-4 py-3">Rol</th>
@@ -314,6 +351,7 @@
 				{#if usuarios.length > 0}
 					{#each usuarios as usuario}
 						<tr class="hover:bg-gray-50">
+							<td class="border px-4 py-3">{usuario.username}</td>
 							<td class="border px-4 py-3">{usuario.nombre}</td>
 							<td class="border px-4 py-3">{usuario.apellido}</td>
 							<td class="border px-4 py-3"

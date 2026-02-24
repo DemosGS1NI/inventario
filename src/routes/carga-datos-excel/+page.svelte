@@ -8,6 +8,15 @@
 	let showError = false;
 	let errorMessage = '';
 
+	const downloadTemplate = () => {
+		const link = document.createElement('a');
+		link.href = '/plantilla_inventario.xlsx';
+		link.download = 'plantilla_inventario.xlsx';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	};
+
 	const uploadFile = async () => {
 		if (!file) {
 			addToast('Seleccione un archivo', 'error');
@@ -55,6 +64,16 @@
 	<BacktoMenu />
 
 	<div class="mb-6 w-full max-w-md rounded-lg bg-white p-6 shadow-md">
+		<div class="mb-4 flex justify-end">
+			<button
+				on:click={downloadTemplate}
+				type="button"
+				class="rounded bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+			>
+				Descarga la Plantilla
+			</button>
+		</div>
+
 		<!-- Warning -->
 		<div class="mb-4 rounded border border-red-200 bg-red-50 p-3">
 			<p class="text-sm text-red-700">

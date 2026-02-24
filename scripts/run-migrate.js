@@ -21,8 +21,8 @@ async function main() {
 		dir: 'migrations',
 		migrationsTable: 'pgmigrations',
 		verbose: true,
-		// Use SQL files instead of JS
-		sqlFile: true
+		// Allow JS migrations (SQL files still supported if present)
+		sqlFile: false
 	});
 
 	console.log('Migrations completed');
