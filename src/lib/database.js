@@ -1,6 +1,7 @@
 // src/lib/database.js
 // Environment-aware database adapter using @vercel/postgres with query caching
 import dotenv from 'dotenv';
+import { building } from '$app/environment';
 import { sql as vercelSql } from '@vercel/postgres';
 
 // Cache configuration
@@ -128,6 +129,7 @@ function detectModifiedTables(query) {
 
 let connectionInfo = {};
 const queryCache = new QueryCache();
+let sqlClientPromise = null;
 
 // Initialize single client using @vercel/postgres everywhere
 async function initializeDatabase() {
@@ -201,7 +203,19 @@ async function initializeDatabase() {
 	return dbClient;
 }
 
-const sql = await initializeDatabase();
+// Lazy wrapper so builds (analyze) do not require DB env; real init happens on first use
+const sql = async (strings, ...values) => {
+	if (building) {
+		throw new Error('Database access not available during build step');
+	}
+
+	if (!sqlClientPromise) {
+		sqlClientPromise = initializeDatabase();
+	}
+
+	const client = await sqlClientPromise;
+	return client(strings, ...values);
+};
 
 export { sql, connectionInfo };
 

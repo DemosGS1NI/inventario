@@ -74,13 +74,6 @@
 			</button>
 		</div>
 
-		<!-- Warning -->
-		<div class="mb-4 rounded border border-red-200 bg-red-50 p-3">
-			<p class="text-sm text-red-700">
-				<strong>Atención:</strong> Esto reemplazará todos los datos existentes.
-			</p>
-		</div>
-
 		<!-- File Input -->
 		<label for="file-input" class="mb-2 block text-sm font-medium text-gray-700">
 			Archivo Excel (.xlsx)
