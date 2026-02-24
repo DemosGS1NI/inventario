@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS inventario (
     master_carton_ean13 VARCHAR(20),
     PRIMARY KEY (id, bodega),
     UNIQUE (codigo_barras),
+    UNIQUE (marca),
     UNIQUE (numero_parte),
     UNIQUE (single_item_ean13)
 );
