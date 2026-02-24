@@ -1,5 +1,12 @@
 // src/lib/environment.js
+import { building } from '$app/environment';
+
 export function validateEnvironment() {
+	if (building) {
+		console.warn('⚠️ Skipping environment validation during build');
+		return;
+	}
+
 	const required = ['JWT_SECRET', 'POSTGRES_URL'];
 	const missing = [];
 

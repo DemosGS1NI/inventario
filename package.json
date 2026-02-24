@@ -17,9 +17,9 @@
 		"docs:deploy": "dbdocs build toma-inventario-schema.dbml --project=toma-inventario",
 		"docs:remove": "dbdocs remove toma-inventario",
 		"generate-schema": "node scripts/generate-schema.js",
-		"migrate:apply:dev": "NODE_ENV=development node scripts/run-migrate.js up",
-		"migrate:apply": "node scripts/run-migrate.js up",
-		"migrate:down": "node scripts/run-migrate.js down"
+		"migrate:apply:dev": "NODE_ENV=development node -r dotenv/config -e 'if(!process.env.POSTGRES_URL){console.error(\"POSTGRES_URL is required\");process.exit(1)}' && NODE_ENV=development DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config ./node_modules/.bin/node-pg-migrate up --database \"$POSTGRES_URL\" --migrations-dir migrations --sql-file --verbose",
+		"migrate:apply": "DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config -e 'if(!process.env.POSTGRES_URL){console.error(\"POSTGRES_URL is required\");process.exit(1)}' && DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config ./node_modules/.bin/node-pg-migrate up --database \"$POSTGRES_URL\" --migrations-dir migrations --sql-file --verbose",
+		"migrate:down": "DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config -e 'if(!process.env.POSTGRES_URL){console.error(\"POSTGRES_URL is required\");process.exit(1)}' && DATABASE_URL=\"$POSTGRES_URL\" PGSSLMODE=require node -r dotenv/config ./node_modules/.bin/node-pg-migrate down --database \"$POSTGRES_URL\" --migrations-dir migrations --sql-file --verbose"
 	},
 	"devDependencies": {
 		"@sveltejs/kit": "^2.10.0",
@@ -38,7 +38,8 @@
 		"tailwindcss": "^3.4.9",
 		"vite": "^5.0.3",
 		"vitest": "^1.6.0",
-		"node-pg-migrate": "^7.6.2"
+		"node-pg-migrate": "^7.6.2",
+		"pg": "^8.16.0"
 	},
 	"dependencies": {
 		"@ericblade/quagga2": "^1.4.0",
@@ -46,14 +47,11 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@vercel/postgres": "^0.10.0",
 		"@vercel/speed-insights": "^1.1.0",
-		"@zxing/browser": "^0.1.5",
 		"bcrypt": "^5.1.1",
 		"date-fns": "^4.1.0",
 		"dotenv": "^16.4.5",
 		"exceljs": "^4.4.0",
 		"jsonwebtoken": "^9.0.2",
-		"lucide-svelte": "^0.471.0",
-		"pg": "^8.16.0",
-		"utf-8-validate": "^6.0.5"
+		"lucide-svelte": "^0.471.0"
 	}
 }
