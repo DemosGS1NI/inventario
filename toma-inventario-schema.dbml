@@ -1,10 +1,82 @@
 // Auto-generated schema from database
-// Generated on: 2026-02-23T19:54:58.033Z
+// Generated on: 2026-02-27T17:13:35.041Z
 // Source: PostgreSQL database
 
 Project toma_inventario {
   database_type: 'PostgreSQL'
   Note: 'Inventory Management System - Auto-generated documentation'
+}
+
+Table audit_log {
+  id integer [pk, increment]
+  action_type varchar(50) [not null]
+  performed_by integer [not null, ref: > usuarios.id]
+  action_details text
+  timestamp timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table categorias_incidencias {
+  id integer [pk, increment]
+  categoria text [not null]
+  descripcion text
+}
+
+Table inventario {
+  id decimal [pk]
+  codigo_barras text [unique, not null]
+  gtin text
+  bodega text [pk]
+  ubicacion text
+  marca text
+  numero_parte text [unique]
+  descripcion text
+  inventario_sistema decimal
+  inventario_fisico decimal
+  fecha_inventario timestamp
+  categoria_incidencia text
+  incidencia text
+  actualizado_por decimal
+  validado boolean
+  validado_por decimal
+  single_item_ean13 varchar(20) [unique]
+  master_carton_ean13 varchar(20)
+}
+
+Table menu_categories {
+  id integer [pk, increment]
+  name varchar(100) [not null]
+  order_index integer [not null, default: 0]
+}
+
+Table menu_item_roles {
+  menu_item_id integer [pk, ref: > menu_items.id]
+  role_id integer [pk, ref: > roles.id]
+}
+
+Table menu_items {
+  id integer [pk, increment]
+  category_id integer [not null, ref: > menu_categories.id]
+  label varchar(100) [not null]
+  href varchar(255)
+  order_index integer [not null, default: 0]
+  is_active boolean [not null, default: true]
+}
+
+Table movimientos {
+  id integer [pk, increment]
+  bodega varchar [unique]
+  ubicacion varchar
+  marca varchar [unique]
+  codigo_barras varchar [unique]
+  numero_parte varchar
+  descripcion varchar
+  tipo_movimiento varchar
+  cantidad integer
+  fecha_movimiento timestamp [default: `CURRENT_TIMESTAMP`]
+  numero_documento varchar [unique, not null]
+  comentarios text
+  usuario_id integer [ref: > usuarios.id]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
 Table pgmigrations {
@@ -13,19 +85,46 @@ Table pgmigrations {
   run_on timestamp [not null]
 }
 
-Table playing_with_neon {
-  id integer [pk, increment]
-  name text [not null]
-  value float
+Table revoked_tokens {
+  jti varchar(255) [pk]
+  expiry timestamp [not null]
+  revoked_at timestamp [default: `CURRENT_TIMESTAMP`]
+}
+
+Table roles {
+  id smallint [pk, increment]
+  nombre_rol varchar(50) [unique, not null]
+  descripcion text
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`]
+  creado_por smallint [ref: > usuarios.id]
+}
+
+Table usuarios {
+  id smallint [pk, increment]
+  numero_telefono char(10) [unique, not null]
+  pin_hash char(60) [not null]
+  nombre varchar(50)
+  apellido varchar(50)
+  rol_id smallint [ref: > roles.id]
+  activo boolean [default: true]
+  fecha_creacion timestamp [default: `CURRENT_TIMESTAMP`]
+  ultimo_login timestamp
+  fecha_actualizacion timestamp [default: `CURRENT_TIMESTAMP`]
+  debe_cambiar_pin boolean [default: false]
+  created_by smallint [ref: > usuarios.id]
+  updated_by smallint [ref: > usuarios.id]
+  username text [unique, not null]
+  password_hash char(60) [not null]
 }
 
 // Generated Schema Summary
 Note schema_info {
   '''
   Database: PostgreSQL
-  Generated: 2026-02-23T19:54:58.035Z
-  Tables: 2
-  Foreign Keys: 0
+  Generated: 2026-02-27T17:13:35.044Z
+  Tables: 11
+  Foreign Keys: 9
   
   This schema was automatically generated from the database structure.
   Manual modifications may be overwritten on regeneration.

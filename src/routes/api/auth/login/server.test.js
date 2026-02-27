@@ -6,7 +6,7 @@ vi.mock('@vercel/postgres', () => ({
 	sql: vi.fn()
 }));
 
-vi.mock('bcrypt', () => ({
+vi.mock('bcryptjs', () => ({
 	default: {
 		compare: vi.fn()
 	},
@@ -64,7 +64,7 @@ describe('POST /api/auth/login', () => {
 		const { sql } = await import('@vercel/postgres');
 		mockSql = sql;
 
-		const bcrypt = await import('bcrypt');
+		const bcrypt = await import('bcryptjs');
 		mockBcrypt = bcrypt.default || bcrypt;
 
 		const jwt = await import('jsonwebtoken');

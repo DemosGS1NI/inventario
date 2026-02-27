@@ -68,6 +68,9 @@
 				addToast('Error loading marcas', 'error');
 			}
 		}
+
+		await tick();
+		barcodeInput?.focus();
 	}
 
 	async function handleBarcodeInput(event) {

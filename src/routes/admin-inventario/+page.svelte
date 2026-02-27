@@ -339,13 +339,6 @@
 		? 'calc(100vh - 220px - 120px)' // header+filters+padding + progress
 		: 'calc(100vh - 220px)'; // header+filters+padding only
 
-	// ===== LIFECYCLE =====
-	onMount(async () => {
-		console.log('🔄 [admin-inventario] Component mounted');
-		await fetchBodegas();
-		await fetchRecords(); // Fetch all records on mount
-	});
-
 	onDestroy(() => {
 		if (refreshTimeout) {
 			clearTimeout(refreshTimeout);
@@ -387,7 +380,7 @@
 				on:click={refreshData}
 				on:touchstart={handleTouchStart}
 				on:touchend={handleTouchEnd}
-				disabled={loading || !selectedUbicacion}
+				disabled={loading}
 			>
 				<RefreshCw size={20} class={loading ? 'animate-spin' : ''} />
 				<span class="hidden md:inline">{loading ? 'Refreshing...' : 'Refresh'}</span>

@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export const up = async (pgm) => {
 	// Ensure unique constraint on role name for conflict handling
