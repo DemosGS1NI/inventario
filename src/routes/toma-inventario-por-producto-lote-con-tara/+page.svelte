@@ -35,14 +35,29 @@
 	let loteInput;
 	let stockQuantityInput;
 	let stockQuantity = 0;
+	let stockQuantityDisplay = '';
 	let notas = '';
 	let selectedCategoriaIncidencia = '';
 	let codigoBarras = '';
 	let lote = '';
 	let showTareModal = false;
-	let tareValue = 0;
-	let grossWeight = '';
+	let tareValue = '0.00';
+	let grossWeight = '0.00';
 	let netWeight = 0;
+	let netWeightDisplay = '0.00';
+
+	const formatNumber = (value) =>
+		new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+			Number(value ?? 0)
+		);
+
+	const parseNumber = (value) => {
+		if (value === null || value === undefined) return NaN;
+		const normalized = String(value).replace(/,/g, '');
+		return Number(normalized);
+	};
+
+	stockQuantityDisplay = formatNumber(stockQuantity);
 
 	function decodeGs1(value) {
 		const result = { code: null, lote: null, unsupported: [] };
@@ -185,6 +200,7 @@
 			if (data.status === 'success' && data.data?.length > 0) {
 				const product = data.data[0];
 				stockQuantity = product.inventario_fisico || 0;
+				stockQuantityDisplay = formatNumber(stockQuantity);
 				notas = product.notas || '';
 				selectedCategoriaIncidencia = product.categoria_incidencia || '';
 				await tick();
@@ -249,6 +265,7 @@
 	function resetFields() {
 		codigoBarras = '';
 		stockQuantity = 0;
+		stockQuantityDisplay = formatNumber(0);
 		notas = '';
 		selectedCategoriaIncidencia = '';
 		lote = '';
@@ -262,9 +279,10 @@
 	}
 
 	function openTareModal() {
-		tareValue = Number(currentProduct?.tare) || 0;
-		grossWeight = '';
+		tareValue = formatNumber(currentProduct?.tare || 0);
+		grossWeight = formatNumber(0);
 		netWeight = 0;
+		netWeightDisplay = formatNumber(0);
 		showTareModal = true;
 	}
 
@@ -273,19 +291,45 @@
 	}
 
 	function updateNetWeight() {
-		const gross = Number(grossWeight);
-		const tareNum = Number(tareValue);
+		const gross = parseNumber(grossWeight);
+		const tareNum = parseNumber(tareValue);
 		if (Number.isNaN(gross) || Number.isNaN(tareNum)) {
 			netWeight = 0;
+			netWeightDisplay = formatNumber(0);
 			return;
 		}
 		netWeight = Math.max(gross - tareNum, 0);
+		netWeightDisplay = formatNumber(netWeight);
+	}
+
+	function handleStockInput(event) {
+		const raw = event.target.value;
+		stockQuantityDisplay = raw;
+		const parsed = parseNumber(raw);
+		if (!Number.isNaN(parsed)) {
+			stockQuantity = parsed;
+		}
+	}
+
+	function handleStockBlur() {
+		stockQuantityDisplay = formatNumber(stockQuantity);
+	}
+
+	function handleTareInput(event) {
+		tareValue = event.target.value;
+		updateNetWeight();
+	}
+
+	function handleGrossInput(event) {
+		grossWeight = event.target.value;
+		updateNetWeight();
 	}
 
 	function applyNetToStock() {
 		const current = Number(stockQuantity) || 0;
 		const added = Number(netWeight) || 0;
 		stockQuantity = current + added;
+		stockQuantityDisplay = formatNumber(stockQuantity);
 
 		const now = new Date();
 		const hh = String(now.getHours()).padStart(2, '0');
@@ -307,7 +351,7 @@
 {/if}
 
 <div class="min-h-screen bg-gray-100 p-6">
-	<h1 class="mb-4 text-2xl font-bold">Toma de Inventario por Producto</h1>
+	<h1 class="mb-4 text-2xl font-bold">Toma de Inventario</h1>
 
 	<div>
 		<BackToMenuButton />
@@ -346,7 +390,7 @@
 
 	<div class="mb-4">
 		<label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-			Codigo Interno, Numero de Parte o GTIN13
+			Codigo Interno, Numero de Parte o GTIN
 		</label>
 		<input
 			type="text"
@@ -377,14 +421,9 @@
 	{#if currentProduct}
 		<div class="mb-4 rounded bg-white p-4 shadow">
 			<div class="mb-4 grid grid-cols-2 gap-4">
-				<p><strong>Código:</strong> {currentProduct.codigo}</p>
-				<p><strong>Número Parte:</strong> {currentProduct.numero_parte}</p>
 				<p><strong>Descripción:</strong> {currentProduct.descripcion}</p>
-				<p><strong>Lote:</strong> {currentProduct.lote}</p>
 				<p><strong>Unidad Medida:</strong> {currentProduct.unidad_medida}</p>
-				<p><strong>Tare:</strong> {currentProduct.tare}</p>
-				<p><strong>GTIN:</strong> {currentProduct.gtin}</p>
-				<p><strong>DUN14:</strong> {currentProduct.dun14}</p>
+				<p><strong>Tare:</strong> {formatNumber(currentProduct.tare)}</p>
 				<p><strong>Fecha Inventario:</strong> {formatDateTime(currentProduct.fecha_inventario)}</p>
 			</div>
 
@@ -395,10 +434,13 @@
 					</label>
 					<input
 						id="stockQuantity"
-						type="number"
-						bind:value={stockQuantity}
+						type="text"
+						value={stockQuantityDisplay}
+						on:input={handleStockInput}
+						on:blur={handleStockBlur}
 						bind:this={stockQuantityInput}
-						class="mt-1 block w-full rounded border p-2"
+						inputmode="decimal"
+						class="mt-1 block w-full rounded border p-2 text-right"
 					/>
 					<button
 						type="button"
@@ -457,37 +499,57 @@
 	{#if showTareModal}
 		<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
 			<div class="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-				<h2 class="mb-4 text-lg font-semibold">Calcular peso neto</h2>
+				<h2 class="mb-4 text-lg font-semibold">Calcular Inventario</h2>
 				<div class="space-y-4">
-					<p class="text-sm text-gray-700">Inventario actual: {stockQuantity}</p>
-					<div>
-						<label for="tareModal" class="block text-sm font-medium text-gray-700">Tare (contenedor)</label>
+					<div class="grid grid-cols-2 items-center gap-3">
+						<label class="text-sm text-gray-700" for="inventarioActualModal">Inventario actual</label>
+						<input
+							id="inventarioActualModal"
+							type="text"
+							value={stockQuantityDisplay}
+							readonly
+							inputmode="decimal"
+							class="block w-full rounded border bg-gray-100 p-2 text-right"
+						/>
+
+						<label class="text-sm text-gray-700" for="tareModal">Tare (contenedor)</label>
 						<input
 							id="tareModal"
-							type="number"
-							bind:value={tareValue}
-							on:input={updateNetWeight}
-							class="mt-1 block w-full rounded border p-2"
+							type="text"
+							value={tareValue}
+							on:input={handleTareInput}
+							inputmode="decimal"
+							class="block w-full rounded border p-2 text-right"
 						/>
-					</div>
-					<div>
-						<label for="grossModal" class="block text-sm font-medium text-gray-700">Peso bruto</label>
+
+						<label class="text-sm text-gray-700" for="grossModal">Peso bruto</label>
 						<input
 							id="grossModal"
-							type="number"
-							bind:value={grossWeight}
-							on:input={updateNetWeight}
-							class="mt-1 block w-full rounded border p-2"
+							type="text"
+							value={grossWeight}
+							on:input={handleGrossInput}
+							inputmode="decimal"
+							class="block w-full rounded border p-2 text-right"
 						/>
-					</div>
-					<div>
-						<label for="netModal" class="block text-sm font-medium text-gray-700">Peso neto</label>
+
+						<label class="text-sm text-gray-700" for="netModal">Peso neto</label>
 						<input
 							id="netModal"
-							type="number"
-							value={netWeight}
+							type="text"
+							value={netWeightDisplay}
 							readonly
-							class="mt-1 block w-full rounded border bg-gray-100 p-2"
+							inputmode="decimal"
+							class="block w-full rounded border bg-gray-100 p-2 text-right"
+						/>
+
+						<label class="text-sm font-semibold text-gray-900" for="nuevoInventarioModal">Nuevo inventario</label>
+						<input
+							id="nuevoInventarioModal"
+							type="text"
+							value={formatNumber((Number(stockQuantity) || 0) + (Number(netWeight) || 0))}
+							readonly
+							inputmode="decimal"
+							class="block w-full rounded border bg-gray-100 p-2 text-right"
 						/>
 					</div>
 				</div>
@@ -504,7 +566,7 @@
 						on:click={applyNetToStock}
 						class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
 					>
-						Usar peso neto
+						Aplicar
 					</button>
 				</div>
 			</div>
