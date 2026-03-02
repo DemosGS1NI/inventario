@@ -27,17 +27,17 @@ export async function GET({ url, locals }) {
 				i.bodega,
 				i.ubicacion, 
 				i.marca,
-				i.codigo_barras,
+				i.codigo,
 				i.numero_parte,
 				i.descripcion,
 				i.inventario_sistema,
 				i.inventario_fisico,
 				i.fecha_inventario,
 				i.categoria_incidencia,
-				i.incidencia
+				i.notas
 			FROM inventario i
 			WHERE ${sql.join(inventoryFilters, sql` AND `)}
-			ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+			ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 		`;
 
 		if (inventoryResult.rows.length === 0) {
@@ -56,9 +56,9 @@ export async function GET({ url, locals }) {
 		}
 
 		// Get all movements for the products found
-		const productCodes = inventoryResult.rows.map((row) => row.codigo_barras);
+		const productCodes = inventoryResult.rows.map((row) => row.codigo);
 
-		const movementFilters = [sql`m.codigo_barras = ANY(${productCodes})`];
+		const movementFilters = [sql`m.codigo = ANY(${productCodes})`];
 		if (bodega) movementFilters.push(sql`m.bodega = ${bodega}`);
 		if (marca && ubicacion) movementFilters.push(sql`m.marca = ${marca} AND m.ubicacion = ${ubicacion}`);
 
@@ -78,7 +78,7 @@ export async function GET({ url, locals }) {
 			// Get movements for this product
 			const productMovements = movementsResult.rows.filter(
 				(movement) =>
-					movement.codigo_barras === record.codigo_barras &&
+					movement.codigo === record.codigo &&
 					movement.bodega === record.bodega &&
 					movement.marca === record.marca &&
 					(movement.ubicacion === record.ubicacion || !movement.ubicacion)
@@ -189,7 +189,7 @@ export async function GET({ url, locals }) {
 					Bodega: record.bodega,
 					Ubicación: record.ubicacion,
 					Marca: record.marca,
-					'Código de Barras': record.codigo_barras,
+					Código: record.codigo,
 					'Número de Parte': record.numero_parte,
 					Descripción: record.descripcion,
 					'Inventario Sistema': record.inventario_sistema,
@@ -205,7 +205,7 @@ export async function GET({ url, locals }) {
 					'Salidas Post-Conteo': record.salidasPostConteo,
 					'Fecha Inventario': record.fecha_inventario,
 					'Categoría Incidencia': record.categoria_incidencia || '',
-					Incidencia: record.incidencia || '',
+					Notas: record.notas || '',
 					Explicación: record.explicacion
 				}));
 
@@ -216,7 +216,7 @@ export async function GET({ url, locals }) {
 					{ header: 'Bodega', key: 'Bodega', width: 15 },
 					{ header: 'Ubicación', key: 'Ubicación', width: 12 },
 					{ header: 'Marca', key: 'Marca', width: 15 },
-					{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
+					{ header: 'Código', key: 'Código', width: 15 },
 					{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
 					{ header: 'Descripción', key: 'Descripción', width: 30 },
 					{ header: 'Inventario Sistema', key: 'Inventario Sistema', width: 12 },
@@ -232,7 +232,7 @@ export async function GET({ url, locals }) {
 					{ header: 'Salidas Post-Conteo', key: 'Salidas Post-Conteo', width: 15 },
 					{ header: 'Fecha Inventario', key: 'Fecha Inventario', width: 20 },
 					{ header: 'Categoría Incidencia', key: 'Categoría Incidencia', width: 20 },
-					{ header: 'Incidencia', key: 'Incidencia', width: 30 },
+					{ header: 'Notas', key: 'Notas', width: 30 },
 					{ header: 'Explicación', key: 'Explicación', width: 40 }
 				];
 

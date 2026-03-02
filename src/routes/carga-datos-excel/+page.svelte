@@ -68,7 +68,7 @@
 			<button
 				on:click={downloadTemplate}
 				type="button"
-				class="rounded bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+				class="rounded-md border border-blue-600 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
 			>
 				Descarga la Plantilla
 			</button>
@@ -90,7 +90,7 @@
 			/>
 			<label
 				for="file-input"
-				class="block w-full cursor-pointer rounded border border-gray-300 bg-white px-4 py-2 text-center text-sm text-gray-700 hover:bg-gray-50"
+				class="block w-full cursor-pointer rounded-md border border-blue-600 bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700"
 				class:opacity-50={isLoading}
 				class:cursor-not-allowed={isLoading}
 			>
@@ -102,7 +102,7 @@
 		<button
 			on:click={uploadFile}
 			disabled={isLoading || !file}
-			class="w-full rounded bg-blue-500 px-4 py-3 font-medium text-white hover:bg-blue-600 disabled:bg-gray-400"
+			class="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
 		>
 			{#if isLoading}
 				<span>Procesando...</span>
@@ -125,7 +125,7 @@
 				<div class="flex justify-center border-t border-gray-200 px-6 py-4">
 					<button
 						on:click={closeError}
-						class="rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+						class="rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
 					>
 						OK
 					</button>

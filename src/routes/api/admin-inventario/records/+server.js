@@ -49,7 +49,7 @@ export async function GET({ url, locals }) {
 				LEFT JOIN usuarios u ON i.actualizado_por = u.id
 				WHERE i.bodega = ${bodega} AND i.marca = ${marca} AND i.ubicacion = ${ubicacion}
 				and fecha_inventario IS NOT NULL
-				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 			`;
 		} else if (bodega && marca) {
 			inventoryResult = await sql`
@@ -58,7 +58,7 @@ export async function GET({ url, locals }) {
 				LEFT JOIN usuarios u ON i.actualizado_por = u.id
 				WHERE i.bodega = ${bodega} AND i.marca = ${marca}
 				and fecha_inventario IS NOT NULL
-				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 			`;
 		} else if (bodega && ubicacion) {
 			inventoryResult = await sql`
@@ -67,7 +67,7 @@ export async function GET({ url, locals }) {
 				LEFT JOIN usuarios u ON i.actualizado_por = u.id
 				WHERE i.bodega = ${bodega} AND i.ubicacion = ${ubicacion}
 				and fecha_inventario IS NOT NULL
-				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 			`;
 		} else if (bodega) {
 			inventoryResult = await sql`
@@ -76,7 +76,7 @@ export async function GET({ url, locals }) {
 				LEFT JOIN usuarios u ON i.actualizado_por = u.id
 				WHERE i.bodega = ${bodega}
 				and fecha_inventario IS NOT NULL
-				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 			`;
 		} else {
 			// Fetch all records, limit for performance
@@ -85,7 +85,7 @@ export async function GET({ url, locals }) {
 				FROM inventario i
 				LEFT JOIN usuarios u ON i.actualizado_por = u.id
 				where fecha_inventario IS NOT NULL
-				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo_barras
+				ORDER BY i.fecha_inventario DESC NULLS LAST, i.bodega, i.ubicacion, i.marca, i.codigo
 				LIMIT 200
 			`;
 		}
@@ -95,58 +95,58 @@ export async function GET({ url, locals }) {
 		}
 
 		// Build movement query for all found products
-		const productCodes = inventoryResult.rows.map((row) => row.codigo_barras);
+		const productIds = inventoryResult.rows.map((row) => row.id);
 		let movementResult = { rows: [] };
-		if (productCodes.length > 0) {
+		if (productIds.length > 0) {
 			if (bodega && marca && ubicacion) {
 				movementResult = await sql`
-					SELECT codigo_barras,
+					SELECT inventario_id,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
 						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
 					FROM movimientos
-					WHERE bodega = ${bodega} AND marca = ${marca} AND ubicacion = ${ubicacion} AND codigo_barras = ANY(${productCodes})
-					GROUP BY codigo_barras
+					WHERE bodega = ${bodega} AND marca = ${marca} AND ubicacion = ${ubicacion} AND inventario_id = ANY(${productIds})
+					GROUP BY inventario_id
 				`;
 			} else if (bodega && marca) {
 				movementResult = await sql`
-					SELECT codigo_barras,
+					SELECT inventario_id,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
 						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
 					FROM movimientos
-					WHERE bodega = ${bodega} AND marca = ${marca} AND codigo_barras = ANY(${productCodes})
-					GROUP BY codigo_barras
+					WHERE bodega = ${bodega} AND marca = ${marca} AND inventario_id = ANY(${productIds})
+					GROUP BY inventario_id
 				`;
 			} else if (bodega && ubicacion) {
 				movementResult = await sql`
-					SELECT codigo_barras,
+					SELECT inventario_id,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
 						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
 					FROM movimientos
-					WHERE bodega = ${bodega} AND ubicacion = ${ubicacion} AND codigo_barras = ANY(${productCodes})
-					GROUP BY codigo_barras
+					WHERE bodega = ${bodega} AND ubicacion = ${ubicacion} AND inventario_id = ANY(${productIds})
+					GROUP BY inventario_id
 				`;
 			} else if (bodega) {
 				movementResult = await sql`
-					SELECT codigo_barras,
+					SELECT inventario_id,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
 						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
 					FROM movimientos
-					WHERE bodega = ${bodega} AND codigo_barras = ANY(${productCodes})
-					GROUP BY codigo_barras
+					WHERE bodega = ${bodega} AND inventario_id = ANY(${productIds})
+					GROUP BY inventario_id
 				`;
 			} else {
 				movementResult = await sql`
-					SELECT codigo_barras,
+					SELECT inventario_id,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE 0 END) as total_entradas,
 						SUM(CASE WHEN tipo_movimiento = 'OUT' THEN cantidad ELSE 0 END) as total_salidas,
 						SUM(CASE WHEN tipo_movimiento = 'IN' THEN cantidad ELSE -cantidad END) as net_movimientos
 					FROM movimientos
-					WHERE codigo_barras = ANY(${productCodes})
-					GROUP BY codigo_barras
+					WHERE inventario_id = ANY(${productIds})
+					GROUP BY inventario_id
 				`;
 			}
 		}
@@ -154,7 +154,7 @@ export async function GET({ url, locals }) {
 		// Create movement lookup map
 		const movementMap = {};
 		movementResult.rows.forEach((row) => {
-			movementMap[row.codigo_barras] = {
+			movementMap[row.inventario_id] = {
 				totalEntradas: parseInt(row.total_entradas) || 0,
 				totalSalidas: parseInt(row.total_salidas) || 0,
 				netMovimientos: parseInt(row.net_movimientos) || 0
@@ -164,7 +164,7 @@ export async function GET({ url, locals }) {
 		// Combine inventory data with simplified movement data
 		const enrichedRecords = inventoryResult.rows.map((record) => ({
 			...record,
-			movements: movementMap[record.codigo_barras] || {
+			movements: movementMap[record.id] || {
 				totalEntradas: 0,
 				totalSalidas: 0,
 				netMovimientos: 0
@@ -194,15 +194,15 @@ export async function PUT({ request, locals }) {
 			bodega,
 			ubicacion,
 			marca,
-			codigo_barras,
+			codigo,
 			inventario_fisico,
 			categoria_incidencia,
 			incidencia
 		} = await request.json();
 
 		// Validate required fields
-		if (!bodega || !marca || !ubicacion) {
-			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca y Ubicación son requeridos');
+		if (!bodega || !marca || !ubicacion || !codigo) {
+			return errorResponse(400, 'BAD_REQUEST', 'Bodega, Marca, Ubicación y Código son requeridos');
 		}
 
 		console.log('Actualizando producto:', { bodega, ubicacion, marca, userId: user.userId });
@@ -222,7 +222,7 @@ export async function PUT({ request, locals }) {
 			WHERE 
 				bodega = ${bodega} AND 
 				marca = ${marca} AND 
-				codigo_barras = ${codigo_barras}
+				codigo = ${codigo}
 		`;
 
 		if (result.rowCount > 0) {

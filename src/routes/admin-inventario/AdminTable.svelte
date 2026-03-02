@@ -52,7 +52,7 @@
 <!-- Records Table -->
 {#if records.length > 0}
 	<div class="overflow-x-auto rounded-lg bg-white shadow">
-		<table class="min-w-[1100px] divide-y divide-gray-200">
+		<table class="min-w-[1100px] divide-y divide-gray-200 table-fixed">
 			<thead class="bg-gray-50">
 				<tr>
 					<th
@@ -60,9 +60,13 @@
 					>
 						Código
 					</th>
-					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Descripción</th
-					>
+					<!-- Removed duplicate description column header -->
+					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[8rem]">
+						Lote
+					</th>
+					<th class="px-32 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[40rem] min-w-[32rem] max-w-[48rem]">
+						Descripción
+					</th>
 					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 						>Sistema</th
 					>
@@ -78,14 +82,16 @@
 					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 						>Movimientos</th
 					>
-					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Incidencia</th
+					<th
+						class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 w-[20rem] min-w-[16rem] max-w-[24rem]"
 					>
+						Notas
+					</th>
 					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 						>Inventariante</th
 					>
 					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-						>Fecha</th
+						>Fecha Inventario</th
 					>
 					<th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
 						>Estado</th
@@ -103,10 +109,9 @@
 			<tbody class="divide-y divide-gray-200 bg-white">
 				{#each records as record}
 					<tr class="touch-manipulation hover:bg-gray-50">
-						<td class="sticky left-0 whitespace-nowrap bg-white px-6 py-4"
-							>{record.codigo_barras}</td
-						>
-						<td class="px-6 py-4">{record.descripcion}</td>
+						<td class="sticky left-0 whitespace-nowrap bg-white px-6 py-4">{record.codigo}</td>
+						<td class="px-6 py-4 w-[8rem] whitespace-nowrap">{record.lote}</td>
+						<td class="px-32 py-4 w-[40rem] min-w-[32rem] max-w-[48rem] whitespace-normal">{record.descripcion}</td>
 						<td class="whitespace-nowrap px-6 py-4 text-right">{formatNumber(record.inventario_sistema)}</td>
 						<td class="whitespace-nowrap px-6 py-4 text-right">{formatNumber(record.inventario_fisico)}</td>
 						<td class="whitespace-nowrap px-6 py-4 text-right">
@@ -165,7 +170,7 @@
 								<span class="font-medium text-gray-600">-</span>
 							{/if}
 						</td>
-						<td class="px-6 py-4">{record.incidencia}</td>
+						<td class="px-6 py-4 w-[20rem] min-w-[16rem] max-w-[24rem] whitespace-normal break-words">{record.notas}</td>
 						<td class="whitespace-nowrap px-6 py-4">{record.nombre}</td>
 						<td class="whitespace-nowrap px-6 py-4">{formatDateTime(record.fecha_inventario)}</td>
 						<td class="whitespace-nowrap px-6 py-4">

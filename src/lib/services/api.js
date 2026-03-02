@@ -75,12 +75,12 @@ export const inventoryAPI = {
 		return data;
 	},
 
-	async fetchProductDetails(selectedBodega, selectedMarca, codigoBarras) {
+	async fetchProductDetails(selectedBodega, selectedMarca, codigoValue, loteValue) {
 		try {
 			// Format parameters properly
 			const queryParams = new URLSearchParams({
 				bodega: selectedBodega,
-				codigo_barras: codigoBarras
+				codigo: codigoValue
 			});
 
 			// Only add marca if it's a valid value
@@ -88,10 +88,15 @@ export const inventoryAPI = {
 				queryParams.append('marca', selectedMarca);
 			}
 
+			if (loteValue) {
+				queryParams.append('lote', loteValue);
+			}
+
 			console.log('Making API call with params:', {
 				bodega: selectedBodega,
 				marca: selectedMarca,
-				codigo_barras: codigoBarras
+				codigo: codigoValue,
+				lote: loteValue
 			});
 
 			// Make the API call

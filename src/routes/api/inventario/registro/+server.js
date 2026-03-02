@@ -13,65 +13,266 @@ export async function GET({ url, locals }) {
 	// Get query parameters
 	const bodega = url.searchParams.get('bodega');
 	let marca = url.searchParams.get('marca');
-	const codigo_barras = url.searchParams.get('codigo_barras'); // This can match multiple fields
+	const codigo = url.searchParams.get('codigo');
+	const lote = url.searchParams.get('lote');
+	const ubicacion = url.searchParams.get('ubicacion');
 
 	// Handle the case where marca is the string "null"
 	if (marca === 'null' || marca === 'undefined') {
 		marca = null;
 	}
 
-	// Debug logging
-	console.log('API recibió parámetros:', { bodega, marca, codigo_barras });
+	// Basic misuse guard: if lote/ubicacion provided, demand non-empty string
+	const trimmedLote = lote?.trim?.();
+	const trimmedUbicacion = ubicacion?.trim?.();
+
+	// Debug logging with normalized params
+	console.log('API recibió parámetros:', { bodega, marca, codigo, lote: trimmedLote, ubicacion: trimmedUbicacion });
 
 	// Validate required parameters
-	if (!bodega || !codigo_barras) {
-		return errorResponse(400, 'BAD_REQUEST', 'Bodega y código de barras son requeridos');
+	if (!bodega || !codigo) {
+		return errorResponse(400, 'BAD_REQUEST', 'Bodega y código son requeridos');
 	}
 
 	try {
-		// Build the SQL query with proper handling of null marca
 		let query;
 
-		if (marca) {
-			// If marca is provided and valid
+		// Explicit branching to avoid dynamic SQL composition issues
+		if (marca && trimmedUbicacion && trimmedLote) {
 			query = await sql`
 				SELECT 
-					id, codigo_barras, numero_parte, descripcion, 
-					inventario_sistema, inventario_fisico, 
-					fecha_inventario::TEXT AS fecha_inventario, 
-					bodega, ubicacion, marca,
-					categoria_incidencia, incidencia, 
-					single_item_ean13, master_carton_ean13,
-					actualizado_por, validado_por, validado
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
 				FROM inventario
 				WHERE bodega = ${bodega}
 					AND marca = ${marca}
-					AND (
-						codigo_barras = ${codigo_barras} OR 
-						numero_parte = ${codigo_barras} OR 
-						single_item_ean13 = ${codigo_barras}
-					)
-				LIMIT 1
+					AND ubicacion = ${trimmedUbicacion}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+					AND lote = ${trimmedLote}
+				LIMIT 2
 			`;
-		} else {
-			// If marca is not provided or is null
+		} else if (marca && trimmedLote) {
 			query = await sql`
 				SELECT 
-					id, codigo_barras, numero_parte, descripcion, 
-					inventario_sistema, inventario_fisico, 
-					fecha_inventario::TEXT AS fecha_inventario, 
-					bodega, ubicacion, marca,
-					categoria_incidencia, incidencia, 
-					single_item_ean13, master_carton_ean13,
-					actualizado_por, validado_por, validado
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
 				FROM inventario
 				WHERE bodega = ${bodega}
-					AND (
-						codigo_barras = ${codigo_barras} OR 
-						numero_parte = ${codigo_barras} OR 
-						single_item_ean13 = ${codigo_barras} 
-					)
-				LIMIT 1
+					AND marca = ${marca}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+					AND lote = ${trimmedLote}
+				LIMIT 2
+			`;
+		} else if (marca && trimmedUbicacion) {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND marca = ${marca}
+					AND ubicacion = ${trimmedUbicacion}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+				LIMIT 2
+			`;
+		} else if (trimmedUbicacion && trimmedLote) {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND ubicacion = ${trimmedUbicacion}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+					AND lote = ${trimmedLote}
+				LIMIT 2
+			`;
+		} else if (trimmedUbicacion) {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND ubicacion = ${trimmedUbicacion}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+				LIMIT 2
+			`;
+		} else if (trimmedLote) {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+					AND lote = ${trimmedLote}
+				LIMIT 2
+			`;
+		} else if (marca) {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND marca = ${marca}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+				LIMIT 2
+			`;
+		} else {
+			query = await sql`
+				SELECT 
+					id,
+					codigo,
+					numero_parte,
+					descripcion,
+					inventario_sistema,
+					inventario_fisico,
+					fecha_inventario::TEXT AS fecha_inventario,
+					bodega,
+					ubicacion,
+					marca,
+					categoria_incidencia,
+					notas,
+					gtin,
+					dun14,
+					lote,
+					unidad_medida,
+					tare,
+					actualizado_por,
+					validado_por,
+					validado
+				FROM inventario
+				WHERE bodega = ${bodega}
+					AND (codigo = ${codigo} OR numero_parte = ${codigo} OR gtin = ${codigo})
+				LIMIT 2
 			`;
 		}
 
@@ -82,6 +283,14 @@ export async function GET({ url, locals }) {
 				404,
 				'NOT_FOUND',
 				'No se encontró registro de inventario con los criterios especificados'
+			);
+		}
+
+		if (query.rows.length > 1) {
+			return errorResponse(
+				409,
+				'MULTIPLE_MATCHES',
+				'La búsqueda devolvió múltiples registros. Ajuste los filtros (marca, ubicación o lote) para un resultado único.'
 			);
 		}
 
@@ -107,14 +316,12 @@ export async function PUT({ request, locals }) {
 		// Parse the request body
 		const {
 			id,
-			// bodega,                 // ← RECEIVED: But not used (this field does not need to be updated)
-			// marca,                  // ← RECEIVED: But not used (this field does not need to be updated)
-			ubicacion, // ← RECEIVED: For updating (this is what changes)
+			ubicacion, // optional update
 			inventario_fisico,
 			categoria_incidencia,
-			incidencia,
-			single_item_ean13,
-			master_carton_ean13
+			notas,
+			gtin,
+			dun14
 		} = await request.json();
 
 		// Validate ID is provided
@@ -129,17 +336,17 @@ export async function PUT({ request, locals }) {
 		const result = await sql`
 			UPDATE inventario
 			SET 
-		        ubicacion = COALESCE(${ubicacion}, ubicacion),                                   
+			    ubicacion = COALESCE(${ubicacion}, ubicacion),                                   
 				inventario_fisico = COALESCE(${inventario_fisico}, inventario_fisico),
 				categoria_incidencia = COALESCE(${categoria_incidencia}, categoria_incidencia),
-				incidencia = COALESCE(${incidencia}, incidencia),
-				single_item_ean13 = COALESCE(${single_item_ean13}, single_item_ean13),
-				master_carton_ean13 = COALESCE(${master_carton_ean13}, master_carton_ean13),
+				notas = COALESCE(${notas}, notas),
+				gtin = COALESCE(${gtin}, gtin),
+				dun14 = COALESCE(${dun14}, dun14),
 				fecha_inventario = ${currentDateTime},                      
 				actualizado_por = ${user.userId}                            
 			WHERE 
 				id = ${id}
-			RETURNING id, codigo_barras, numero_parte, fecha_inventario, inventario_fisico, ubicacion
+			RETURNING id, codigo, numero_parte, fecha_inventario, inventario_fisico, ubicacion
 		`;
 
 		// Check if a record was updated
@@ -147,9 +354,23 @@ export async function PUT({ request, locals }) {
 			return errorResponse(404, 'NOT_FOUND', `No se encontró registro de inventario con ID: ${id}`);
 		}
 
-		// Log the update for audit purposes
+		// Log the update for audit purposes with changed fields summary
+		const updatedFields = {
+			ubicacion: ubicacion ?? 'sin cambio',
+			inventario_fisico: inventario_fisico ?? 'sin cambio',
+			categoria_incidencia: categoria_incidencia ?? 'sin cambio',
+			notas: notas ?? 'sin cambio',
+			gtin: gtin ?? 'sin cambio',
+			dun14: dun14 ?? 'sin cambio'
+		};
+
+		const actor = user?.userId ?? locals?.user?.userId ?? 'desconocido';
+		if (actor === 'desconocido') {
+			console.warn('Usuario no disponible en locals durante actualización');
+		}
+
 		console.log(
-			`Producto actualizado: ID ${id}, Nueva Ubicación: ${ubicacion}, Usuario: ${user.userId}`
+			`Producto actualizado: ID ${id}, Usuario: ${actor} | Campos: ${JSON.stringify(updatedFields)}`
 		);
 
 		return successResponse(result.rows[0], 'Registro de inventario actualizado satisfactoriamente');

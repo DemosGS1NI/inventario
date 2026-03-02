@@ -9,6 +9,14 @@
 	let totalRecords = 0;
 	let loading = false;
 
+	const formatNumber = (value) => {
+		if (value === null || value === undefined || value === '') return '';
+		const num = Number(value);
+		return Number.isFinite(num)
+			? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+			: value;
+	};
+
 	async function fetchPage(page = 1) {
 		loading = true;
 		try {
@@ -78,67 +86,65 @@
 		<table class="min-w-full border border-gray-300 bg-white">
 			<thead>
 				<tr class="bg-gray-200">
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						ID
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Bodega
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Marca
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Ubicación
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Código
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						N.º Parte
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Descripción
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						Inv. Sistema
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						GTIN
-					</th>
-					<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
-						DUN
-					</th>
+					{#each [
+						'ID',
+						'Bodega',
+						'Ubicación',
+						'Código',
+						'Lote',
+						'Unidad Medida',
+						'Descripción',
+						'Marca',
+						'N.º Parte',
+						'Inv. Sistema',
+						'GTIN',
+						'DUN14',
+						'Tare',
+						'Notas'
+					] as header}
+						<th class="border-b border-gray-300 px-3 py-3 text-center text-xs font-semibold text-gray-700">
+							{header}
+						</th>
+					{/each}
 				</tr>
 			</thead>
 			<tbody>
 				{#if items && items.length > 0}
 					{#each items as item}
 						<tr class="transition-colors hover:bg-gray-50">
-							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
 								>{item.id}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
 								>{item.bodega}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
-								>{item.marca}</td>
-							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
 								>{item.ubicacion}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
-								>{item.codigo_barras}</td>
+								>{item.codigo}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
-								>{item.numero_parte}</td>
+								>{item.lote}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.unidad_medida}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
 								>{item.descripcion}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
-								>{item.inventario_sistema}</td>
-							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
+								>{item.marca}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
+								>{item.numero_parte}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
+								>{formatNumber(item.inventario_sistema)}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
 								>{item.gtin}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
+								>{item.dun14}</td>
+							<td class="border-b border-gray-200 px-3 py-2 text-right text-sm text-gray-800"
+								>{formatNumber(item.tare)}</td>
 							<td class="border-b border-gray-200 px-3 py-2 text-center text-sm text-gray-800"
-								>{item.master_carton_ean13}</td>
+								>{item.notas}</td>
 						</tr>
 					{/each}
 				{:else if !loading}
 					<tr>
-						<td colspan="7" class="px-4 py-8 text-center text-gray-500">
+						<td colspan="20" class="px-4 py-8 text-center text-gray-500">
 							No hay datos disponibles
 						</td>
 					</tr>

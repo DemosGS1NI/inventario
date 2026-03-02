@@ -23,12 +23,15 @@ Table categorias_incidencias {
 
 Table inventario {
   id decimal [pk]
-  codigo_barras text [unique, not null]
+  codigo text [unique, not null]
   gtin text
   bodega text [pk]
   ubicacion text
   marca text
   numero_parte text [unique]
+  lote varchar(40)
+  unidad_medida varchar(20)
+  tare decimal(10,2)
   descripcion text
   inventario_sistema decimal
   inventario_fisico decimal
@@ -38,8 +41,8 @@ Table inventario {
   actualizado_por decimal
   validado boolean
   validado_por decimal
-  single_item_ean13 varchar(20) [unique]
-  master_carton_ean13 varchar(20)
+  GTIN13 varchar(20) [unique]
+  DUN14 varchar(20)
 }
 
 Table menu_categories {

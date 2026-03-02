@@ -454,7 +454,7 @@
 								<td class="px-6 py-4 text-sm text-gray-900">
 									<div>
 										<div class="font-medium">{record.numero_parte}</div>
-										<div class="text-xs text-gray-500">{record.codigo_barras}</div>
+										<div class="text-xs text-gray-500">{record.codigo}</div>
 										<div class="text-xs text-gray-500">{record.descripcion}</div>
 									</div>
 								</td>

@@ -39,20 +39,23 @@ export async function GET({ url, locals }) {
 			);
 		}
 
-		// Fetch paginated data with tagged template (works with both pg and @vercel/postgres)
+		// Fetch only import-relevant fields (exclude system-maintained metadata)
 		const result = await sql`
 			SELECT 
 				id,
 				bodega,
-				marca,
 				ubicacion,
-				codigo_barras,
-				numero_parte,
+				codigo,
+				lote,
+				unidad_medida,
 				descripcion,
+				marca,
+				numero_parte,
 				inventario_sistema,
 				gtin,
-				master_carton_ean13,
-				single_item_ean13
+				dun14,
+				tare,
+				notas
 			FROM inventario
 			ORDER BY bodega, marca, id
 			LIMIT ${limit}

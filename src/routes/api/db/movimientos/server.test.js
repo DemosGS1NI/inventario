@@ -67,7 +67,7 @@ describe('Movimientos API', () => {
 				json: vi.fn().mockResolvedValue({
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					tipo_movimiento: 'IN',
 					cantidad: 10
 				})
@@ -87,7 +87,7 @@ describe('Movimientos API', () => {
 				json: vi.fn().mockResolvedValue({
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					tipo_movimiento: 'INVALID',
 					cantidad: 10
 				})
@@ -108,7 +108,7 @@ describe('Movimientos API', () => {
 				json: vi.fn().mockResolvedValue({
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					tipo_movimiento: 'IN',
 					cantidad: -5
 				})

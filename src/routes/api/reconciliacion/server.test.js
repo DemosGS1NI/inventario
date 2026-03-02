@@ -71,14 +71,14 @@ describe('Reconciliation API', () => {
 					bodega: 'BODEGA #1',
 					ubicacion: 'A1-B1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					numero_parte: 'PART123',
 					descripcion: 'Test Product',
 					inventario_sistema: 100,
 					inventario_fisico: 100,
 					fecha_inventario: '2024-01-15 10:00:00',
 					categoria_incidencia: null,
-					incidencia: null
+					notas: null
 				}
 			];
 
@@ -114,14 +114,14 @@ describe('Reconciliation API', () => {
 					bodega: 'BODEGA #1',
 					ubicacion: 'A1-B1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					numero_parte: 'PART123',
 					descripcion: 'Test Product',
 					inventario_sistema: 100,
 					inventario_fisico: 95,
 					fecha_inventario: '2024-01-15T10:00:00.000Z',
 					categoria_incidencia: null,
-					incidencia: null
+					notas: null
 				}
 			];
 
@@ -129,7 +129,7 @@ describe('Reconciliation API', () => {
 			const movementsData = [
 				{
 					id: 1,
-					codigo_barras: '12345',
+					codigo: '12345',
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
 					ubicacion: 'A1-B1',
@@ -171,14 +171,14 @@ describe('Reconciliation API', () => {
 					bodega: 'BODEGA #1',
 					ubicacion: 'A1-B1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					numero_parte: 'PART123',
 					descripcion: 'Test Product',
 					inventario_sistema: 100,
 					inventario_fisico: 85, // 15 less than system
 					fecha_inventario: '2024-01-15T10:00:00.000Z',
 					categoria_incidencia: null,
-					incidencia: null
+					notas: null
 				}
 			];
 
@@ -186,7 +186,7 @@ describe('Reconciliation API', () => {
 			const movementsData = [
 				{
 					id: 1,
-					codigo_barras: '12345',
+					codigo: '12345',
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
 					ubicacion: 'A1-B1',
@@ -222,21 +222,21 @@ describe('Reconciliation API', () => {
 					bodega: 'BODEGA #1',
 					ubicacion: 'A1-B1',
 					marca: 'MARCA1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					numero_parte: 'PART123',
 					descripcion: 'Test Product',
 					inventario_sistema: 100,
 					inventario_fisico: 100,
 					fecha_inventario: '2024-01-15T10:00:00.000Z',
 					categoria_incidencia: null,
-					incidencia: null
+					notas: null
 				}
 			];
 
 			const movementsData = [
 				{
 					id: 1,
-					codigo_barras: '12345',
+					codigo: '12345',
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
 					ubicacion: 'A1-B1',
@@ -248,7 +248,7 @@ describe('Reconciliation API', () => {
 				},
 				{
 					id: 2,
-					codigo_barras: '12345',
+					codigo: '12345',
 					bodega: 'BODEGA #1',
 					marca: 'MARCA1',
 					ubicacion: 'A1-B1',
@@ -306,7 +306,7 @@ describe('Reconciliation API', () => {
 				{
 					id: 1,
 					bodega: 'BODEGA #1',
-					codigo_barras: '12345',
+					codigo: '12345',
 					inventario_sistema: 100,
 					inventario_fisico: 100,
 					fecha_inventario: '2024-01-15T10:00:00.000Z',
@@ -315,7 +315,7 @@ describe('Reconciliation API', () => {
 					numero_parte: 'PART1',
 					descripcion: 'Product 1',
 					categoria_incidencia: null,
-					incidencia: null
+					notas: null
 				}
 			];
 

@@ -116,7 +116,7 @@ describe('inventoryAPI', () => {
 		it('should fetch product details successfully', async () => {
 			const mockProduct = {
 				id: 1,
-				codigo_barras: '12345',
+				codigo: '12345',
 				numero_parte: 'PART123',
 				descripcion: 'Test Product',
 				inventario_sistema: 100,
@@ -136,7 +136,7 @@ describe('inventoryAPI', () => {
 			expect(result.status).toBe('success');
 			expect(result.data).toEqual([mockProduct]);
 			expect(mockFetch).toHaveBeenCalledWith(
-				'/api/inventario/registro?bodega=BODEGA+%231&codigo_barras=12345&marca=MARCA1',
+				'/api/inventario/registro?bodega=BODEGA+%231&codigo=12345&marca=MARCA1',
 				{
 					headers: {
 						'Content-Type': 'application/json'
@@ -167,7 +167,7 @@ describe('inventoryAPI', () => {
 		it('should handle fetchProductDetails with null marca', async () => {
 			const mockProduct = {
 				id: 1,
-				codigo_barras: '12345',
+				codigo: '12345',
 				numero_parte: 'PART123'
 			};
 
@@ -184,7 +184,7 @@ describe('inventoryAPI', () => {
 			expect(result.status).toBe('success');
 			// Should not include marca parameter when null
 			expect(mockFetch).toHaveBeenCalledWith(
-				'/api/inventario/registro?bodega=BODEGA+%231&codigo_barras=12345',
+				'/api/inventario/registro?bodega=BODEGA+%231&codigo=12345',
 				{
 					headers: {
 						'Content-Type': 'application/json'

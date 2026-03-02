@@ -57,7 +57,8 @@ export const POST = async ({ request, locals }) => {
 				if (typeof value === 'object' && value.text) return value.text.trim();
 				return String(value).trim();
 			})
-			.filter(Boolean);
+			.filter(Boolean)
+			.map((h) => h.toLowerCase());
 
 		if (headers.length === 0) {
 			return errorResponse(400, 'EMPTY_SHEET', 'La hoja no contiene encabezados');
@@ -95,32 +96,125 @@ export const POST = async ({ request, locals }) => {
 		}
 
 		try {
-			// Allow legacy headers and new headers (codigo, GTIN, DUN) using tagged templates
 			await sql`BEGIN`;
-			for (const row of data) {
-				const codigoBarras = row.codigo || row.codigo_barras || null;
-				const gtin = row.GTIN || row.gtin || row.gtin13 || row.GTIN13 || row.single_item_ean13 || null;
-				const masterCarton = row.DUN || row.dun14 || row.master_carton_ean13 || null;
-				const singleItem = row.GTIN || row.gtin13 || row.GTIN13 || row.gtin || row.single_item_ean13 || null;
 
-				await sql`
-					INSERT INTO inventario (
-						id, codigo_barras, gtin, bodega, ubicacion, marca,
-						numero_parte, descripcion, inventario_sistema, master_carton_ean13, single_item_ean13
-					) VALUES (
-						${row.id || null},
-						${codigoBarras},
-						${gtin},
-						${row.bodega || null},
-						${row.ubicacion || null},
-						${row.marca || null},
-						${row.numero_parte || null},
-						${row.descripcion || null},
-						${row.inventario_sistema || null},
-						${masterCarton},
-						${singleItem}
-					)
-				`;
+			const hasIdHeader = headers.includes('id');
+			const defaultId = { __unsafe: 'DEFAULT' };
+
+			for (const row of data) {
+				const rawId = hasIdHeader ? row.id : null;
+				const trimmedId = rawId === undefined || rawId === null ? null : String(rawId).trim();
+				const parsedId = trimmedId === '' ? null : Number(trimmedId);
+
+				if (trimmedId !== null && trimmedId !== '' && Number.isNaN(parsedId)) {
+					throw new Error('El valor de id debe ser numérico');
+				}
+
+				// Treat null, empty, or zero as "use default sequence"
+				const useDefaultId = parsedId === null || parsedId === 0;
+
+				const codigo = row.codigo || null;
+				const gtin = row.gtin || null;
+				const dun14 = row.dun14 || null;
+				const lote = row.lote || null;
+				const unidadMedida = row.unidad_medida || null;
+				const tare = row.tare || null;
+				const inventarioSistema = row.inventario_sistema || null;
+				const inventarioFisico = row.inventario_fisico || null;
+				const categoriaIncidencia = row.categoria_incidencia || null;
+				const notas = row.notas || null;
+
+				if (useDefaultId) {
+					await sql`
+						INSERT INTO inventario (
+							codigo,
+							gtin,
+							dun14,
+							bodega,
+							ubicacion,
+							marca,
+							numero_parte,
+							lote,
+							unidad_medida,
+							tare,
+							descripcion,
+							inventario_sistema,
+							inventario_fisico,
+							fecha_inventario,
+							categoria_incidencia,
+							notas,
+							actualizado_por,
+							validado,
+							validado_por
+						) VALUES (
+							${codigo},
+							${gtin},
+							${dun14},
+							${row.bodega || null},
+							${row.ubicacion || null},
+							${row.marca || null},
+							${row.numero_parte || null},
+							${lote},
+							${unidadMedida},
+							${tare},
+							${row.descripcion || null},
+							${inventarioSistema},
+							${inventarioFisico},
+							${row.fecha_inventario || null},
+							${categoriaIncidencia},
+							${notas},
+							${row.actualizado_por || null},
+							${row.validado || null},
+							${row.validado_por || null}
+						)
+					`;
+				} else {
+					await sql`
+						INSERT INTO inventario (
+							id,
+							codigo,
+							gtin,
+							dun14,
+							bodega,
+							ubicacion,
+							marca,
+							numero_parte,
+							lote,
+							unidad_medida,
+							tare,
+							descripcion,
+							inventario_sistema,
+							inventario_fisico,
+							fecha_inventario,
+							categoria_incidencia,
+							notas,
+							actualizado_por,
+							validado,
+							validado_por
+						) VALUES (
+							${parsedId},
+							${codigo},
+							${gtin},
+							${dun14},
+							${row.bodega || null},
+							${row.ubicacion || null},
+							${row.marca || null},
+							${row.numero_parte || null},
+							${lote},
+							${unidadMedida},
+							${tare},
+							${row.descripcion || null},
+							${inventarioSistema},
+							${inventarioFisico},
+							${row.fecha_inventario || null},
+							${categoriaIncidencia},
+							${notas},
+							${row.actualizado_por || null},
+							${row.validado || null},
+							${row.validado_por || null}
+						)
+					`;
+				}
 			}
 			await sql`COMMIT`;
 

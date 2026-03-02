@@ -38,9 +38,9 @@
 	let barcodeInput;
 	let stockQuantityInput;
 	let stockQuantity = 0;
-	let incidencia = '';
+	let notas = '';
 	let selectedCategoriaIncidencia = '';
-	let codigoBarras = '';
+	let codigo = '';
 
 	onMount(async () => {
 		//Reset the store when component mounts
@@ -73,7 +73,7 @@
 	async function handleBarcodeInput(event) {
 		if (event.key === 'Enter' || event.key === 'Tab') {
 			event.preventDefault();
-			if (!ubicacion || !codigoBarras) {
+			if (!ubicacion || !codigo) {
 				addToast('Favor introduzca ubicación y código del producto', 'error');
 				return;
 			}
@@ -82,13 +82,13 @@
 				const data = await inventoryAPI.fetchProductDetails(
 					selectedBodega,
 					selectedMarca,
-					codigoBarras
+					codigo
 				);
 
 				if (data.status === 'success' && data.data?.length > 0) {
 					const product = data.data[0];
 					stockQuantity = product.inventario_fisico || 0;
-					incidencia = product.incidencia || '';
+					notas = product.notas || '';
 					selectedCategoriaIncidencia = product.categoria_incidencia || '';
 					await tick();
 					stockQuantityInput?.focus();
@@ -109,9 +109,7 @@
 			ubicacion: $inventoryStore.ubicacion,
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,
-			incidencia,
-			single_item_ean13: $inventoryStore.currentProduct.single_item_ean13,
-			master_carton_ean13: $inventoryStore.currentProduct.master_carton_ean13
+			notas
 		};
 
 		console.log('Saving changes with data:', formData);
@@ -142,14 +140,10 @@
 	}
 
 	function resetFields() {
-		codigoBarras = '';
+		codigo = '';
 		stockQuantity = 0;
-		incidencia = '';
+		notas = '';
 		selectedCategoriaIncidencia = '';
-		if (currentProduct) {
-			currentProduct.single_item_ean13 = '';
-			currentProduct.master_carton_ean13 = '';
-		}
 		inventoryStore.resetProduct();
 		tick().then(() => barcodeInput?.focus());
 	}
@@ -239,14 +233,14 @@
 	{#if selectedBodega && selectedMarca && ubicacion}
 		<div class="mb-4">
 			<label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-				Codigo de Barras / Numero de Parte / EAN13
+				Código interno o Número de Parte
 			</label>
 			<input
 				type="text"
 				id="barcodeInput"
-				bind:value={codigoBarras}
+				bind:value={codigo}
 				bind:this={barcodeInput}
-				placeholder="Escanear el codigo de barras del producto"
+				placeholder="Escanear el código del producto"
 				on:keydown={handleBarcodeInput}
 				class="block w-full rounded border p-2"
 			/>
@@ -257,44 +251,18 @@
 	{#if currentProduct}
 		<div class="mb-4 rounded bg-white p-4 shadow">
 			<div class="mb-4 grid grid-cols-2 gap-4">
-				<p><strong>Codigo de Barras:</strong> {currentProduct.codigo_barras}</p>
-				<p><strong>Numero Parte:</strong> {currentProduct.numero_parte}</p>
-				<p><strong>Descripcion:</strong> {currentProduct.descripcion}</p>
+				<p><strong>Código:</strong> {currentProduct.codigo}</p>
+				<p><strong>Número Parte:</strong> {currentProduct.numero_parte}</p>
+				<p><strong>Descripción:</strong> {currentProduct.descripcion}</p>
+				<p><strong>Lote:</strong> {currentProduct.lote}</p>
+				<p><strong>Unidad de Medida:</strong> {currentProduct.unidad_medida}</p>
+				<p><strong>Tare:</strong> {currentProduct.tare}</p>
+				<p><strong>GTIN:</strong> {currentProduct.gtin}</p>
+				<p><strong>DUN14:</strong> {currentProduct.dun14}</p>
 				<p><strong>Fecha Inventario:</strong> {formatDateTime(currentProduct.fecha_inventario)}</p>
 			</div>
 
 			<div class="space-y-4">
-				<!-- New EAN-13 fields -->
-				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-					<div>
-						<label for="singleItemEan13" class="block text-sm font-medium text-gray-700">
-							EAN-13 Unidad
-						</label>
-						<input
-							id="singleItemEan13"
-							type="text"
-							bind:value={currentProduct.single_item_ean13}
-							maxlength="13"
-							placeholder="Escanear EAN-13 Unidad"
-							class="mt-1 block w-full rounded border p-2"
-						/>
-					</div>
-
-					<div>
-						<label for="masterCartonEan13" class="block text-sm font-medium text-gray-700">
-							EAN-13 Caja Master
-						</label>
-						<input
-							id="masterCartonEan13"
-							type="text"
-							bind:value={currentProduct.master_carton_ean13}
-							maxlength="14"
-							placeholder="Escanear EAN-13 Caja Master"
-							class="mt-1 block w-full rounded border p-2"
-						/>
-					</div>
-				</div>
-
 				<div>
 					<label for="stockQuantity" class="block text-sm font-medium text-gray-700">
 						Inventario Físico
@@ -306,6 +274,15 @@
 						bind:this={stockQuantityInput}
 						class="mt-1 block w-full rounded border p-2"
 					/>
+				</div>
+
+				<div>
+					<label for="notas" class="block text-sm font-medium text-gray-700"> Notas </label>
+					<textarea
+						id="notas"
+						bind:value={notas}
+						class="mt-1 block w-full rounded border p-2"
+					></textarea>
 				</div>
 
 				<div>
@@ -322,15 +299,6 @@
 							<option value={categoria}>{categoria}</option>
 						{/each}
 					</select>
-				</div>
-
-				<div>
-					<label for="incidencia" class="block text-sm font-medium text-gray-700"> Notas </label>
-					<textarea
-						id="incidencia"
-						bind:value={incidencia}
-						class="mt-1 block w-full rounded border p-2"
-					></textarea>
 				</div>
 
 				<div class="mt-4 flex gap-4">
@@ -352,7 +320,7 @@
 	{/if}
 
 	<!-- Location Reset Button -->
-	{#if selectedBodega && selectedMarca && ubicacion && !codigoBarras}
+	{#if selectedBodega && selectedMarca && ubicacion && !codigo}
 		<button
 			on:click={resetLocation}
 			class="mt-4 rounded bg-red-500 p-2 text-white transition-colors hover:bg-red-600"

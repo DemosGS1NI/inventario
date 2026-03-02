@@ -195,7 +195,7 @@
 	async function fetchProductDetails() {
 		try {
 			const res = await fetch(
-				`/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo_barras=${codigoBarras}`
+				`/api/producto?bodega=${selectedBodega}&marca=${selectedMarca}&codigo=${codigoBarras}`
 			);
 
 			const data = await res.json();
@@ -231,7 +231,7 @@
 				bodega: selectedBodega,
 				ubicacion: ubicacion,
 				marca: selectedMarca,
-				codigo_barras: codigoBarras,
+				codigo: codigoBarras,
 				inventario_fisico: stockQuantity,
 				categoria_incidencia: selectedCategoriaIncidencia,
 				incidencia: incidencia
