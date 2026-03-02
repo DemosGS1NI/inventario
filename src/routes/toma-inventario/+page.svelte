@@ -167,8 +167,8 @@
 			selectedCategoriaIncidencia = '';
 
 			if (currentProduct) {
-				currentProduct.single_item_ean13 = '';
-				currentProduct.master_carton_ean13 = '';
+				currentProduct.gtin = '';
+				currentProduct.dun14 = '';
 			}
 
 			await tick();
@@ -206,7 +206,7 @@
 				if (data.status === 'success') {
 					const product = data.data[0];
 					stockQuantity = product.inventario_fisico;
-					incidencia = product.incidencia;
+					incidencia = product.notas || product.incidencia || '';
 					selectedCategoriaIncidencia = product.categoria_incidencia;
 					await tick();
 					stockQuantityInput?.focus();
@@ -236,9 +236,9 @@
 			// ❌ REMOVED: codigo_barras (could be a numero_parte, don't overwrite actual barcode)
 			inventario_fisico: stockQuantity,
 			categoria_incidencia: selectedCategoriaIncidencia,
-			incidencia,
-			single_item_ean13: currentProduct.single_item_ean13,
-			master_carton_ean13: currentProduct.master_carton_ean13
+			notas: incidencia,
+			gtin: currentProduct.gtin,
+			dun14: currentProduct.dun14
 		};
 
 		try {
@@ -271,8 +271,8 @@
 		incidencia = '';
 		selectedCategoriaIncidencia = '';
 		if (currentProduct) {
-			currentProduct.single_item_ean13 = '';
-			currentProduct.master_carton_ean13 = '';
+			currentProduct.gtin = '';
+			currentProduct.dun14 = '';
 		}
 		inventoryStore.resetProduct();
 	}
@@ -408,7 +408,7 @@
 		{#if selectedBodega && ubicacion && selectedMarca}
 			<div>
 				<label for="barcodeInput" class="block text-sm font-medium text-gray-700">
-					4. Codigo de Barras / Numero de Parte / EAN-13
+					4. Código / GTIN / DUN14
 				</label>
 				<input
 					type="text"
@@ -435,39 +435,37 @@
 	{#if currentProduct}
 		<div class="mb-4 rounded bg-white p-4 shadow">
 			<div class="mb-4 grid grid-cols-2 gap-4">
-				<p><strong>Codigo de Barras:</strong> {currentProduct.codigo_barras}</p>
+				<p><strong>Código:</strong> {currentProduct.codigo}</p>
 				<p><strong>Numero Parte:</strong> {currentProduct.numero_parte}</p>
 				<p><strong>Descripcion:</strong> {currentProduct.descripcion}</p>
+				<p><strong>Lote:</strong> {currentProduct.lote}</p>
+				<p><strong>Unidad Medida:</strong> {currentProduct.unidad_medida}</p>
+				<p><strong>Tare:</strong> {currentProduct.tare}</p>
 				<p><strong>Fecha Inventario:</strong> {formatDateTime(currentProduct.fecha_inventario)}</p>
 			</div>
 
 			<div class="space-y-4">
-				<!-- New EAN-13 fields -->
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<div>
-						<label for="singleItemEan13" class="block text-sm font-medium text-gray-700">
-							EAN-13 Unidad
-						</label>
+						<label for="gtin" class="block text-sm font-medium text-gray-700">GTIN</label>
 						<input
-							id="singleItemEan13"
+							id="gtin"
 							type="text"
-							bind:value={currentProduct.single_item_ean13}
+							bind:value={currentProduct.gtin}
 							maxlength="14"
-							placeholder="Escanear EAN-13 Unidad"
+							placeholder="Escanear GTIN"
 							class="mt-1 block w-full rounded border p-2"
 						/>
 					</div>
 
 					<div>
-						<label for="masterCartonEan13" class="block text-sm font-medium text-gray-700">
-							EAN-13 Caja Master
-						</label>
+						<label for="dun14" class="block text-sm font-medium text-gray-700">DUN14</label>
 						<input
-							id="masterCartonEan13"
+							id="dun14"
 							type="text"
-							bind:value={currentProduct.master_carton_ean13}
+							bind:value={currentProduct.dun14}
 							maxlength="14"
-							placeholder="Escanear EAN-13 Caja Master"
+							placeholder="Escanear DUN14"
 							class="mt-1 block w-full rounded border p-2"
 						/>
 					</div>
@@ -487,6 +485,15 @@
 				</div>
 
 				<div>
+					<label for="incidencia" class="block text-sm font-medium text-gray-700"> Notas </label>
+					<textarea
+						id="incidencia"
+						bind:value={incidencia}
+						class="mt-1 block w-full rounded border p-2"
+					></textarea>
+				</div>
+
+				<div>
 					<label for="categoriaIncidencia" class="block text-sm font-medium text-gray-700">
 						Categoría Incidencia
 					</label>
@@ -500,15 +507,6 @@
 							<option value={categoria}>{categoria}</option>
 						{/each}
 					</select>
-				</div>
-
-				<div>
-					<label for="incidencia" class="block text-sm font-medium text-gray-700"> Notas </label>
-					<textarea
-						id="incidencia"
-						bind:value={incidencia}
-						class="mt-1 block w-full rounded border p-2"
-					></textarea>
 				</div>
 
 				<div class="mt-4 flex gap-4">

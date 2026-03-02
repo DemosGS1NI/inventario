@@ -1,5 +1,5 @@
 import { sql } from '$lib/database';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';
 import { AUTH } from '$lib/constants.js';

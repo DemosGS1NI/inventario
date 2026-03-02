@@ -1,18 +1,6 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export const up = async (pgm) => {
-	// Ensure unique constraint on role name for conflict handling
-	await pgm.db.query(`
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint WHERE conname = 'roles_nombre_rol_key'
-    ) THEN
-        ALTER TABLE roles ADD CONSTRAINT roles_nombre_rol_key UNIQUE (nombre_rol);
-    END IF;
-END$$;
-`);
-
 	// Ensure unique constraint on role name for conflict handling
 	await pgm.db.query(`
 DO $$

@@ -14,8 +14,8 @@ export function validateInventoryForm(data) {
 		errors.ubicacion = 'La ubicación es requerida';
 	}
 
-	if (!data.codigo_barras) {
-		errors.codigo_barras = 'El código de barras es requerido';
+	if (!data.codigo) {
+		errors.codigo = 'El código es requerido';
 	}
 
 	if (data.inventario_fisico < 0) {

@@ -17,15 +17,17 @@ export async function GET({ locals }) {
 			       i.marca,
 			       i.ubicacion,
 			       i.descripcion,
-			       i.codigo_barras,
+			       i.codigo,
 			       i.numero_parte,
 			       i.inventario_sistema,
 			       i.inventario_fisico,
 			       i.gtin,
-			       i.single_item_ean13,
-			       i.master_carton_ean13,
+			       i.dun14,
+			       i.lote,
+			       i.unidad_medida,
+			       i.tare,
 			       i.categoria_incidencia,
-			       i.incidencia,
+			       i.notas,
 			       timezone('America/Chicago', i.fecha_inventario) as fecha_inventario,
 			       u1.nombre || ' ' || u1.apellido AS actualizado,
 			       u2.nombre || ' ' || u2.apellido AS validado
@@ -37,14 +39,25 @@ export async function GET({ locals }) {
 
 		// Fetch movements records with user names
 		const movimientosResult = await sql`
-       SELECT m.bodega, m.ubicacion, m.marca, m.codigo_barras, m.numero_parte, m.descripcion,
-              m.tipo_movimiento, m.cantidad, m.numero_documento, m.comentarios,
-              timezone('America/Chicago', m.fecha_movimiento) as fecha_movimiento,
-              u.nombre || ' ' || u.apellido AS usuario_nombre
-        FROM movimientos m 
-        LEFT JOIN usuarios u ON m.usuario_id = u.id
-        ORDER BY m.fecha_movimiento DESC, m.bodega, m.ubicacion, m.marca
-    `;
+				SELECT 
+					m.inventario_id,
+					m.bodega,
+					m.ubicacion,
+					m.marca,
+					COALESCE(i.codigo, '') as codigo,
+					COALESCE(i.numero_parte, m.numero_parte) as numero_parte,
+					COALESCE(i.descripcion, m.descripcion) as descripcion,
+					m.tipo_movimiento,
+					m.cantidad,
+					m.numero_documento,
+					m.comentarios,
+					timezone('America/Chicago', m.fecha_movimiento) as fecha_movimiento,
+					u.nombre || ' ' || u.apellido AS usuario_nombre
+				FROM movimientos m 
+				LEFT JOIN usuarios u ON m.usuario_id = u.id
+				LEFT JOIN inventario i ON m.inventario_id = i.id
+				ORDER BY m.fecha_movimiento DESC, m.bodega, m.ubicacion, m.marca
+		`;
 
 		// Create a workbook
 		const workbook = new ExcelJS.Workbook();
@@ -53,7 +66,7 @@ export async function GET({ locals }) {
 		const netMovementsMap = new Map();
 		if (movimientosResult.rows && movimientosResult.rows.length > 0) {
 			for (const mov of movimientosResult.rows) {
-				const key = `${mov.bodega}||${mov.ubicacion || ''}||${mov.marca}||${mov.codigo_barras}`;
+				const key = mov.inventario_id || `${mov.bodega}||${mov.ubicacion || ''}||${mov.marca}||${mov.codigo}`;
 				const sign = mov.tipo_movimiento === 'IN' ? 1 : -1;
 				netMovementsMap.set(key, (netMovementsMap.get(key) || 0) + sign * mov.cantidad);
 			}
@@ -62,25 +75,26 @@ export async function GET({ locals }) {
 		// Process Inventory Data
 		if (inventarioResult.rows && inventarioResult.rows.length > 0) {
 			const inventarioData = inventarioResult.rows.map((row) => {
-				const key = `${row.bodega}||${row.ubicacion || ''}||${row.marca}||${row.codigo_barras}`;
+				const key = row.id || `${row.bodega}||${row.ubicacion || ''}||${row.marca}||${row.codigo}`;
 				return {
-					// Template-aligned columns first
 					id: row.id,
 					bodega: row.bodega,
 					marca: row.marca,
 					ubicacion: row.ubicacion,
-					codigo: row.codigo_barras,
+					codigo: row.codigo,
 					numero_parte: row.numero_parte,
 					descripcion: row.descripcion,
 					inventario_sistema: row.inventario_sistema,
-					GTIN: row.gtin || row.single_item_ean13 || '',
-					DUN: row.master_carton_ean13 || '',
-					// System/extra columns afterwards
+					gtin: row.gtin || '',
+					dun14: row.dun14 || '',
+					lote: row.lote || '',
+					unidad_medida: row.unidad_medida || '',
+					tare: row.tare || '',
 					inventario_fisico: row.inventario_fisico,
 					movimientos_netos: netMovementsMap.get(key) || '',
 					fecha_inventario: row.fecha_inventario ? new Date(row.fecha_inventario) : null,
 					categoria_incidencia: row.categoria_incidencia || '',
-					incidencia: row.incidencia || '',
+					notas: row.notas || '',
 					actualizado_por: row.actualizado || '',
 					validado_por: row.validado || ''
 				};
@@ -96,13 +110,16 @@ export async function GET({ locals }) {
 				{ header: 'numero_parte', key: 'numero_parte', width: 18 },
 				{ header: 'descripcion', key: 'descripcion', width: 30 },
 				{ header: 'inventario_sistema', key: 'inventario_sistema', width: 18 },
-				{ header: 'GTIN', key: 'GTIN', width: 18 },
-				{ header: 'DUN', key: 'DUN', width: 18 },
+				{ header: 'gtin', key: 'gtin', width: 18 },
+				{ header: 'dun14', key: 'dun14', width: 18 },
+				{ header: 'lote', key: 'lote', width: 14 },
+				{ header: 'unidad_medida', key: 'unidad_medida', width: 18 },
+				{ header: 'tare', key: 'tare', width: 12 },
 				{ header: 'inventario_fisico', key: 'inventario_fisico', width: 18 },
 				{ header: 'movimientos_netos', key: 'movimientos_netos', width: 18 },
 				{ header: 'fecha_inventario', key: 'fecha_inventario', width: 20 },
 				{ header: 'categoria_incidencia', key: 'categoria_incidencia', width: 22 },
-				{ header: 'incidencia', key: 'incidencia', width: 28 },
+				{ header: 'notas', key: 'notas', width: 28 },
 				{ header: 'actualizado_por', key: 'actualizado_por', width: 20 },
 				{ header: 'validado_por', key: 'validado_por', width: 20 }
 			];
@@ -116,7 +133,7 @@ export async function GET({ locals }) {
 				Bodega: row.bodega,
 				Ubicación: row.ubicacion || '',
 				Marca: row.marca,
-				'Código de Barras': row.codigo_barras,
+				Código: row.codigo,
 				'Número de Parte': row.numero_parte || '',
 				Descripción: row.descripcion || '',
 				'Tipo Movimiento': row.tipo_movimiento === 'IN' ? 'Entrada' : 'Salida',
@@ -132,7 +149,7 @@ export async function GET({ locals }) {
 				{ header: 'Bodega', key: 'Bodega', width: 15 },
 				{ header: 'Ubicación', key: 'Ubicación', width: 12 },
 				{ header: 'Marca', key: 'Marca', width: 15 },
-				{ header: 'Código de Barras', key: 'Código de Barras', width: 15 },
+				{ header: 'Código', key: 'Código', width: 15 },
 				{ header: 'Número de Parte', key: 'Número de Parte', width: 20 },
 				{ header: 'Descripción', key: 'Descripción', width: 25 },
 				{ header: 'Tipo Movimiento', key: 'Tipo Movimiento', width: 12 },

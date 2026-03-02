@@ -9,7 +9,7 @@
 	let marcas = [];
 	let selectedBodega = '';
 	let selectedMarca = '';
-	let codigoBarras = '';
+	let codigo = '';
 	let numeroDocumento = '';
 	let comentarios = '';
 	let tipoMovimiento = '';
@@ -70,13 +70,13 @@
 	}
 
 	async function fetchProductDetails() {
-		if (!selectedBodega || !selectedMarca || !codigoBarras) return;
+		if (!selectedBodega || !selectedMarca || !codigo) return;
 
 		try {
 			const result = await inventoryAPI.fetchProductDetails(
 				selectedBodega,
 				selectedMarca,
-				codigoBarras
+				codigo
 			);
 			if (result.status === 'success' && result.data.length > 0) {
 				product = result.data[0];
@@ -97,7 +97,7 @@
 		selectedMarca = '';
 		marcas = [];
 		product = null;
-		codigoBarras = '';
+		codigo = '';
 		if (selectedBodega) {
 			await fetchMarcas();
 		}
@@ -106,13 +106,13 @@
 	async function handleMarcaChange(event) {
 		selectedMarca = event.target.value;
 		product = null;
-		codigoBarras = '';
+		codigo = '';
 	}
 
 	async function handleBarcodeInput(event) {
 		if (event.key === 'Enter' || event.key === 'Tab') {
 			event.preventDefault();
-			if (codigoBarras.trim()) {
+			if (codigo.trim()) {
 				await fetchProductDetails();
 			}
 		}
@@ -123,7 +123,8 @@
 		if (
 			!selectedBodega ||
 			!selectedMarca ||
-			!codigoBarras ||
+			!product?.id ||
+			!codigo ||
 			!tipoMovimiento ||
 			!numeroDocumento.trim() ||
 			!cantidad
@@ -141,10 +142,11 @@
 
 		try {
 			const payload = {
+				inventario_id: product?.id,
 				bodega: selectedBodega,
 				ubicacion: product?.ubicacion || '',
 				marca: selectedMarca,
-				codigo_barras: product?.codigo_barras,
+				codigo: product?.codigo || codigo,
 				numero_parte: product?.numero_parte || '',
 				descripcion: product?.descripcion || '',
 				tipo_movimiento: tipoMovimiento,
@@ -175,7 +177,7 @@
 	}
 
 	function resetForm() {
-		codigoBarras = '';
+		codigo = '';
 		numeroDocumento = '';
 		comentarios = '';
 		tipoMovimiento = '';
@@ -231,15 +233,15 @@
 	<!-- Product Code Input -->
 	{#if selectedMarca}
 		<div class="mb-4">
-			<label for="codigoBarras" class="block text-sm font-medium text-gray-700">
-				Código de Barras / Número de Parte / EAN 13*
-			</label>
+			<label for="codigo" class="block text-sm font-medium text-gray-700">
+					Código / GTIN / DUN14*
+				</label>
 			<input
 				type="text"
-				id="codigoBarras"
-				bind:value={codigoBarras}
+					id="codigo"
+					bind:value={codigo}
 				on:keydown={handleBarcodeInput}
-				placeholder="Escanear o ingresar código"
+					placeholder="Escanear o ingresar código"
 				class="mt-1 block w-full rounded border p-2 focus:border-blue-500 focus:ring-blue-500"
 			/>
 		</div>
@@ -251,7 +253,7 @@
 			<h3 class="mb-2 text-lg font-semibold">Detalles del Producto</h3>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<p><strong>Ubicación:</strong> {product.ubicacion}</p>
-				<p><strong>Código:</strong> {product.codigo_barras}</p>
+				<p><strong>Código:</strong> {product.codigo}</p>
 				<p><strong>Número de Parte:</strong> {product.numero_parte}</p>
 				<p><strong>Descripción:</strong> {product.descripcion}</p>
 				<p><strong>Inventario Sistema:</strong> {product.inventario_sistema}</p>

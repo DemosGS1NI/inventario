@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { sql } from '$lib/database';
 import dotenv from 'dotenv';
 import { successResponse, errorResponse } from '$lib/responseUtils';

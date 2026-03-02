@@ -27,13 +27,17 @@ export async function DELETE({ params, locals }) {
 
 		// First, check if the movement exists and get its details for logging
 		const checkResult = await sql`
-      SELECT 
-        m.*,
-        u.nombre || ' ' || u.apellido AS usuario_nombre
-      FROM movimientos m
-      LEFT JOIN usuarios u ON m.usuario_id = u.id
-      WHERE m.id = ${movementId}
-    `;
+			SELECT 
+				m.*,
+				u.nombre || ' ' || u.apellido AS usuario_nombre,
+				i.codigo,
+				i.numero_parte,
+				i.descripcion
+			FROM movimientos m
+			LEFT JOIN usuarios u ON m.usuario_id = u.id
+			LEFT JOIN inventario i ON m.inventario_id = i.id
+			WHERE m.id = ${movementId}
+		`;
 
 		if (checkResult.rows.length === 0) {
 			return errorResponse(404, 'NOT_FOUND', 'Movement not found');
@@ -43,10 +47,10 @@ export async function DELETE({ params, locals }) {
 
 		// Delete the movement
 		const deleteResult = await sql`
-      DELETE FROM movimientos
-      WHERE id = ${movementId}
-      RETURNING id, codigo_barras, tipo_movimiento, cantidad
-    `;
+			DELETE FROM movimientos
+			WHERE id = ${movementId}
+			RETURNING id, inventario_id, tipo_movimiento, cantidad
+		`;
 
 		if (deleteResult.rowCount === 0) {
 			return errorResponse(404, 'NOT_FOUND', 'Movement not found or already deleted');
@@ -55,18 +59,18 @@ export async function DELETE({ params, locals }) {
 		// Log the deletion in audit log (if you have one)
 		try {
 			await sql`
-        INSERT INTO audit_log (
-          action_type,
-          performed_by,
-          action_details,
-          timestamp
-        ) VALUES (
-          'MOVEMENT_DELETED',
-          ${userId},
-          ${`Deleted movement: ${movement.tipo_movimiento} ${movement.cantidad} units of ${movement.codigo_barras} (Doc: ${movement.numero_documento || 'N/A'})`},
-          CURRENT_TIMESTAMP
-        )
-      `;
+				INSERT INTO audit_log (
+					action_type,
+					performed_by,
+					action_details,
+					timestamp
+				) VALUES (
+					'MOVEMENT_DELETED',
+					${userId},
+					${`Deleted movement: ${movement.tipo_movimiento} ${movement.cantidad} units of ${movement.numero_parte || movement.codigo || 'N/A'} (Doc: ${movement.numero_documento || 'N/A'})`},
+					CURRENT_TIMESTAMP
+				)
+			`;
 		} catch (auditError) {
 			// Log audit error but don't fail the deletion
 			console.error('Failed to log movement deletion:', auditError);

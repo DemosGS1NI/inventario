@@ -11,10 +11,10 @@ export async function POST({ request, locals }) {
 
 	try {
 		const {
+			inventario_id,
 			bodega,
 			ubicacion,
 			marca,
-			codigo_barras,
 			numero_parte,
 			descripcion,
 			tipo_movimiento,
@@ -24,11 +24,11 @@ export async function POST({ request, locals }) {
 		} = await request.json();
 
 		// Validate required fields
-		if (!bodega || !marca || !codigo_barras || !tipo_movimiento || !cantidad) {
+		if (!inventario_id || !bodega || !marca || !tipo_movimiento || !cantidad) {
 			return errorResponse(
 				400,
 				'VALIDATION_ERROR',
-				'Bodega, Marca, Código de Barras, Tipo de Movimiento y Cantidad son requeridos'
+				'Inventario, Bodega, Marca, Tipo de Movimiento y Cantidad son requeridos'
 			);
 		}
 
@@ -44,16 +44,34 @@ export async function POST({ request, locals }) {
 
 		// Insert movement
 		const result = await sql`
-      INSERT INTO movimientos (
-        bodega, ubicacion, marca, codigo_barras, numero_parte, descripcion,
-        tipo_movimiento, cantidad, numero_documento, comentarios, usuario_id
-      )
-      VALUES (
-        ${bodega}, ${ubicacion}, ${marca}, ${codigo_barras}, ${numero_parte}, ${descripcion},
-        ${tipo_movimiento}, ${cantidad}, ${numero_documento}, ${comentarios}, ${user.userId}
-      )
-      RETURNING id, fecha_movimiento
-    `;
+			INSERT INTO movimientos (
+				inventario_id,
+				bodega,
+				ubicacion,
+				marca,
+				numero_parte,
+				descripcion,
+				tipo_movimiento,
+				cantidad,
+				numero_documento,
+				comentarios,
+				usuario_id
+			)
+			VALUES (
+				${inventario_id},
+				${bodega},
+				${ubicacion},
+				${marca},
+				${numero_parte},
+				${descripcion},
+				${tipo_movimiento},
+				${cantidad},
+				${numero_documento},
+				${comentarios},
+				${user.userId}
+			)
+			RETURNING id, fecha_movimiento
+		`;
 
 		return successResponse(result.rows[0], 'Movimiento registrado satisfactoriamente');
 	} catch (error) {
@@ -95,47 +113,43 @@ export async function GET({ url, locals }) {
 		let result;
 
 		// Build dynamic query based on filters
+		const baseQuery = sql`
+			SELECT 
+				m.*, 
+				u.nombre || ' ' || u.apellido AS usuario_nombre,
+				i.codigo,
+				i.numero_parte,
+				i.descripcion
+			FROM movimientos m 
+			LEFT JOIN usuarios u ON m.usuario_id = u.id
+			LEFT JOIN inventario i ON m.inventario_id = i.id
+		`;
+
 		if (bodega && marca && ubicacion) {
 			result = await sql`
-        SELECT 
-          m.*, 
-          u.nombre || ' ' || u.apellido AS usuario_nombre
-        FROM movimientos m 
-        LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = ${bodega} AND m.marca = ${marca} AND m.ubicacion = ${ubicacion}
-        ORDER BY m.fecha_movimiento DESC
-      `;
+				${baseQuery}
+				WHERE m.bodega = ${bodega} AND m.marca = ${marca} AND m.ubicacion = ${ubicacion}
+				ORDER BY m.fecha_movimiento DESC
+			`;
 		} else if (bodega && marca) {
 			result = await sql`
-        SELECT 
-          m.*, 
-          u.nombre || ' ' || u.apellido AS usuario_nombre
-        FROM movimientos m 
-        LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = ${bodega} AND m.marca = ${marca}
-        ORDER BY m.fecha_movimiento DESC
-      `;
+				${baseQuery}
+				WHERE m.bodega = ${bodega} AND m.marca = ${marca}
+				ORDER BY m.fecha_movimiento DESC
+			`;
 		} else if (bodega) {
 			result = await sql`
-        SELECT 
-          m.*, 
-          u.nombre || ' ' || u.apellido AS usuario_nombre
-        FROM movimientos m 
-        LEFT JOIN usuarios u ON m.usuario_id = u.id
-        WHERE m.bodega = ${bodega}
-        ORDER BY m.fecha_movimiento DESC
-      `;
+				${baseQuery}
+				WHERE m.bodega = ${bodega}
+				ORDER BY m.fecha_movimiento DESC
+			`;
 		} else {
 			// Get all movements (limit for performance)
 			result = await sql`
-        SELECT 
-          m.*, 
-          u.nombre || ' ' || u.apellido AS usuario_nombre
-        FROM movimientos m 
-        LEFT JOIN usuarios u ON m.usuario_id = u.id
-        ORDER BY m.fecha_movimiento DESC
-        LIMIT 100
-      `;
+				${baseQuery}
+				ORDER BY m.fecha_movimiento DESC
+				LIMIT 100
+			`;
 		}
 
 		return successResponse(result.rows, 'Movimientos obtenidos satisfactoriamente');

@@ -393,7 +393,7 @@
 									{movement.marca}
 								</td>
 								<td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-									{movement.codigo_barras}
+									{movement.codigo}
 								</td>
 								<td class="px-6 py-4 text-sm text-gray-900">
 									<div>
@@ -417,10 +417,10 @@
 									<td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
 										<button
 											on:click={() =>
-												deleteMovement(
-													movement.id,
-													`${getTipoLabel(movement.tipo_movimiento)}: ${movement.cantidad} - ${movement.numero_parte || movement.codigo_barras}`
-												)}
+											deleteMovement(
+												movement.id,
+												`${getTipoLabel(movement.tipo_movimiento)}: ${movement.cantidad} - ${movement.numero_parte || movement.codigo}`
+											)}
 											class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-3 py-1 text-xs font-medium leading-4 text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
 											title="Eliminar movimiento"
 										>
